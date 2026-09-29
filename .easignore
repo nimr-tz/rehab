@@ -1,0 +1,39 @@
+# ── Laravel / PHP backend (not needed for mobile build) ──────
+app/
+bootstrap/
+config/
+database/
+docs/
+node_modules/
+outputs/
+public/
+resources/
+routes/
+storage/
+tests/
+vendor/
+tmp/
+.kiro/
+.codex-remote-attachments/
+
+# ── Root-level build / log artefacts ─────────────────────────
+*.log
+*.pdf
+*.zip
+*.tar
+*.gz
+*.apk
+*.aab
+
+# ── conference-mobile internals (mirrors conference-mobile/.easignore) ──
+conference-mobile/node_modules/
+conference-mobile/android/
+conference-mobile/ios/
+conference-mobile/design/
+conference-mobile/design-mockups/
+conference-mobile/screenshots/
+conference-mobile/.expo/
+conference-mobile/coverage/
+conference-mobile/__tests__/
+conference-mobile/scripts/
+conference-mobile/*.log

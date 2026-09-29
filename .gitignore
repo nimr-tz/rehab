@@ -1,0 +1,23 @@
+
+node_modules
+vendor
+storage/*.key
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+.env
+.idea
+.vscode
+.DS_Store
+*.php.new
+*.php.bak
+tmp_debug_stats.php
+tmp_test_cleanup.php
+tmp_test_fuzzy.php
+*.html
+*.blade.php.new
+
+# Vite dev server marker — present only while `npm run dev` is running.
+# If committed, production would try to load assets from localhost.
+/public/hot

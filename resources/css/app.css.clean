@@ -1,0 +1,277 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import premium fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Enhanced Design System Components */
+@layer base {
+    html {
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+    
+    body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        font-weight: 600;
+    }
+}
+
+@layer components {
+    /* Premium Button System */
+    .btn {
+        @apply inline-flex items-center justify-center px-4 py-2 font-medium text-sm rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+    
+    .btn-primary {
+        @apply bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-sm hover:shadow-md focus:ring-blue-500;
+    }
+    
+    .btn-secondary {
+        @apply bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-700 border border-gray-300 shadow-sm hover:shadow-md focus:ring-blue-500;
+    }
+    
+    .btn-success {
+        @apply bg-green-600 hover:bg-green-700 active:bg-green-800 text-white shadow-sm hover:shadow-md focus:ring-green-500;
+    }
+    
+    .btn-warning {
+        @apply bg-yellow-600 hover:bg-yellow-700 active:bg-yellow-800 text-white shadow-sm hover:shadow-md focus:ring-yellow-500;
+    }
+    
+    .btn-error {
+        @apply bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-sm hover:shadow-md focus:ring-red-500;
+    }
+    
+    .btn-ghost {
+        @apply bg-transparent hover:bg-gray-100 active:bg-gray-200 text-gray-700 focus:ring-blue-500;
+    }
+    
+    .btn-sm {
+        @apply px-3 py-1.5 text-xs;
+    }
+    
+    .btn-lg {
+        @apply px-6 py-3 text-base;
+    }
+    
+    .btn-xl {
+        @apply px-8 py-4 text-lg;
+    }
+
+    /* Premium Card System */
+    .card {
+        @apply bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-200;
+    }
+    
+    .card-hover {
+        @apply hover:shadow-md hover:-translate-y-1 transform;
+    }
+    
+    .card-interactive {
+        @apply cursor-pointer hover:shadow-lg hover:scale-[1.02] transform transition-all duration-300;
+    }
+    
+    .card-gradient {
+        @apply bg-gradient-to-br from-white to-gray-50;
+    }
+
+    /* Premium Input System */
+    .input {
+        @apply block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200;
+    }
+    
+    .input-error {
+        @apply border-red-500 focus:ring-red-500 focus:border-red-500;
+    }
+    
+    .input-success {
+        @apply border-green-500 focus:ring-green-500 focus:border-green-500;
+    }
+
+    /* Premium Badge System */
+    .badge {
+        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    }
+    
+    .badge-primary {
+        @apply bg-blue-100 text-blue-800;
+    }
+    
+    .badge-success {
+        @apply bg-green-100 text-green-800;
+    }
+    
+    .badge-warning {
+        @apply bg-yellow-100 text-yellow-800;
+    }
+    
+    .badge-error {
+        @apply bg-red-100 text-red-800;
+    }
+    
+    .badge-secondary {
+        @apply bg-gray-100 text-gray-800;
+    }
+
+    /* Premium Alert System */
+    .alert {
+        @apply p-4 rounded-lg border-l-4;
+    }
+    
+    .alert-success {
+        @apply bg-green-50 border-green-400 text-green-800;
+    }
+    
+    .alert-warning {
+        @apply bg-yellow-50 border-yellow-400 text-yellow-800;
+    }
+    
+    .alert-error {
+        @apply bg-red-50 border-red-400 text-red-800;
+    }
+    
+    .alert-info {
+        @apply bg-blue-50 border-blue-400 text-blue-800;
+    }
+
+    /* Enhanced transitions */
+    .dark-transition {
+        @apply transition-all duration-300 ease-in-out;
+    }
+    
+    /* Enhanced scrollbar */
+    .premium-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .premium-scrollbar::-webkit-scrollbar-track {
+        @apply bg-gray-100;
+    }
+    
+    .premium-scrollbar::-webkit-scrollbar-thumb {
+        @apply bg-gray-300 rounded-full hover:bg-gray-400 transition-colors;
+    }
+
+    /* Premium glass morphism effects */
+    .glass {
+        @apply backdrop-blur-sm bg-white/80 border border-white/20;
+    }
+    
+    .glass-strong {
+        @apply backdrop-blur-md bg-white/90 border border-white/30;
+    }
+
+    /* Premium skeleton loading */
+    .skeleton {
+        @apply animate-pulse bg-gray-200 rounded;
+    }
+    
+    .skeleton-text {
+        @apply h-4 bg-gray-200 rounded animate-pulse;
+    }
+    
+    .skeleton-circle {
+        @apply rounded-full bg-gray-200 animate-pulse;
+    }
+
+    /* Premium gradients */
+    .gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .gradient-success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .gradient-warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .gradient-text-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Improved focus states */
+    .focus-ring {
+        @apply focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:outline-none;
+    }
+
+    /* Premium floating action button */
+    .fab {
+        @apply fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 z-50;
+    }
+}
+
+/* Enhanced focus-visible for better accessibility */
+*:focus-visible {
+    @apply ring-2 ring-blue-500 ring-opacity-50 outline-none;
+}
+
+/* Improved selection styling */
+::selection {
+    @apply bg-blue-200 text-blue-900;
+}
+
+/* Enhanced animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Animation classes */
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-fade-in-down {
+    animation: fadeInDown 0.6s ease-out;
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Animation delays */
+.animation-delay-200 { animation-delay: 0.2s; }
+.animation-delay-300 { animation-delay: 0.3s; }
+.animation-delay-400 { animation-delay: 0.4s; }
+.animation-delay-500 { animation-delay: 0.5s; }
+.animation-delay-600 { animation-delay: 0.6s; }
+.animation-delay-700 { animation-delay: 0.7s; }
+.animation-delay-800 { animation-delay: 0.8s; }
+.animation-delay-900 { animation-delay: 0.9s; }
+.animation-delay-1000 { animation-delay: 1.0s; }

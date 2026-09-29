@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Rehab Summit Staff",
+    "slug": "rehab-summit-staff",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#154B5F"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "tz.or.rehabhealth.summitstaff",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Rehab Summit Staff uses the camera to scan attendee badge QR codes for attendance."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#154B5F"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "tz.or.rehabhealth.summitstaff",
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "primaryColor": "#154B5F",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Rehab Summit Staff uses the camera to scan attendee badge QR codes for attendance."
+        }
+      ]
+    ],
+    "scheme": "rehabsummitstaff"
+  }
+}
