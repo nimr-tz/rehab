@@ -1,0 +1,82 @@
+name: Build, Deploy, and Notify
+
+on:
+  push:
+    branches: [main, deploy/rehab-demo]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/nimr-tz/rehab:sha-${{ github.sha }}
+          provenance: false
+
+  update-gitops:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: nimr-tz/platform-gitops
+          ref: main
+          token: ${{ secrets.PLATFORM_GITOPS_TOKEN }}
+          path: platform-gitops
+      - name: Pin image
+        env:
+          GITOPS_TOKEN: ${{ secrets.PLATFORM_GITOPS_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$GITOPS_TOKEN"
+          cd platform-gitops
+          file=clusters/msmt-02/research/rehab/kustomization.yaml
+          tag="sha-${GITHUB_SHA}"
+          sed -i "s/^    newTag: .*/    newTag: ${tag}/" "$file"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$file"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "rehab: deploy ${tag}"
+          git push origin HEAD:main || {
+            git pull --rebase origin main
+            git push origin HEAD:main
+          }
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [build, update-gitops]
+    if: always()
+    steps:
+      - name: Email result
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          secure: true
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "Rehab deploy #${{ github.run_number }}: build ${{ needs.build.result }}, GitOps ${{ needs.update-gitops.result }}"
+          to: john.a.mduda@gmail.com,mchainajr@gmail.com
+          from: ${{ secrets.SMTP_USERNAME }}
+          body: |
+            Repository: ${{ github.repository }}
+            Commit: ${{ github.sha }}
+            Build: ${{ needs.build.result }}
+            GitOps update: ${{ needs.update-gitops.result }}
+            Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
