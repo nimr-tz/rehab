@@ -58,6 +58,7 @@ Each phase ends with working, tested features. The order follows the summit cale
 - Design tokens and a component library: button, field, select, card, table, badge, alert, modal, sidebar and page header.
 - Layouts: public, sign-in, and the portal with role-based navigation.
 - Screens: sign-in, registration, forgot and reset password, and email verification, all built from the mockup.
+- Public home page, from the approved preview `design/home.html`, with every edition detail (dates, venue, theme, fees, topics, key dates) read from the edition settings. Details not yet set show "To be announced".
 - `editions` table with admin settings for dates, venue, deadlines and fees. Roles seeded, and the first admin created from `.env`.
 
 ### Phase 1: Accounts and registration

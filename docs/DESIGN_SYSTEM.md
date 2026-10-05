@@ -1,6 +1,6 @@
 # Design system
 
-Light mode only. The source is the client's login mockup and the Rehab Health logo, since there are no brand guidelines. The live reference is `design/index.html` (components) and `design/login.html` (sign-in screen). Open them at `http://localhost/rehab-events/design/`.
+Light mode only. The source is the client's login mockup and the Rehab Health logo, since there are no brand guidelines. The live reference is `design/index.html` (components), `design/login.html` (sign-in screen) and `design/home.html` (public home page, adapted from the "Complete home page redesign" export). Open them at `http://localhost/rehab-events/design/`.
 
 ## Principles
 

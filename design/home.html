@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rehabilitation Summit 2027 · Rehab Health</title>
+    <meta name="description" content="The 5th Rehabilitation Summit, organised by Rehab Health. Register, submit an abstract and follow the programme.">
+    <link rel="icon" href="assets/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+/* THEME:START (copied from theme.css) */
+@theme section of resources/css/app.css.
+ | The static previews in this folder carry a copy inline. When a token changes,
+ | change it here first, then in the previews.
+ */
+@theme {
+    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+    /* Brand teal: the hand and crescent of the logo (700) */
+    --color-brand-50: #eff8fb;
+    --color-brand-100: #d7edf4;
+    --color-brand-200: #b0dbe9;
+    --color-brand-300: #7cc0d7;
+    --color-brand-400: #3f9dbe;
+    --color-brand-500: #1b7fa3;
+    --color-brand-600: #0b6688;
+    --color-brand-700: #024f6d;
+    --color-brand-800: #043f57;
+    --color-brand-900: #073348;
+    --color-brand-950: #04202e;
+
+    /* Ink: text and neutrals, anchored on the wordmark (800) */
+    --color-ink-50: #f6f8fa;
+    --color-ink-100: #eef1f5;
+    --color-ink-200: #dfe4eb;
+    --color-ink-300: #c3cad5;
+    --color-ink-400: #949cab;
+    --color-ink-500: #6b7386;
+    --color-ink-600: #515a6c;
+    --color-ink-700: #3e4556;
+    --color-ink-800: #303440;
+    --color-ink-900: #232733;
+    --color-ink-950: #161922;
+
+    /* Figure accents: categories only, never status */
+    --color-ember-50: #fff4ec;
+    --color-ember-100: #fee4cf;
+    --color-ember-200: #fcc79e;
+    --color-ember-300: #f9a265;
+    --color-ember-400: #ef8233;
+    --color-ember-500: #df670d;
+    --color-ember-600: #bd520a;
+    --color-ember-700: #963f0b;
+    --color-ember-800: #763310;
+    --color-ember-900: #5f2b10;
+
+    --color-coral-50: #fff4f2;
+    --color-coral-100: #ffe5e1;
+    --color-coral-200: #ffcdc6;
+    --color-coral-300: #feb2a9;
+    --color-coral-400: #fd9a8f;
+    --color-coral-500: #f2766a;
+    --color-coral-600: #d9574b;
+    --color-coral-700: #b5443a;
+    --color-coral-800: #923832;
+    --color-coral-900: #78322e;
+
+    --color-olive-50: #f4f7ef;
+    --color-olive-100: #e5ecd9;
+    --color-olive-200: #ccdab5;
+    --color-olive-300: #aac088;
+    --color-olive-400: #87a35f;
+    --color-olive-500: #688644;
+    --color-olive-600: #516a35;
+    --color-olive-700: #45582e;
+    --color-olive-800: #384628;
+    --color-olive-900: #2f3b23;
+
+    --color-sun-50: #fffbea;
+    --color-sun-100: #fff3c4;
+    --color-sun-200: #ffe685;
+    --color-sun-300: #ffd546;
+    --color-sun-400: #f2b302;
+    --color-sun-500: #d69a00;
+    --color-sun-600: #b07a00;
+    --color-sun-700: #8a5c04;
+    --color-sun-800: #71490b;
+    --color-sun-900: #603d0f;
+
+    /* Surfaces */
+    --color-canvas: #f3f8fb;
+
+    /* Shape and depth */
+    --radius-card: 1.5rem;
+    --radius-control: 0.75rem;
+    --shadow-soft: 0 1px 2px rgb(4 32 46 / 0.04), 0 12px 32px -14px rgb(2 79 109 / 0.18);
+    --shadow-lift: 0 2px 6px rgb(4 32 46 / 0.04), 0 28px 64px -24px rgb(2 79 109 / 0.32);
+}
+/* THEME:END */
+
+        @layer base {
+            html { scroll-behavior: smooth; scroll-padding-top: 5.5rem; }
+            h1, h2, h3, p { text-wrap: pretty; }
+        }
+        @layer components {
+            .wrap { @apply mx-auto max-w-7xl px-4 sm:px-8; }
+            .eyebrow { @apply text-[13px] font-bold uppercase tracking-[0.16em] text-ember-600; }
+            .section-title { @apply mt-3 text-[clamp(2.1rem,4vw,3.4rem)] font-extrabold leading-[1.05] tracking-tight text-brand-700; }
+            .btn-pill { @apply inline-flex items-center justify-center gap-2.5 whitespace-nowrap rounded-full px-7 py-4 text-base font-bold transition focus:outline-none focus-visible:ring-4; }
+            .tba { @apply font-semibold text-ink-400; }
+        }
+    </style>
+</head>
+<body class="bg-white font-sans text-ink-800 antialiased">
+
+<!-- Announcement -->
+<div class="bg-brand-700 text-white">
+    <div class="wrap flex flex-wrap items-center justify-center gap-x-4 gap-y-1 py-2.5 text-center text-sm font-semibold">
+        <span class="h-2 w-2 rounded-full bg-sun-400"></span>
+        <span>Save the date: the Rehabilitation Summit 2027. Dates and venue will be announced soon.</span>
+        <a href="#register" class="text-sun-300 hover:text-sun-200">Create your account →</a>
+    </div>
+</div>
+
+<!-- Navigation -->
+<nav class="sticky top-0 z-50 border-b border-ink-100 bg-white/95 backdrop-blur-md">
+    <div class="wrap flex min-h-[76px] items-center justify-between gap-3 sm:gap-6">
+        <a href="#" class="flex shrink-0 items-center gap-3">
+            <img src="assets/logo-mark-sm.png" alt="" class="h-10 w-auto sm:h-11">
+            <span class="flex flex-col leading-tight">
+                <span class="whitespace-nowrap text-[15px] font-bold text-brand-700 sm:text-[17px]">Rehab Summit 2027</span>
+                <span class="whitespace-nowrap text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Rehab Health</span>
+            </span>
+        </a>
+
+        <div class="hidden items-center gap-6 text-[15px] font-semibold lg:flex">
+            <a href="#about" class="text-ink-800 hover:text-ember-600">About</a>
+            <a href="#dates" class="text-ink-800 hover:text-ember-600">Key dates</a>
+            <a href="#register" class="text-ink-800 hover:text-ember-600">Fees</a>
+            <a href="#topics" class="text-ink-800 hover:text-ember-600">Topics</a>
+            <a href="#programme" class="text-ink-800 hover:text-ember-600">Programme</a>
+            <a href="#venue" class="text-ink-800 hover:text-ember-600">Venue</a>
+            <a href="#faq" class="text-ink-800 hover:text-ember-600">FAQ</a>
+        </div>
+
+        <div class="flex shrink-0 items-center gap-1 sm:gap-5">
+            <a href="login.html" class="hidden text-[15px] font-semibold text-brand-700 hover:text-brand-800 sm:inline">Log in</a>
+            <a href="#register" class="rounded-full bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-800 sm:px-5 sm:py-3 sm:text-[15px]">Register</a>
+            <button type="button" id="menu-button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu"
+                    class="grid h-11 w-11 place-items-center rounded-full text-brand-700 hover:bg-brand-50 lg:hidden">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="mobile-menu" class="hidden border-t border-ink-100 bg-white lg:hidden">
+        <div class="wrap grid gap-1 py-3 text-base font-semibold">
+            <a href="#about" class="rounded-xl px-3 py-2.5 hover:bg-brand-50">About</a>
+            <a href="#dates" class="rounded-xl px-3 py-2.5 hover:bg-brand-50">Key dates</a>
+            <a href="#register" class="rounded-xl px-3 py-2.5 hover:bg-brand-50">Fees</a>
+            <a href="#topics" class="rounded-xl px-3 py-2.5 hover:bg-brand-50">Topics</a>
+            <a href="#programme" class="rounded-xl px-3 py-2.5 hover:bg-brand-50">Programme</a>
+            <a href="#venue" class="rounded-xl px-3 py-2.5 hover:bg-brand-50">Venue</a>
+            <a href="#faq" class="rounded-xl px-3 py-2.5 hover:bg-brand-50">FAQ</a>
+            <a href="login.html" class="rounded-xl px-3 py-2.5 text-brand-700 hover:bg-brand-50">Log in</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<header class="bg-gradient-to-b from-white to-brand-50">
+    <div class="wrap grid items-center gap-12 pb-20 pt-14 lg:grid-cols-[1.15fr_1fr] lg:pt-16">
+        <div>
+            <p class="flex flex-wrap items-center gap-x-3.5 gap-y-2 text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
+                People <span class="h-[7px] w-[7px] rounded-full bg-ember-500"></span>
+                Care <span class="h-[7px] w-[7px] rounded-full bg-olive-700"></span>
+                Together
+            </p>
+            <h1 class="mt-6 text-[clamp(3rem,6.4vw,5.6rem)] font-extrabold leading-[0.98] tracking-[-0.035em] text-brand-700">
+                Rehabilitation Summit <span class="text-ember-500">2027</span>
+            </h1>
+            <p class="mt-6 max-w-xl text-[clamp(1.15rem,1.6vw,1.35rem)] leading-normal text-ink-600">
+                <span class="font-bold text-ink-900">Theme:</span>
+                <span class="tba">to be announced with the call for abstracts</span>
+            </p>
+
+            <div class="mt-9 flex flex-wrap gap-3">
+                <a href="#register" class="btn-pill bg-brand-700 text-white shadow-[0_10px_24px_-10px_rgb(2_79_109/0.6)] hover:bg-brand-800 focus-visible:ring-brand-500/30">
+                    Register now <span class="text-sun-400">→</span>
+                </a>
+                <!-- Shown only while abstract submission is open -->
+                <a href="#" class="btn-pill border-[1.5px] border-brand-700 bg-white text-brand-700 hover:bg-brand-700 hover:text-white focus-visible:ring-brand-500/30">
+                    Submit an abstract
+                </a>
+            </div>
+
+            <dl class="mt-12 grid grid-cols-2 gap-5 border-t border-brand-100 pt-6 sm:grid-cols-3">
+                <div>
+                    <dt class="text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Dates</dt>
+                    <dd class="mt-1.5 text-lg font-bold text-ink-900">2027<span class="block text-sm tba">Exact dates to be announced</span></dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Venue</dt>
+                    <dd class="mt-1.5 text-lg tba">To be announced</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Edition</dt>
+                    <dd class="mt-1.5 text-lg font-bold text-ink-900">5th</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="relative mx-auto flex w-full max-w-[32rem] items-center justify-center">
+            <div class="absolute aspect-square w-[88%] rounded-full bg-[radial-gradient(circle,#fff_0%,#fff_55%,rgb(255_255_255/0)_72%)]"></div>
+            <span class="absolute right-[10%] top-[6%] h-[22px] w-[22px] rounded-full bg-sun-400"></span>
+            <span class="absolute bottom-[14%] left-[4%] h-4 w-4 rounded-full bg-coral-400"></span>
+            <span class="absolute left-[2%] top-[30%] h-2.5 w-2.5 rounded-full bg-brand-700"></span>
+            <div class="relative aspect-square w-full">
+                <img id="brand-still" src="assets/logo-2027-still.webp" alt="Rehab Health 2027 Events Portal"
+                     class="h-full w-full object-contain transition-opacity duration-300">
+                <img id="brand-anim" alt="" aria-hidden="true"
+                     class="absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity duration-300">
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- About -->
+<section id="about" class="wrap pt-28">
+    <div class="grid gap-x-16 gap-y-8 lg:grid-cols-3">
+        <p class="eyebrow">About the Summit</p>
+        <div class="lg:col-span-2">
+            <p class="text-[clamp(1.6rem,3vw,2.5rem)] font-semibold leading-tight tracking-tight text-brand-700">
+                The 5th Rehabilitation Summit is organised by Rehab Health in collaboration with the Ministry of Health.
+            </p>
+            <p class="mt-6 max-w-3xl text-xl leading-relaxed text-ink-600">
+                It brings together practitioners, researchers, policy makers and partners to share evidence and practice in rehabilitation.
+            </p>
+        </div>
+    </div>
+    <div class="mt-16 grid gap-4 md:grid-cols-3">
+        <div class="rounded-[20px] bg-ember-50 p-7">
+            <p class="text-[2.75rem] font-extrabold tracking-tight text-ember-600">3 days</p>
+            <p class="mt-1.5 text-[17px] leading-snug text-ink-600">of plenaries, parallel sessions and posters</p>
+        </div>
+        <div class="rounded-[20px] bg-sun-50 p-7">
+            <p class="text-[2.75rem] font-extrabold tracking-tight text-brand-700">9 topics</p>
+            <p class="mt-1.5 text-[17px] leading-snug text-ink-600">for abstracts, review and sessions</p>
+        </div>
+        <div class="rounded-[20px] bg-olive-50 p-7">
+            <p class="text-[2.75rem] font-extrabold tracking-tight text-olive-700">CPD</p>
+            <p class="mt-1.5 text-[17px] leading-snug text-ink-600">attendance recorded per session, with certificates after the summit</p>
+        </div>
+    </div>
+</section>
+
+<!-- Key dates -->
+<section id="dates" class="wrap pt-28">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="eyebrow">Key dates</p>
+            <h2 class="section-title">On the road to 2027</h2>
+        </div>
+        <a href="#" class="text-base font-bold text-brand-700 hover:text-brand-800">Apply to chair or report a session →</a>
+    </div>
+    <ol class="mt-12 grid gap-y-8 sm:grid-cols-2 lg:grid-cols-5">
+        <li class="border-t-[3px] border-brand-700 pr-5">
+            <span class="-mt-2.5 block h-4 w-4 rounded-full bg-brand-700 ring-[5px] ring-white"></span>
+            <p class="mt-4 text-[22px] font-bold tracking-tight text-brand-700">Open now</p>
+            <p class="mt-2 text-base leading-snug text-ink-600">Create your portal account</p>
+        </li>
+        <li class="border-t-[3px] border-ember-500 pr-5">
+            <span class="-mt-2.5 block h-4 w-4 rounded-full bg-ember-500 ring-[5px] ring-white"></span>
+            <p class="mt-4 text-[22px] tba">To be announced</p>
+            <p class="mt-2 text-base leading-snug text-ink-600">Abstract submission deadline</p>
+        </li>
+        <li class="border-t-[3px] border-coral-400 pr-5">
+            <span class="-mt-2.5 block h-4 w-4 rounded-full bg-coral-400 ring-[5px] ring-white"></span>
+            <p class="mt-4 text-[22px] tba">To be announced</p>
+            <p class="mt-2 text-base leading-snug text-ink-600">Session chair and rapporteur applications close</p>
+        </li>
+        <li class="border-t-[3px] border-olive-700 pr-5">
+            <span class="-mt-2.5 block h-4 w-4 rounded-full bg-olive-700 ring-[5px] ring-white"></span>
+            <p class="mt-4 text-[22px] tba">To be announced</p>
+            <p class="mt-2 text-base leading-snug text-ink-600">Presentation upload deadline</p>
+        </li>
+        <li class="border-t-[3px] border-sun-400 pr-5">
+            <span class="-mt-2.5 block h-4 w-4 rounded-full bg-sun-400 ring-[5px] ring-white"></span>
+            <p class="mt-4 text-[22px] tba">To be announced</p>
+            <p class="mt-2 text-base leading-snug text-ink-600">The Rehabilitation Summit 2027</p>
+        </li>
+    </ol>
+</section>
+
+<!-- How to register -->
+<section id="register" class="mt-28 bg-brand-700 text-white">
+    <div class="wrap grid gap-14 py-24 lg:grid-cols-2">
+        <div>
+            <p class="text-[13px] font-bold uppercase tracking-[0.16em] text-sun-400">How to register</p>
+            <h2 class="mt-3 text-[clamp(2.1rem,4vw,3.4rem)] font-extrabold leading-[1.05] tracking-tight">Three steps to your badge</h2>
+            <ol class="mt-10 grid gap-7">
+                <li class="grid grid-cols-[52px_1fr] items-start gap-4">
+                    <span class="grid h-[52px] w-[52px] place-items-center rounded-full bg-sun-400 text-xl font-extrabold text-ink-900">1</span>
+                    <div>
+                        <p class="mt-1 text-xl font-bold">Create your account</p>
+                        <p class="mt-1.5 text-[17px] leading-relaxed text-brand-100">Register on the portal and verify your email. Authors submit abstracts from the same account.</p>
+                    </div>
+                </li>
+                <li class="grid grid-cols-[52px_1fr] items-start gap-4">
+                    <span class="grid h-[52px] w-[52px] place-items-center rounded-full bg-coral-400 text-xl font-extrabold text-ink-900">2</span>
+                    <div>
+                        <p class="mt-1 text-xl font-bold">Pay and upload proof</p>
+                        <p class="mt-1.5 text-[17px] leading-relaxed text-brand-100">Pay by bank transfer or mobile money using your personal payment reference, then upload the receipt.</p>
+                    </div>
+                </li>
+                <li class="grid grid-cols-[52px_1fr] items-start gap-4">
+                    <span class="grid h-[52px] w-[52px] place-items-center rounded-full bg-olive-300 text-xl font-extrabold text-ink-900">3</span>
+                    <div>
+                        <p class="mt-1 text-xl font-bold">Get verified</p>
+                        <p class="mt-1.5 text-[17px] leading-relaxed text-brand-100">Our finance team confirms your payment. Your badge and invitation letter are then ready in your dashboard.</p>
+                    </div>
+                </li>
+            </ol>
+            <div class="mt-10 flex flex-wrap gap-3">
+                <a href="#" class="btn-pill bg-sun-400 text-ink-900 hover:bg-sun-300 focus-visible:ring-sun-300/50">Create your account →</a>
+                <a href="#" class="btn-pill border-[1.5px] border-white/50 text-white hover:bg-white/10 focus-visible:ring-white/30">Register a group</a>
+            </div>
+        </div>
+
+        <div class="self-start rounded-card bg-white p-8 text-ink-800 shadow-lift">
+            <div class="flex flex-wrap items-baseline justify-between gap-3">
+                <h3 class="text-2xl font-bold text-brand-700">Registration fees</h3>
+                <span class="text-[13px] font-bold text-ember-600">To be confirmed</span>
+            </div>
+            <div class="mt-5 divide-y divide-ink-100 border-t border-ink-100">
+                <div class="flex items-center justify-between gap-4 py-4"><span class="text-[17px] font-semibold">Professional (Tanzania)</span><span class="text-[17px] font-semibold text-ink-400">TZS —</span></div>
+                <div class="flex items-center justify-between gap-4 py-4"><span class="text-[17px] font-semibold">Professional (International)</span><span class="text-[17px] font-semibold text-ink-400">USD —</span></div>
+                <div class="flex items-center justify-between gap-4 py-4"><span class="text-[17px] font-semibold">Student (Tanzania)</span><span class="text-[17px] font-semibold text-ink-400">TZS —</span></div>
+                <div class="flex items-center justify-between gap-4 py-4"><span class="text-[17px] font-semibold">Student (International)</span><span class="text-[17px] font-semibold text-ink-400">USD —</span></div>
+            </div>
+            <p class="mb-2.5 mt-6 text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Pay by</p>
+            <div class="flex flex-wrap gap-2">
+                <span class="whitespace-nowrap rounded-full bg-brand-50 px-3.5 py-2 text-sm font-semibold text-brand-700">Bank transfer</span>
+                <span class="whitespace-nowrap rounded-full bg-brand-50 px-3.5 py-2 text-sm font-semibold text-brand-700">M-Pesa</span>
+                <span class="whitespace-nowrap rounded-full bg-brand-50 px-3.5 py-2 text-sm font-semibold text-brand-700">Airtel Money</span>
+                <span class="whitespace-nowrap rounded-full bg-brand-50 px-3.5 py-2 text-sm font-semibold text-brand-700">Mixx by Yas</span>
+                <span class="whitespace-nowrap rounded-full bg-brand-50 px-3.5 py-2 text-sm font-semibold text-brand-700">HaloPesa</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Topics -->
+<section id="topics" class="bg-brand-50">
+    <div class="wrap py-24">
+        <p class="eyebrow !text-ember-700">Topics</p>
+        <h2 class="section-title">Nine topics, one theme</h2>
+        <p class="mt-3.5 text-lg text-ink-600">Abstracts are submitted and reviewed under these topics.</p>
+        <ol id="topic-list" class="mt-12 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3"></ol>
+    </div>
+</section>
+
+<!-- Programme -->
+<section id="programme" class="wrap pt-28">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="eyebrow">Programme</p>
+            <h2 class="section-title">Three days of the Summit</h2>
+        </div>
+        <a href="#" class="text-base font-bold text-brand-700 hover:text-brand-800">View the full programme →</a>
+    </div>
+    <div id="day-tabs" role="tablist" aria-label="Summit days" class="mt-10 flex flex-wrap gap-2"></div>
+    <div id="day-sessions" role="tabpanel" class="mt-6 overflow-hidden rounded-card border border-ink-100"></div>
+    <p class="mt-3.5 text-sm text-ink-500">Indicative outline. Times and halls are published in the programme.</p>
+</section>
+
+<!-- Speakers -->
+<section id="speakers" class="wrap pt-28">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="eyebrow">Speakers</p>
+            <h2 class="section-title">Who you will hear from</h2>
+        </div>
+        <a href="#" class="text-base font-bold text-brand-700 hover:text-brand-800">All speakers →</a>
+    </div>
+    <div class="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <div class="rounded-card border border-ink-100 bg-ink-50/60 p-3.5 sm:p-6">
+            <div class="flex aspect-square items-end rounded-[14px] sm:rounded-[18px] bg-ember-50 p-3 sm:p-4"><span class="h-8 w-8 rounded-full sm:h-11 sm:w-11 bg-ember-500"></span></div>
+            <p class="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Keynote</p>
+            <p class="mt-1.5 text-base font-bold text-ink-900 sm:text-xl">To be announced</p>
+        </div>
+        <div class="rounded-card border border-ink-100 bg-ink-50/60 p-3.5 sm:p-6">
+            <div class="flex aspect-square items-end rounded-[14px] sm:rounded-[18px] bg-sun-50 p-3 sm:p-4"><span class="h-8 w-8 rounded-full sm:h-11 sm:w-11 bg-sun-400"></span></div>
+            <p class="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Keynote</p>
+            <p class="mt-1.5 text-base font-bold text-ink-900 sm:text-xl">To be announced</p>
+        </div>
+        <div class="rounded-card border border-ink-100 bg-ink-50/60 p-3.5 sm:p-6">
+            <div class="flex aspect-square items-end rounded-[14px] sm:rounded-[18px] bg-olive-50 p-3 sm:p-4"><span class="h-8 w-8 rounded-full sm:h-11 sm:w-11 bg-olive-700"></span></div>
+            <p class="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Plenary speaker</p>
+            <p class="mt-1.5 text-base font-bold text-ink-900 sm:text-xl">To be announced</p>
+        </div>
+        <div class="rounded-card border border-ink-100 bg-ink-50/60 p-3.5 sm:p-6">
+            <div class="flex aspect-square items-end rounded-[14px] sm:rounded-[18px] bg-coral-50 p-3 sm:p-4"><span class="h-8 w-8 rounded-full sm:h-11 sm:w-11 bg-coral-400"></span></div>
+            <p class="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Panellist</p>
+            <p class="mt-1.5 text-base font-bold text-ink-900 sm:text-xl">To be announced</p>
+        </div>
+    </div>
+</section>
+
+<!-- Venue. Once the venue is set, the right panel becomes the map. -->
+<section id="venue" class="wrap pt-28">
+    <div class="grid overflow-hidden rounded-[28px] bg-brand-50 lg:grid-cols-2">
+        <div class="p-8 sm:p-11">
+            <p class="eyebrow !text-ember-700">Venue</p>
+            <h2 class="mt-3 text-[clamp(1.9rem,3.4vw,2.75rem)] font-extrabold leading-[1.1] tracking-tight text-brand-700">Venue to be announced</h2>
+            <p class="mt-4 max-w-md text-lg leading-relaxed text-ink-600">
+                The venue and travel information will be published together with the summit dates.
+                International participants can request an invitation letter for their visa once registered.
+            </p>
+            <div class="mt-8 flex flex-wrap gap-3">
+                <a href="#" class="inline-flex whitespace-nowrap rounded-full border-[1.5px] border-brand-700 px-6 py-3.5 text-base font-bold text-brand-700 transition hover:bg-brand-700 hover:text-white">Request an invitation letter</a>
+            </div>
+        </div>
+        <div class="relative hidden min-h-[380px] overflow-hidden bg-gradient-to-br from-brand-100 to-brand-200 lg:block" aria-hidden="true">
+            <div class="absolute inset-0 bg-[radial-gradient(#7cc0d7_1.4px,transparent_1.4px)] [background-size:18px_18px] opacity-60"></div>
+            <div class="absolute left-1/2 top-1/2 grid h-28 w-28 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white shadow-lift">
+                <svg class="h-12 w-12 text-brand-700" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.14-7.5 11.25-7.5 11.25S4.5 17.64 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
+            </div>
+            <span class="absolute left-[18%] top-[22%] h-4 w-4 rounded-full bg-sun-400"></span>
+            <span class="absolute bottom-[20%] right-[16%] h-5 w-5 rounded-full bg-coral-400"></span>
+            <span class="absolute bottom-[30%] left-[26%] h-3 w-3 rounded-full bg-ember-500"></span>
+        </div>
+    </div>
+</section>
+
+<!-- Organisers -->
+<section id="partners" class="wrap pt-28">
+    <p class="eyebrow">Organisers</p>
+    <div class="mt-6 grid gap-4 md:grid-cols-3">
+        <div class="flex items-center gap-5 rounded-card border border-ink-100 p-7">
+            <img src="assets/logo-mark-sm.png" alt="Rehab Health" class="h-[72px] w-auto">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Organised by</p>
+                <p class="mt-1 text-[22px] font-bold text-brand-700">Rehab Health</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-5 rounded-card border border-ink-100 p-7">
+            <div class="h-[72px] w-[72px] shrink-0 rounded-full border-[1.5px] border-dashed border-brand-300"></div>
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.14em] text-ink-500">In collaboration with</p>
+                <p class="mt-1 text-[22px] font-bold text-brand-700">Ministry of Health</p>
+            </div>
+        </div>
+        <div class="flex flex-col justify-center gap-2 rounded-card bg-sun-50 p-7">
+            <p class="text-xl font-bold text-ink-900">Partner with the Summit</p>
+            <a href="mailto:info@rehabhealth.or.tz" class="text-base font-bold text-brand-700 hover:text-brand-800">info@rehabhealth.or.tz →</a>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="wrap py-28">
+    <div class="grid gap-x-16 gap-y-10 lg:grid-cols-3">
+        <div>
+            <p class="eyebrow">FAQ</p>
+            <h2 class="section-title">Questions, answered</h2>
+            <p class="mt-4 text-lg leading-relaxed text-ink-600">
+                Can't find what you need? Email
+                <a href="mailto:info@rehabhealth.or.tz" class="font-bold text-brand-700 hover:text-brand-800">info@rehabhealth.or.tz</a>.
+            </p>
+        </div>
+        <div id="faq-list" class="border-t border-brand-100 lg:col-span-2"></div>
+    </div>
+</section>
+
+<!-- Closing call to action -->
+<section class="bg-sun-400">
+    <div class="wrap flex flex-wrap items-center justify-between gap-7 py-16 sm:py-[72px]">
+        <h2 class="max-w-3xl text-[clamp(1.9rem,3.6vw,3rem)] font-extrabold leading-[1.08] tracking-tight text-ink-900">
+            Join us at the Rehabilitation Summit 2027.
+        </h2>
+        <a href="#register" class="btn-pill bg-brand-700 text-white hover:bg-brand-800 focus-visible:ring-brand-700/30">Register now →</a>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-brand-900 text-brand-100">
+    <div class="wrap pb-8 pt-16">
+        <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="flex rounded-[14px] bg-white p-1.5"><img src="assets/logo-mark-sm.png" alt="Rehab Health" class="h-11 w-auto"></span>
+                    <span class="text-lg font-bold text-white">Rehab Summit 2027</span>
+                </div>
+                <p class="text-[13px] font-bold uppercase tracking-[0.24em] text-sun-400">Transforming lives</p>
+            </div>
+            <div>
+                <h3 class="mb-3.5 text-sm font-bold text-white">Contact</h3>
+                <a href="mailto:info@rehabhealth.or.tz" class="mb-2 block text-[15px] hover:text-sun-300">info@rehabhealth.or.tz</a>
+                <a href="mailto:abstract@rehabhealth.or.tz" class="block text-[15px] hover:text-sun-300">abstract@rehabhealth.or.tz</a>
+            </div>
+            <div>
+                <h3 class="mb-3.5 text-sm font-bold text-white">Summit</h3>
+                <div class="grid gap-2 text-[15px]">
+                    <a href="#about" class="hover:text-sun-300">About</a>
+                    <a href="#programme" class="hover:text-sun-300">Programme</a>
+                    <a href="#speakers" class="hover:text-sun-300">Speakers</a>
+                    <a href="#venue" class="hover:text-sun-300">Venue</a>
+                </div>
+            </div>
+            <div>
+                <h3 class="mb-3.5 text-sm font-bold text-white">Participants</h3>
+                <div class="grid gap-2 text-[15px]">
+                    <a href="#register" class="hover:text-sun-300">Register</a>
+                    <a href="login.html" class="hover:text-sun-300">Log in</a>
+                    <a href="#faq" class="hover:text-sun-300">FAQ</a>
+                </div>
+            </div>
+        </div>
+        <div class="mt-12 flex flex-wrap justify-between gap-3 border-t border-brand-800 pt-6 text-sm text-brand-200">
+            <span>© <span id="year">2026</span> Rehab Health. All rights reserved.</span>
+            <a href="https://rehabhealth.or.tz" class="hover:text-sun-300">rehabhealth.or.tz</a>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Content below comes from the edition settings in the real app.
+    const ACCENTS = [
+        { border: 'border-ember-500' },
+        { border: 'border-coral-400' },
+        { border: 'border-olive-700' },
+        { border: 'border-sun-400' },
+    ];
+
+    // Topics (the 2026 list, kept as placeholders until the 2027 topics are set)
+    const TOPICS = [
+        ['Home-Based Rehabilitation', 'HBR'],
+        ['Technology and AI in Rehabilitation', 'TAI'],
+        ['Financing Rehabilitation Services', 'FIN'],
+        ['Occupational Health and Workplace Rehabilitation', 'OCC'],
+        ['Rehabilitation Leadership and Advocacy', 'LEA'],
+        ['Rehabilitation Across the Life Course', 'LIF'],
+        ['Rehabilitation and Non-Communicable Diseases (NCDs)', 'NCD'],
+        ['Women, Disability and Inclusive Development', 'WDI'],
+        ['Research and Innovation', 'RIN'],
+    ];
+    document.getElementById('topic-list').innerHTML = TOPICS.map(function ([name, code], i) {
+        return '<li class="flex min-h-[150px] flex-col justify-between gap-7 rounded-[20px] border-t-[5px] bg-white p-6 ' + ACCENTS[i % 4].border + '">' +
+            '<div class="flex items-center justify-between"><span class="text-[15px] font-bold text-ink-500">' + String(i + 1).padStart(2, '0') + '</span>' +
+            '<span class="rounded-md bg-brand-50 px-2.5 py-1 text-[13px] font-bold tracking-[0.08em] text-brand-700">' + code + '</span></div>' +
+            '<p class="text-xl font-bold leading-tight text-ink-900">' + name + '</p></li>';
+    }).join('');
+
+    // Programme outline
+    const KIND = {
+        Plenary: 'text-ember-600',
+        Parallel: 'text-brand-700',
+        Posters: 'text-olive-700',
+        Panel: 'text-sun-700',
+    };
+    const DAYS = [
+        ['Day 1 · Opening', [
+            ['Plenary', 'Opening ceremony and keynote', 'Welcome and the summit theme'],
+            ['Parallel', 'Oral sessions by topic', 'Abstract presentations across halls'],
+            ['Posters', 'Poster session', 'Presenters at their posters'],
+        ]],
+        ['Day 2 · Evidence and practice', [
+            ['Plenary', 'Keynote plenary', 'Morning plenary hall'],
+            ['Panel', 'Panel discussions', 'Policy, financing and practice'],
+            ['Parallel', 'Oral sessions by topic', 'Abstract presentations across halls'],
+            ['Posters', 'Poster session', 'Presenters at their posters'],
+        ]],
+        ['Day 3 · Closing', [
+            ['Parallel', 'Oral sessions by topic', 'Abstract presentations across halls'],
+            ['Plenary', 'Rapporteur reports', 'Summaries from each session'],
+            ['Plenary', 'Closing ceremony', 'Close of the 5th Rehabilitation Summit'],
+        ]],
+    ];
+    const tabs = document.getElementById('day-tabs');
+    const panel = document.getElementById('day-sessions');
+    function showDay(index) {
+        tabs.innerHTML = DAYS.map(function ([label], i) {
+            const on = i === index;
+            return '<button type="button" role="tab" aria-selected="' + on + '" data-day="' + i + '" class="whitespace-nowrap rounded-full border-[1.5px] border-brand-700 px-5 py-3 text-base font-bold transition ' +
+                (on ? 'bg-brand-700 text-white' : 'bg-white text-brand-700 hover:bg-brand-50') + '">' + label + '</button>';
+        }).join('');
+        panel.innerHTML = DAYS[index][1].map(function ([kind, title, note], i) {
+            return '<div class="grid gap-x-8 gap-y-2 px-7 py-6 sm:grid-cols-[180px_1fr] sm:items-baseline ' + (i ? 'border-t border-ink-100' : '') + '">' +
+                '<span class="text-sm font-bold uppercase tracking-[0.12em] ' + KIND[kind] + '">' + kind + '</span>' +
+                '<div><p class="text-xl font-bold text-ink-900">' + title + '</p><p class="mt-1.5 text-base text-ink-500">' + note + '</p></div></div>';
+        }).join('');
+    }
+    tabs.addEventListener('click', function (event) {
+        const button = event.target.closest('[data-day]');
+        if (button) showDay(Number(button.dataset.day));
+    });
+    showDay(0);
+
+    // FAQ: answers describe how the new portal works
+    const FAQS = [
+        ['How do I create an account?', 'Click "Register" at the top of this page and fill in your details. We send you an email to confirm your address, and then you can sign in. One account covers registration, payment and abstracts.'],
+        ['How do I submit an abstract?', 'Sign in and choose "Submit an abstract" on your dashboard while submissions are open. Pick a topic, add your co-authors and write your abstract. You can save a draft and come back to it before the deadline.'],
+        ['How does the review work?', 'Abstracts are reviewed double-blind: reviewers do not see who wrote them, and authors do not see who reviewed them. The scientific committee then decides, and you are notified by email and on your dashboard.'],
+        ['How do I pay the registration fee?', 'Pay by bank transfer or mobile money using the payment reference shown in your dashboard, then upload the receipt. A finance officer confirms the payment, after which your badge becomes available.'],
+        ['I need a visa. Can I get an invitation letter?', 'Yes. Once you have registered, you can download an official invitation letter from your dashboard to support your visa application.'],
+        ['Will I receive a CPD certificate?', 'Attendance is recorded at each session you attend. Certificates are issued in the portal after the summit, based on that recorded attendance.'],
+    ];
+    const faqList = document.getElementById('faq-list');
+    faqList.innerHTML = FAQS.map(function ([q, a], i) {
+        return '<details class="group border-b border-brand-100"' + (i === 0 ? ' open' : '') + '>' +
+            '<summary class="flex cursor-pointer list-none items-center justify-between gap-6 py-6 text-left text-xl font-semibold text-ink-900 [&::-webkit-details-marker]:hidden">' +
+            '<span>' + q + '</span>' +
+            '<span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-50 text-[22px] font-medium text-brand-700 transition group-open:rotate-45 group-open:bg-brand-700 group-open:text-white">+</span>' +
+            '</summary><p class="pb-6 pr-14 text-[17px] leading-relaxed text-ink-600">' + a + '</p></details>';
+    }).join('');
+
+    // Mobile menu
+    (function () {
+        const button = document.getElementById('menu-button');
+        const menu = document.getElementById('mobile-menu');
+        button.addEventListener('click', function () {
+            const open = menu.classList.toggle('hidden') === false;
+            button.setAttribute('aria-expanded', String(open));
+            button.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        });
+        menu.addEventListener('click', function (event) {
+            if (event.target.closest('a')) {
+                menu.classList.add('hidden');
+                button.setAttribute('aria-expanded', 'false');
+            }
+        });
+    })();
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Animated logo: same behaviour as the sign-in page
+    (function () {
+        const still = document.getElementById('brand-still');
+        const anim = document.getElementById('brand-anim');
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        if (!window.matchMedia('(min-width: 1024px)').matches) return;
+
+        still.classList.add('opacity-0');
+        let settled = false;
+        const showStill = function () {
+            if (settled) return;
+            settled = true;
+            still.classList.remove('opacity-0');
+        };
+        const fallback = setTimeout(showStill, 1200);
+
+        const img = new Image();
+        img.onload = function () {
+            if (settled) return;
+            settled = true;
+            clearTimeout(fallback);
+            anim.src = img.src;
+            anim.classList.remove('opacity-0');
+        };
+        img.onerror = showStill;
+        img.src = 'assets/logo-2027-animated.webp';
+    })();
+</script>
+</body>
+</html>
