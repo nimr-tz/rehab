@@ -18,7 +18,7 @@ The new portal for the annual Rehabilitation Summit run by Rehab Health, startin
 
 ## Stack
 
-- **Laravel 13** on **PHP 8.4**. This is pending, see "Open questions".
+- **Laravel 13** on **PHP 8.4**. Locally, PHP 8.4 is a separate install (`php84`, `composer84`), and XAMPP keeps PHP 8.2 for the other projects. Production needs PHP 8.3 or newer.
 - **Blade** with Blade components, **Tailwind CSS v4** and **Alpine.js**, built with Vite.
 - **Laravel Fortify** for authentication (login, registration, email verification, password reset and rate limiting), with our own Blade screens.
 - **spatie/laravel-permission** for roles.
@@ -105,6 +105,6 @@ The old portal had about 30 services. Many were extras from the earlier AJSC con
 
 ## Open questions
 
-1. **PHP version.** Laravel 13 needs PHP 8.3 or newer, and this machine's XAMPP has PHP 8.2. Laravel 12 still runs on PHP 8.2, but its security fixes end in early 2027, before the summit. What PHP version does the production server run?
+1. Production hosting: which server it runs on, and whether it can run PHP 8.4. If it uses the Docker image, the base image changes to `php:8.4-fpm`.
 2. Vector logo (SVG, AI or EPS) from the client, for print quality on badges and certificates.
 3. The 2027 dates, venue and fees.
