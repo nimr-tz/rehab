@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('phone', 32);
             $table->char('country', 2); // ISO 3166-1 alpha-2
+            $table->string('institution')->nullable();
+            $table->string('profession')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

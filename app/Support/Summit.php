@@ -2,19 +2,70 @@
 
 namespace App\Support;
 
+use App\Models\Edition;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 
 /**
- * Read-only view of the current summit edition for the public pages.
+ * The current summit edition, as the views see it.
  *
- * Reads config/summit.php for now. Phase 0 points it at the `editions` table,
- * and the views keep working unchanged.
+ * Edition details come from the `editions` table (edited by admins in Summit
+ * settings). Organisation details such as contact emails come from
+ * config/summit.php, which also supplies placeholders when no edition exists
+ * yet, so a fresh install still renders every public page.
  */
 class Summit
 {
+    private ?Edition $edition = null;
+
+    private bool $loaded = false;
+
+    public function edition(): ?Edition
+    {
+        if (! $this->loaded) {
+            $this->edition = Edition::current()?->load(['categories', 'topics']);
+            $this->loaded = true;
+        }
+
+        return $this->edition;
+    }
+
+    /** Forget the cached edition, after settings change. */
+    public function refresh(): void
+    {
+        $this->loaded = false;
+        $this->edition = null;
+    }
+
     public function get(string $key, mixed $default = null): mixed
     {
-        return config("summit.{$key}", $default);
+        $edition = $this->edition();
+
+        if (! $edition) {
+            return config("summit.{$key}", $default);
+        }
+
+        return match ($key) {
+            'year', 'name', 'short_name', 'theme', 'venue', 'city', 'country', 'registration_open' => $edition->{$key},
+            'edition' => $edition->ordinal,
+            'start_date', 'end_date' => $edition->{$key}?->toDateString(),
+            'abstracts_open' => $edition->acceptsAbstracts(),
+            'days' => $edition->start_date && $edition->end_date
+                ? (int) $edition->start_date->diffInDays($edition->end_date) + 1
+                : config('summit.days', $default),
+            'topics' => $edition->topics->pluck('code', 'name')->all(),
+            'fees' => $edition->categories->map(fn ($category) => [
+                'label' => $category->name,
+                'currency' => $category->currency,
+                'amount' => $category->amount,
+            ])->all(),
+            'key_dates' => [
+                ['label' => 'Abstract submission deadline', 'date' => $edition->abstract_deadline?->toDateString()],
+                ['label' => 'Session chair and rapporteur applications close', 'date' => $edition->session_role_deadline?->toDateString()],
+                ['label' => 'Presentation upload deadline', 'date' => $edition->presentation_deadline?->toDateString()],
+            ],
+            default => config("summit.{$key}", $default),
+        };
     }
 
     public function title(): string
@@ -67,7 +118,14 @@ class Summit
 
     public function feesConfirmed(): bool
     {
-        return collect($this->get('fees', []))->every(fn (array $fee) => filled($fee['amount']));
+        $fees = $this->get('fees', []);
+
+        return $fees !== [] && collect($fees)->every(fn (array $fee) => filled($fee['amount']));
+    }
+
+    public static function formatDate(?CarbonInterface $date): string
+    {
+        return $date ? $date->format('j M Y') : 'To be announced';
     }
 
     private function date(string $key): ?CarbonImmutable

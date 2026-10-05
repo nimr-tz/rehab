@@ -3,10 +3,13 @@
 namespace Tests\Unit;
 
 use App\Support\Summit;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SummitTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_date_range_is_null_until_dates_are_set(): void
     {
         config(['summit.start_date' => null, 'summit.end_date' => null]);

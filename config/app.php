@@ -42,6 +42,25 @@ return [
     'debug' => (bool) env('APP_DEBUG', false),
 
     /*
+    | Demo mode shows one-click demo accounts on the sign-in page. Never in production.
+    */
+
+    'demo' => (bool) env('APP_DEMO', false),
+
+    /*
+    | First administrator, created by the DeploymentSeeder.
+    */
+
+    'admin' => [
+        'email' => env('ADMIN_EMAIL'),
+        'password' => env('ADMIN_PASSWORD'),
+        'first_name' => env('ADMIN_FIRST_NAME', 'Portal'),
+        'last_name' => env('ADMIN_LAST_NAME', 'Admin'),
+        'phone' => env('ADMIN_PHONE', ''),
+        'country' => env('ADMIN_COUNTRY', 'TZ'),
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------

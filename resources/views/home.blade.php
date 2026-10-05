@@ -280,7 +280,7 @@
                 <p class="eyebrow">Programme</p>
                 <h2 class="section-title">{{ ucfirst(\Illuminate\Support\Number::spell($summit->get('days'))) }} days of the Summit</h2>
             </div>
-            <a href="#programme" class="text-base font-bold text-brand-700 hover:text-brand-800">View the full programme →</a>
+            <a href="{{ route('programme') }}" class="text-base font-bold text-brand-700 hover:text-brand-800">View the full programme →</a>
         </div>
         <div role="tablist" aria-label="Summit days" class="mt-10 flex flex-wrap gap-2">
             @foreach ($programme as $i => [$label])

@@ -2,8 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\AbstractSubmission;
+use App\Models\ReviewAssignment;
 use App\Support\Summit;
 use Illuminate\Foundation\DevCommands;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -27,6 +31,11 @@ class AppServiceProvider extends ServiceProvider
         View::composer('*', fn ($view) => $view->with('summit', $this->app->make(Summit::class)));
 
         Password::defaults(fn () => Password::min(8)->letters()->numbers());
+
+        Route::model('abstract', AbstractSubmission::class);
+        Route::model('assignment', ReviewAssignment::class);
+
+        Paginator::defaultView('pagination.portal');
 
         $this->registerDevCommands();
     }

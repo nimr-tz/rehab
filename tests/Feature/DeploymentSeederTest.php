@@ -14,17 +14,9 @@ class DeploymentSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function tearDown(): void
-    {
-        putenv('ADMIN_EMAIL');
-        putenv('ADMIN_PASSWORD');
-        parent::tearDown();
-    }
-
     public function test_it_creates_every_role_and_a_verified_admin(): void
     {
-        putenv('ADMIN_EMAIL=Chair@RehabHealth.or.tz');
-        putenv('ADMIN_PASSWORD=initial-secret-1');
+        config(['app.admin.email' => 'Chair@RehabHealth.or.tz', 'app.admin.password' => 'initial-secret-1']);
 
         $this->seed(DeploymentSeeder::class);
 
@@ -39,11 +31,10 @@ class DeploymentSeederTest extends TestCase
 
     public function test_running_it_again_keeps_the_admin_password(): void
     {
-        putenv('ADMIN_EMAIL=chair@rehabhealth.or.tz');
-        putenv('ADMIN_PASSWORD=initial-secret-1');
+        config(['app.admin.email' => 'chair@rehabhealth.or.tz', 'app.admin.password' => 'initial-secret-1']);
         $this->seed(DeploymentSeeder::class);
 
-        putenv('ADMIN_PASSWORD=changed-secret-2');
+        config(['app.admin.password' => 'changed-secret-2']);
         $this->seed(DeploymentSeeder::class);
 
         $this->assertSame(1, User::count());

@@ -27,7 +27,23 @@ php84 artisan migrate:fresh --seed
 npm run build
 ```
 
-Local email goes to Mailpit: http://127.0.0.1:8025. `composer84 run dev` starts it; with `artisan serve` alone, start `mailpit` yourself or emails fail. The seeded accounts are `admin@rehab.test` and `participant@rehab.test`, both with the password `password`. They exist locally only. Production uses `php artisan db:seed --class=DeploymentSeeder` with `ADMIN_EMAIL` set.
+Local email goes to Mailpit: http://127.0.0.1:8025. `composer84 run dev` starts it; with `artisan serve` alone, start `mailpit` yourself or emails fail.
+
+## Demo data
+
+The portal doubles as a demonstration of the complete product. **Every link must lead to a working screen; no "coming soon" pages.**
+
+- `database/seeders/DemoSeeder.php` builds a sample 2027 summit: settings, staff for every role, about 60 participants at every payment stage, about 36 abstracts through review, and the programme. It refuses to run in production. `migrate:fresh --seed` runs it locally (it takes about 30 seconds because it renders sample bank slips).
+- Demo accounts (password `rehab2027`) are listed in `DemoSeeder::ACCOUNTS`. With `APP_DEMO=true` the sign-in page shows them as one-click buttons.
+- The sample bank and mobile money numbers live in `.env.example` and are marked as samples.
+- Only code and structure go into git. The database, uploaded proofs and `.env` stay local, so production starts empty: `php artisan migrate`, then `php artisan db:seed --class=DeploymentSeeder` with `ADMIN_EMAIL` set.
+
+## Code map
+
+- `app/Support/Summit.php`: the current edition, as views see it (`$summit` in every view). It falls back to `config/summit.php` when no edition exists.
+- `app/Services/RegistrationService.php`: registration and payments (locks, transactions, emails). `AbstractService.php`: abstracts, double-blind assignment, reviews, decisions and conference codes. `DocumentService.php`: badge and invitation letter PDFs.
+- `app/Support/Navigation.php`: the sidebar, one section per role.
+- `resources/views/components`: the component library (button, card, status, stat, page-header, empty, form fields, icon).
 
 Port 8100 avoids the old portal, which often runs on 8000. Do not open this app through XAMPP's Apache (`localhost/rehab-events/public`), because that runs PHP 8.2.
 

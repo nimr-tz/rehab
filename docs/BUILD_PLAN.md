@@ -53,6 +53,19 @@ announcements, email_logs, feedback
 
 Each phase ends with working, tested features. The order follows the summit calendar: registration and abstracts open first, then review, the programme, the event days, and the close-out.
 
+## Status (October 2026): working demo
+
+The portal is a complete, working demonstration with sample data (`DemoSeeder`). Built and tested end to end:
+
+- Public site: home page and programme, both driven by the summit settings.
+- Accounts: registration, sign-in, email verification, password reset and profile.
+- Registration and payment: categories and fees, bank and mobile money instructions, proof upload, finance verification or rejection, emails, and badge and invitation letter PDFs.
+- Abstracts: drafts, submission with a word limit, co-authors and presenter, withdrawal, and feedback after the decision.
+- Review: double-blind assignment (authors and co-authors are excluded), scoring, recommendations, decisions, and conference codes.
+- Staff: role-based navigation and dashboards, the finance queue, the scientific committee, reviewer workload, the registration desk check-in, the admin overview, participants, users and roles, and summit settings.
+
+Still to build for the live 2027 summit: group registration, sponsors, session chair and rapporteur applications, presentation uploads, programme editing in the portal (the demo programme is seeded), certificates, the abstract book, the staff scanning app API, and email campaigns.
+
 ### Phase 0: Foundation and design system
 
 Done so far: the Laravel 13 app, design tokens, public home page, sign-in screens (Fortify: sign-in, registration, email verification and password reset), roles and the admin seeder, and the portal layout with a first dashboard. Remaining: the `editions` table with admin settings (it replaces `config/summit.php`), the rest of the component library, and role-based navigation.

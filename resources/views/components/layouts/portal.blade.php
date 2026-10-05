@@ -5,10 +5,7 @@
     $roles = $user->getRoleNames()
         ->map(fn ($role) => \App\Enums\Role::tryFrom($role)?->label() ?? $role);
 
-    // Each phase adds its own entries here.
-    $navigation = [
-        ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'home'],
-    ];
+    $sections = \App\Support\Navigation::for($user);
 @endphp
 
 <x-layouts.public class="bg-canvas" :title="$title.' · '.$summit->get('organiser').' Events Portal'">
@@ -27,18 +24,28 @@
                 </span>
             </a>
 
-            <nav class="flex-1 space-y-0.5 text-sm" aria-label="Portal">
-                @foreach ($navigation as $item)
-                    @php $active = request()->routeIs($item['route']); @endphp
-                    <a href="{{ route($item['route']) }}" @if ($active) aria-current="page" @endif
-                       @class([
-                           'flex items-center gap-3 rounded-xl px-3 py-2.5 transition',
-                           'bg-brand-50 font-semibold text-brand-800' => $active,
-                           'text-ink-600 hover:bg-ink-50 hover:text-ink-900' => ! $active,
-                       ])>
-                        <x-icon :name="$item['icon']" :class="$active ? 'h-5 w-5 text-brand-600' : 'h-5 w-5 text-ink-400'" />
-                        {{ $item['label'] }}
-                    </a>
+            <nav class="-mx-1 flex-1 space-y-5 overflow-y-auto px-1 text-sm" aria-label="Portal">
+                @foreach ($sections as $section)
+                    <div class="space-y-0.5">
+                        @if ($section['label'])
+                            <p class="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">{{ $section['label'] }}</p>
+                        @endif
+                        @foreach ($section['items'] as $item)
+                            @php $active = request()->routeIs($item['active']); @endphp
+                            <a href="{{ route($item['route']) }}" @if ($active) aria-current="page" @endif
+                               @class([
+                                   'flex items-center gap-3 rounded-xl px-3 py-2.5 transition',
+                                   'bg-brand-50 font-semibold text-brand-800' => $active,
+                                   'text-ink-600 hover:bg-ink-50 hover:text-ink-900' => ! $active,
+                               ])>
+                                <x-icon :name="$item['icon']" :class="$active ? 'h-5 w-5 shrink-0 text-brand-600' : 'h-5 w-5 shrink-0 text-ink-400'" />
+                                <span class="flex-1 truncate">{{ $item['label'] }}</span>
+                                @if (! empty($item['count']))
+                                    <span class="rounded-full bg-ember-500 px-2 py-0.5 text-[11px] font-bold text-white">{{ $item['count'] }}</span>
+                                @endif
+                            </a>
+                        @endforeach
+                    </div>
                 @endforeach
             </nav>
 

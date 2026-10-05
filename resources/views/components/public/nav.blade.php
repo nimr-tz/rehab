@@ -1,12 +1,14 @@
 @php
+    // Anchors on the home page; full links from any other public page.
+    $home = request()->routeIs('home') ? '' : route('home');
     $links = [
-        '#about' => 'About',
-        '#dates' => 'Key dates',
-        '#register' => 'Fees',
-        '#topics' => 'Topics',
-        '#programme' => 'Programme',
-        '#venue' => 'Venue',
-        '#faq' => 'FAQ',
+        $home.'#about' => 'About',
+        $home.'#dates' => 'Key dates',
+        $home.'#register' => 'Fees',
+        $home.'#topics' => 'Topics',
+        route('programme') => 'Programme',
+        $home.'#venue' => 'Venue',
+        $home.'#faq' => 'FAQ',
     ];
 @endphp
 
@@ -27,8 +29,12 @@
         </div>
 
         <div class="flex shrink-0 items-center gap-1 sm:gap-5">
-            <a href="{{ route('login') }}" class="hidden text-[15px] font-semibold text-brand-700 hover:text-brand-800 sm:inline">Log in</a>
-            <a href="#register" class="rounded-full bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-800 sm:px-5 sm:py-3 sm:text-[15px]">Register</a>
+            @auth
+                <a href="{{ route('dashboard') }}" class="rounded-full bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-800 sm:px-5 sm:py-3 sm:text-[15px]">My dashboard</a>
+            @else
+                <a href="{{ route('login') }}" class="hidden text-[15px] font-semibold text-brand-700 hover:text-brand-800 sm:inline">Log in</a>
+                <a href="{{ route('register') }}" class="rounded-full bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-800 sm:px-5 sm:py-3 sm:text-[15px]">Register</a>
+            @endauth
             <button type="button" @click="open = ! open" :aria-expanded="open.toString()" aria-controls="mobile-menu"
                     :aria-label="open ? 'Close menu' : 'Open menu'" aria-label="Open menu"
                     class="grid h-11 w-11 place-items-center rounded-full text-brand-700 hover:bg-brand-50 lg:hidden">
