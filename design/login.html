@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign in · Rehab Health Events Portal</title>
+    <link rel="icon" href="assets/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+/* THEME:START (copied from theme.css) */
+@theme section of resources/css/app.css.
+ | The static previews in this folder carry a copy inline. When a token changes,
+ | change it here first, then in the previews.
+ */
+@theme {
+    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+    /* Brand teal: the hand and crescent of the logo (700) */
+    --color-brand-50: #eff8fb;
+    --color-brand-100: #d7edf4;
+    --color-brand-200: #b0dbe9;
+    --color-brand-300: #7cc0d7;
+    --color-brand-400: #3f9dbe;
+    --color-brand-500: #1b7fa3;
+    --color-brand-600: #0b6688;
+    --color-brand-700: #024f6d;
+    --color-brand-800: #043f57;
+    --color-brand-900: #073348;
+    --color-brand-950: #04202e;
+
+    /* Ink: text and neutrals, anchored on the wordmark (800) */
+    --color-ink-50: #f6f8fa;
+    --color-ink-100: #eef1f5;
+    --color-ink-200: #dfe4eb;
+    --color-ink-300: #c3cad5;
+    --color-ink-400: #949cab;
+    --color-ink-500: #6b7386;
+    --color-ink-600: #515a6c;
+    --color-ink-700: #3e4556;
+    --color-ink-800: #303440;
+    --color-ink-900: #232733;
+    --color-ink-950: #161922;
+
+    /* Figure accents: categories only, never status */
+    --color-ember-50: #fff4ec;
+    --color-ember-100: #fee4cf;
+    --color-ember-200: #fcc79e;
+    --color-ember-300: #f9a265;
+    --color-ember-400: #ef8233;
+    --color-ember-500: #df670d;
+    --color-ember-600: #bd520a;
+    --color-ember-700: #963f0b;
+    --color-ember-800: #763310;
+    --color-ember-900: #5f2b10;
+
+    --color-coral-50: #fff4f2;
+    --color-coral-100: #ffe5e1;
+    --color-coral-200: #ffcdc6;
+    --color-coral-300: #feb2a9;
+    --color-coral-400: #fd9a8f;
+    --color-coral-500: #f2766a;
+    --color-coral-600: #d9574b;
+    --color-coral-700: #b5443a;
+    --color-coral-800: #923832;
+    --color-coral-900: #78322e;
+
+    --color-olive-50: #f4f7ef;
+    --color-olive-100: #e5ecd9;
+    --color-olive-200: #ccdab5;
+    --color-olive-300: #aac088;
+    --color-olive-400: #87a35f;
+    --color-olive-500: #688644;
+    --color-olive-600: #516a35;
+    --color-olive-700: #45582e;
+    --color-olive-800: #384628;
+    --color-olive-900: #2f3b23;
+
+    --color-sun-50: #fffbea;
+    --color-sun-100: #fff3c4;
+    --color-sun-200: #ffe685;
+    --color-sun-300: #ffd546;
+    --color-sun-400: #f2b302;
+    --color-sun-500: #d69a00;
+    --color-sun-600: #b07a00;
+    --color-sun-700: #8a5c04;
+    --color-sun-800: #71490b;
+    --color-sun-900: #603d0f;
+
+    /* Surfaces */
+    --color-canvas: #f3f8fb;
+
+    /* Shape and depth */
+    --radius-card: 1.5rem;
+    --radius-control: 0.75rem;
+    --shadow-soft: 0 1px 2px rgb(4 32 46 / 0.04), 0 12px 32px -14px rgb(2 79 109 / 0.18);
+    --shadow-lift: 0 2px 6px rgb(4 32 46 / 0.04), 0 28px 64px -24px rgb(2 79 109 / 0.32);
+}
+/* THEME:END */
+
+        @keyframes drift {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            50% { transform: translate3d(0, -14px, 0); }
+        }
+        .orb { animation: drift 9s ease-in-out infinite; }
+        .orb-slow { animation-duration: 13s; }
+        @media (prefers-reduced-motion: reduce) {
+            .orb { animation: none; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-canvas font-sans text-ink-700 antialiased">
+
+    <!-- Backdrop: soft waves, glows and orbs. Decorative only. -->
+    <div class="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+        <div class="absolute -left-40 -top-40 h-[36rem] w-[36rem] rounded-full bg-brand-100/60 blur-3xl"></div>
+        <div class="absolute -bottom-48 right-[-10rem] h-[40rem] w-[40rem] rounded-full bg-brand-200/50 blur-3xl"></div>
+        <div class="absolute left-[30%] top-[55%] h-72 w-72 rounded-full bg-sun-100/50 blur-3xl"></div>
+
+        <svg class="absolute bottom-0 left-0 w-full" viewBox="0 0 1440 320" preserveAspectRatio="none" style="height: 42vh">
+            <defs>
+                <linearGradient id="wave-a" x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0" stop-color="#d7edf4" stop-opacity="0.55"/>
+                    <stop offset="1" stop-color="#7cc0d7" stop-opacity="0.45"/>
+                </linearGradient>
+                <linearGradient id="wave-b" x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/>
+                    <stop offset="1" stop-color="#b0dbe9" stop-opacity="0.5"/>
+                </linearGradient>
+            </defs>
+            <path fill="url(#wave-a)" d="M0,192 C240,120 420,288 720,240 C1010,194 1180,96 1440,150 L1440,320 L0,320 Z"/>
+            <path fill="url(#wave-b)" d="M0,256 C300,200 520,320 820,280 C1080,246 1260,206 1440,236 L1440,320 L0,320 Z"/>
+        </svg>
+
+        <svg class="absolute right-0 top-0 h-full w-[45%] opacity-60" viewBox="0 0 600 900" preserveAspectRatio="none">
+            <path fill="#eff8fb" d="M600,0 L600,900 L420,900 C520,760 380,620 470,470 C560,320 430,170 520,0 Z"/>
+        </svg>
+
+        <span class="orb absolute left-[7%] top-[9%] h-16 w-16 rounded-full bg-gradient-to-br from-brand-300 to-brand-600 opacity-40 blur-[1px]"></span>
+        <span class="orb orb-slow absolute left-[42%] top-[13%] h-9 w-9 rounded-full bg-gradient-to-br from-sun-200 to-sun-400 opacity-80"></span>
+        <span class="orb absolute left-[50%] top-[30%] h-7 w-7 rounded-full bg-gradient-to-br from-brand-300 to-brand-700 opacity-70"></span>
+        <span class="orb orb-slow absolute left-[11%] top-[66%] h-12 w-12 rounded-full bg-gradient-to-br from-coral-200 to-coral-500 opacity-50 blur-[1px]"></span>
+        <span class="orb absolute left-[6%] top-[52%] h-8 w-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-800 opacity-60"></span>
+        <span class="orb orb-slow absolute left-[46%] top-[70%] h-3 w-3 rounded-full bg-ember-500 opacity-80"></span>
+        <span class="orb absolute right-[4%] top-[18%] h-3 w-3 rounded-full bg-brand-500 opacity-40"></span>
+
+        <div class="absolute left-[3%] top-[18%] h-28 w-24 bg-[radial-gradient(#7cc0d7_1.2px,transparent_1.2px)] [background-size:12px_12px] opacity-50"></div>
+        <div class="absolute bottom-[18%] left-[49%] h-24 w-24 bg-[radial-gradient(#7cc0d7_1.2px,transparent_1.2px)] [background-size:12px_12px] opacity-40"></div>
+    </div>
+
+    <!-- Top bar -->
+    <header class="relative z-10 flex items-center justify-between px-5 py-5 sm:px-10">
+        <a href="#" class="flex items-center gap-2.5 lg:invisible">
+            <img src="assets/logo-mark-sm.png" alt="" class="h-9 w-auto">
+            <span class="leading-tight">
+                <span class="block text-sm font-bold text-ink-900">Rehab Health</span>
+                <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-700">Events Portal</span>
+            </span>
+        </a>
+        <p class="text-sm text-ink-500">
+            <span class="hidden sm:inline">Need help?</span>
+            <a href="mailto:info@rehabhealth.or.tz" class="font-semibold text-brand-700 hover:text-brand-800">Contact support</a>
+        </p>
+    </header>
+
+    <main class="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-5 pb-14 sm:px-10 lg:min-h-[calc(100vh-88px)] lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:pb-10">
+
+        <!-- Brand panel -->
+        <section class="hidden flex-col items-center text-center lg:flex">
+            <div class="relative aspect-square w-full max-w-[26rem]">
+                <div class="absolute inset-[12%] rounded-full bg-white/70 blur-2xl"></div>
+                <img id="brand-still" src="assets/logo-2027-still.webp" alt="Rehab Health 2027 Events Portal"
+                     class="relative h-full w-full object-contain transition-opacity duration-300">
+                <img id="brand-anim" alt="" aria-hidden="true"
+                     class="absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity duration-300">
+            </div>
+
+            <p class="mt-8 flex items-center gap-5 text-lg font-semibold tracking-[0.32em] text-brand-800">
+                PEOPLE
+                <span class="h-2 w-2 rounded-full bg-ember-500"></span>
+                CARE
+                <span class="h-2 w-2 rounded-full bg-olive-700"></span>
+                TOGETHER
+            </p>
+            <p class="mt-3 text-sm tracking-[0.3em] text-ink-500">A healthier tomorrow, together.</p>
+        </section>
+
+        <!-- Sign-in card -->
+        <section class="mx-auto w-full max-w-[30rem]">
+            <div class="rounded-card border border-white bg-white/90 p-7 shadow-lift backdrop-blur sm:p-10">
+                <div class="text-center">
+                    <img src="assets/logo-mark-sm.png" alt="Rehab Health" class="mx-auto h-20 w-auto">
+                    <h1 class="mt-5 text-3xl font-extrabold tracking-tight text-ink-900 sm:text-[2.1rem]">Welcome back</h1>
+                    <p class="mx-auto mt-2 max-w-xs text-[15px] leading-relaxed text-ink-500">
+                        Sign in to the Rehab Health Events Portal to continue with the 2027 Summit.
+                    </p>
+                </div>
+
+                <form class="mt-8 space-y-5" onsubmit="event.preventDefault()">
+                    <div>
+                        <label for="email" class="mb-1.5 block text-sm font-medium text-ink-800">Email address</label>
+                        <div class="relative">
+                            <svg class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-400" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.1a7.5 7.5 0 0 1 15 0A17.9 17.9 0 0 1 12 21.75c-2.68 0-5.22-.58-7.5-1.65Z"/>
+                            </svg>
+                            <input id="email" name="email" type="email" autocomplete="email" required
+                                   placeholder="you@example.com"
+                                   class="h-12 w-full rounded-control border border-ink-200 bg-white pl-12 pr-4 text-[15px] text-ink-900 placeholder:text-ink-400 transition focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="mb-1.5 block text-sm font-medium text-ink-800">Password</label>
+                        <div class="relative">
+                            <svg class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-400" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+                            </svg>
+                            <input id="password" name="password" type="password" autocomplete="current-password" required
+                                   placeholder="Enter your password"
+                                   class="h-12 w-full rounded-control border border-ink-200 bg-white pl-12 pr-12 text-[15px] text-ink-900 placeholder:text-ink-400 transition focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15">
+                            <button type="button" id="toggle-password" aria-label="Show password" aria-pressed="false"
+                                    class="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-ink-400 transition hover:bg-ink-100 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40">
+                                <svg data-eye class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.04 12.32a1 1 0 0 1 0-.64C3.42 7.51 7.36 4.5 12 4.5c4.64 0 8.57 3 9.96 7.18.07.2.07.43 0 .64C20.58 16.49 16.64 19.5 12 19.5c-4.64 0-8.57-3-9.96-7.18Z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                                </svg>
+                                <svg data-eye-off class="hidden h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.22A10.48 10.48 0 0 0 1.93 12c1.3 4.34 5.31 7.5 10.07 7.5.99 0 1.95-.14 2.86-.4M6.23 6.23A10.45 10.45 0 0 1 12 4.5c4.76 0 8.77 3.16 10.07 7.5a10.52 10.52 0 0 1-4.29 5.77M6.23 6.23 3 3m3.23 3.23 3.65 3.65m7.89 7.89L21 21m-3.23-3.23-3.65-3.65m0 0a3 3 0 1 0-4.24-4.24m4.24 4.24L9.88 9.88"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center gap-2 text-sm text-ink-600">
+                            <input type="checkbox" name="remember" class="h-4 w-4 rounded border-ink-300 text-brand-700 accent-brand-700">
+                            Keep me signed in
+                        </label>
+                        <a href="#" class="text-sm font-semibold text-brand-700 hover:text-brand-800">Forgot password?</a>
+                    </div>
+
+                    <button type="submit"
+                            class="group flex h-12 w-full items-center justify-center gap-2 rounded-control bg-gradient-to-r from-brand-700 to-brand-500 text-[15px] font-bold text-white shadow-soft transition hover:from-brand-800 hover:to-brand-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/30">
+                        Sign in
+                        <svg class="h-5 w-5 transition group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="my-6 flex items-center gap-4 text-xs text-ink-400">
+                    <span class="h-px flex-1 bg-ink-200"></span>or<span class="h-px flex-1 bg-ink-200"></span>
+                </div>
+
+                <a href="#"
+                   class="flex h-12 w-full items-center justify-center gap-2 rounded-control border border-brand-200 bg-white text-[15px] font-semibold text-brand-700 transition hover:border-brand-300 hover:bg-brand-50">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.13a3.38 3.38 0 1 1-6.75 0 3.38 3.38 0 0 1 6.75 0ZM3 19.24v-.12a6.38 6.38 0 0 1 12.75 0v.12A12.32 12.32 0 0 1 9.37 21c-2.33 0-4.5-.64-6.37-1.76Z"/>
+                    </svg>
+                    New here? Create an account
+                </a>
+            </div>
+
+            <p class="mt-6 text-center text-xs text-ink-400">© 2027 Rehab Health · Transforming Lives</p>
+        </section>
+    </main>
+
+    <script>
+        // Show / hide password
+        (function () {
+            const button = document.getElementById('toggle-password');
+            const input = document.getElementById('password');
+            button.addEventListener('click', function () {
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                button.setAttribute('aria-pressed', String(show));
+                button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+                button.querySelector('[data-eye]').classList.toggle('hidden', show);
+                button.querySelector('[data-eye-off]').classList.toggle('hidden', !show);
+            });
+        })();
+
+        // Animated logo. It builds up from an empty first frame, so it replaces the
+        // still rather than layering over it. If it has not loaded within 1.2s the
+        // still is shown instead, and the late animation is ignored.
+        (function () {
+            const still = document.getElementById('brand-still');
+            const anim = document.getElementById('brand-anim');
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            if (!window.matchMedia('(min-width: 1024px)').matches) return;
+
+            still.classList.add('opacity-0');
+            let settled = false;
+            const showStill = function () {
+                if (settled) return;
+                settled = true;
+                still.classList.remove('opacity-0');
+            };
+            const fallback = setTimeout(showStill, 1200);
+
+            const img = new Image();
+            img.onload = function () {
+                if (settled) return;
+                settled = true;
+                clearTimeout(fallback);
+                anim.src = img.src;
+                anim.classList.remove('opacity-0');
+            };
+            img.onerror = showStill;
+            img.src = 'assets/logo-2027-animated.webp';
+        })();
+    </script>
+</body>
+</html>

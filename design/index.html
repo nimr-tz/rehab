@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Design system · Rehab Health Events Portal</title>
+    <link rel="icon" href="assets/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+/* THEME:START (copied from theme.css) */
+@theme section of resources/css/app.css.
+ | The static previews in this folder carry a copy inline. When a token changes,
+ | change it here first, then in the previews.
+ */
+@theme static {
+    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+    /* Brand teal: the hand and crescent of the logo (700) */
+    --color-brand-50: #eff8fb;
+    --color-brand-100: #d7edf4;
+    --color-brand-200: #b0dbe9;
+    --color-brand-300: #7cc0d7;
+    --color-brand-400: #3f9dbe;
+    --color-brand-500: #1b7fa3;
+    --color-brand-600: #0b6688;
+    --color-brand-700: #024f6d;
+    --color-brand-800: #043f57;
+    --color-brand-900: #073348;
+    --color-brand-950: #04202e;
+
+    /* Ink: text and neutrals, anchored on the wordmark (800) */
+    --color-ink-50: #f6f8fa;
+    --color-ink-100: #eef1f5;
+    --color-ink-200: #dfe4eb;
+    --color-ink-300: #c3cad5;
+    --color-ink-400: #949cab;
+    --color-ink-500: #6b7386;
+    --color-ink-600: #515a6c;
+    --color-ink-700: #3e4556;
+    --color-ink-800: #303440;
+    --color-ink-900: #232733;
+    --color-ink-950: #161922;
+
+    /* Figure accents: categories only, never status */
+    --color-ember-50: #fff4ec;
+    --color-ember-100: #fee4cf;
+    --color-ember-200: #fcc79e;
+    --color-ember-300: #f9a265;
+    --color-ember-400: #ef8233;
+    --color-ember-500: #df670d;
+    --color-ember-600: #bd520a;
+    --color-ember-700: #963f0b;
+    --color-ember-800: #763310;
+    --color-ember-900: #5f2b10;
+
+    --color-coral-50: #fff4f2;
+    --color-coral-100: #ffe5e1;
+    --color-coral-200: #ffcdc6;
+    --color-coral-300: #feb2a9;
+    --color-coral-400: #fd9a8f;
+    --color-coral-500: #f2766a;
+    --color-coral-600: #d9574b;
+    --color-coral-700: #b5443a;
+    --color-coral-800: #923832;
+    --color-coral-900: #78322e;
+
+    --color-olive-50: #f4f7ef;
+    --color-olive-100: #e5ecd9;
+    --color-olive-200: #ccdab5;
+    --color-olive-300: #aac088;
+    --color-olive-400: #87a35f;
+    --color-olive-500: #688644;
+    --color-olive-600: #516a35;
+    --color-olive-700: #45582e;
+    --color-olive-800: #384628;
+    --color-olive-900: #2f3b23;
+
+    --color-sun-50: #fffbea;
+    --color-sun-100: #fff3c4;
+    --color-sun-200: #ffe685;
+    --color-sun-300: #ffd546;
+    --color-sun-400: #f2b302;
+    --color-sun-500: #d69a00;
+    --color-sun-600: #b07a00;
+    --color-sun-700: #8a5c04;
+    --color-sun-800: #71490b;
+    --color-sun-900: #603d0f;
+
+    /* Surfaces */
+    --color-canvas: #f3f8fb;
+
+    /* Shape and depth */
+    --radius-card: 1.5rem;
+    --radius-control: 0.75rem;
+    --shadow-soft: 0 1px 2px rgb(4 32 46 / 0.04), 0 12px 32px -14px rgb(2 79 109 / 0.18);
+    --shadow-lift: 0 2px 6px rgb(4 32 46 / 0.04), 0 28px 64px -24px rgb(2 79 109 / 0.32);
+}
+/* THEME:END */
+
+        @layer components {
+            .btn { @apply inline-flex h-11 items-center justify-center gap-2 rounded-control px-5 text-sm font-semibold transition focus:outline-none focus-visible:ring-4 disabled:pointer-events-none disabled:opacity-50; }
+            .btn-sm { @apply h-9 px-3.5 text-[13px]; }
+            .btn-lg { @apply h-12 px-6 text-[15px]; }
+            .btn-primary { @apply bg-brand-700 text-white shadow-soft hover:bg-brand-800 focus-visible:ring-brand-500/30; }
+            .btn-secondary { @apply border border-ink-200 bg-white text-ink-800 hover:border-ink-300 hover:bg-ink-50 focus-visible:ring-brand-500/20; }
+            .btn-ghost { @apply text-brand-700 hover:bg-brand-50 focus-visible:ring-brand-500/20; }
+            .btn-danger { @apply bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-500/30; }
+
+            .field { @apply h-11 w-full rounded-control border border-ink-200 bg-white px-4 text-sm text-ink-900 placeholder:text-ink-400 transition focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15; }
+            .field-error { @apply border-red-400 focus:border-red-500 focus:ring-red-500/15; }
+            .label { @apply mb-1.5 block text-sm font-medium text-ink-800; }
+
+            .card { @apply rounded-card border border-ink-100 bg-white shadow-soft; }
+            .pill { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold; }
+            .eyebrow { @apply text-xs font-semibold uppercase tracking-[0.2em] text-brand-700; }
+            .swatch { @apply h-14 rounded-xl ring-1 ring-black/5; }
+        }
+    </style>
+</head>
+<body class="bg-canvas font-sans text-ink-700 antialiased">
+
+<header class="sticky top-0 z-20 border-b border-ink-100 bg-white/85 backdrop-blur">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-8">
+        <div class="flex items-center gap-2.5">
+            <img src="assets/logo-mark-sm.png" alt="" class="h-9 w-auto">
+            <span class="leading-tight">
+                <span class="block text-sm font-bold text-ink-900">Rehab Health</span>
+                <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-700">Events Portal</span>
+            </span>
+        </div>
+        <nav class="flex items-center gap-1 text-sm">
+            <span class="hidden rounded-lg bg-brand-50 px-3 py-1.5 font-semibold text-brand-800 sm:inline">Design system</span>
+            <a href="login.html" class="btn btn-sm btn-ghost">Sign-in screen →</a>
+        </nav>
+    </div>
+</header>
+
+<main class="mx-auto max-w-6xl space-y-16 px-4 py-12 sm:px-8">
+
+    <section>
+        <p class="eyebrow">Rehab Health · 2027 Summit</p>
+        <h1 class="mt-3 text-4xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">Design system</h1>
+        <p class="mt-4 max-w-2xl text-base leading-relaxed text-ink-500">
+            Light, calm and caring, taken from the client's login mockup and the Rehab Health logo.
+            Teal is for actions. The four figure colours mark categories. Status has its own colours.
+        </p>
+    </section>
+
+    <!-- Colour -->
+    <section class="space-y-8">
+        <h2 class="text-2xl font-bold text-ink-900">Colour</h2>
+
+        <div id="ramps" class="space-y-6"></div>
+
+        <div class="grid gap-4 sm:grid-cols-3">
+            <div class="card p-5">
+                <p class="text-sm font-semibold text-ink-900">Actions use brand</p>
+                <p class="mt-1 text-sm text-ink-500">brand-700 on white, 9.0 contrast. Hover goes to brand-800.</p>
+            </div>
+            <div class="card p-5">
+                <p class="text-sm font-semibold text-ink-900">Coral and sun carry no text</p>
+                <p class="mt-1 text-sm text-ink-500">Contrast is about 2:1. Use them as fills and dots, with ink-900 text on top.</p>
+            </div>
+            <div class="card p-5">
+                <p class="text-sm font-semibold text-ink-900">Status is not brand</p>
+                <p class="mt-1 text-sm text-ink-500">Emerald, amber and red are used for status only, so olive and sun stay categories.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Type -->
+    <section class="space-y-6">
+        <h2 class="text-2xl font-bold text-ink-900">Type · Plus Jakarta Sans</h2>
+        <div class="card divide-y divide-ink-100">
+            <div class="grid gap-2 p-5 sm:grid-cols-[180px_1fr] sm:items-baseline"><span class="text-xs text-ink-400">Display · 4xl–5xl / 800</span><span class="text-4xl font-extrabold tracking-tight text-ink-900">Welcome back</span></div>
+            <div class="grid gap-2 p-5 sm:grid-cols-[180px_1fr] sm:items-baseline"><span class="text-xs text-ink-400">Page title · 2xl / 700</span><span class="text-2xl font-bold text-ink-900">My registration</span></div>
+            <div class="grid gap-2 p-5 sm:grid-cols-[180px_1fr] sm:items-baseline"><span class="text-xs text-ink-400">Section · lg / 600</span><span class="text-lg font-semibold text-ink-900">Payment details</span></div>
+            <div class="grid gap-2 p-5 sm:grid-cols-[180px_1fr] sm:items-baseline"><span class="text-xs text-ink-400">Body · sm / 400</span><span class="text-sm text-ink-700">Upload your bank slip and a finance officer will confirm it, usually within one working day.</span></div>
+            <div class="grid gap-2 p-5 sm:grid-cols-[180px_1fr] sm:items-baseline"><span class="text-xs text-ink-400">Eyebrow · xs / 600</span><span class="eyebrow">Step 2 of 3</span></div>
+        </div>
+    </section>
+
+    <!-- Controls -->
+    <section class="space-y-6">
+        <h2 class="text-2xl font-bold text-ink-900">Buttons and fields</h2>
+        <div class="card space-y-8 p-6">
+            <div class="flex flex-wrap items-center gap-3">
+                <button class="btn btn-primary">Submit abstract</button>
+                <button class="btn btn-secondary">Save draft</button>
+                <button class="btn btn-ghost">Cancel</button>
+                <button class="btn btn-danger">Reject payment</button>
+                <button class="btn btn-primary" disabled>Disabled</button>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <button class="btn btn-primary btn-sm">Small</button>
+                <button class="btn btn-primary">Medium</button>
+                <button class="btn btn-primary btn-lg">Large</button>
+            </div>
+
+            <div class="grid gap-6 md:grid-cols-2">
+                <div>
+                    <label class="label" for="f1">Institution</label>
+                    <input id="f1" class="field" placeholder="e.g. Muhimbili National Hospital">
+                    <p class="mt-1.5 text-xs text-ink-500">As it should appear on your badge.</p>
+                </div>
+                <div>
+                    <label class="label" for="f2">Registration category</label>
+                    <select id="f2" class="field">
+                        <option>Professional (Tanzania)</option>
+                        <option>Professional (International)</option>
+                        <option>Student (Tanzania)</option>
+                        <option>Student (International)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="label" for="f3">Transaction reference</label>
+                    <input id="f3" class="field field-error" value="ABC">
+                    <p class="mt-1.5 text-xs font-medium text-red-700">The reference must be at least 6 characters.</p>
+                </div>
+                <div>
+                    <span class="label">Presentation type</span>
+                    <div class="flex gap-6 pt-2 text-sm text-ink-700">
+                        <label class="flex items-center gap-2"><input type="radio" name="t" checked class="h-4 w-4 accent-brand-700"> Oral</label>
+                        <label class="flex items-center gap-2"><input type="radio" name="t" class="h-4 w-4 accent-brand-700"> Poster</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" checked class="h-4 w-4 accent-brand-700"> Student presenter</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Status and categories -->
+    <section class="space-y-6">
+        <h2 class="text-2xl font-bold text-ink-900">Status pills and topic chips</h2>
+        <div class="card grid gap-8 p-6 md:grid-cols-2">
+            <div>
+                <p class="mb-3 text-sm font-semibold text-ink-900">Status (semantic)</p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="pill bg-emerald-50 text-emerald-700"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Paid</span>
+                    <span class="pill bg-amber-50 text-amber-800"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Awaiting verification</span>
+                    <span class="pill bg-red-50 text-red-700"><span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>Rejected</span>
+                    <span class="pill bg-brand-50 text-brand-800"><span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>Under review</span>
+                    <span class="pill bg-ink-100 text-ink-600"><span class="h-1.5 w-1.5 rounded-full bg-ink-400"></span>Draft</span>
+                </div>
+            </div>
+            <div>
+                <p class="mb-3 text-sm font-semibold text-ink-900">Topics (figure colours)</p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="pill bg-ember-50 text-ember-700">Home-Based Rehabilitation</span>
+                    <span class="pill bg-coral-50 text-coral-700">Women, Disability and Inclusion</span>
+                    <span class="pill bg-olive-50 text-olive-700">Rehabilitation and NCDs</span>
+                    <span class="pill bg-sun-50 text-sun-700">Technology and AI</span>
+                    <span class="pill bg-brand-50 text-brand-700">Research and Innovation</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Alerts -->
+    <section class="space-y-6">
+        <h2 class="text-2xl font-bold text-ink-900">Alerts</h2>
+        <div class="space-y-3">
+            <div class="flex gap-3 rounded-2xl border border-brand-100 bg-brand-50 p-4 text-sm text-brand-900">
+                <svg class="mt-0.5 h-5 w-5 shrink-0 text-brand-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.04-.02a.75.75 0 0 1 1.06.85l-.7 2.84a.75.75 0 0 0 1.06.85l.04-.02M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.01v.01H12v-.01Z"/></svg>
+                <p><span class="font-semibold">Abstract submission is open.</span> The deadline will be announced together with the summit dates.</p>
+            </div>
+            <div class="flex gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900">
+                <svg class="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                <p><span class="font-semibold">Payment confirmed.</span> Your badge is ready to download.</p>
+            </div>
+            <div class="flex gap-3 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
+                <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.01v.01H12v-.01Z"/></svg>
+                <p><span class="font-semibold">Proof of payment needed.</span> Upload your bank slip so a finance officer can confirm it.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portal preview -->
+    <section class="space-y-6">
+        <div>
+            <h2 class="text-2xl font-bold text-ink-900">Inside the portal</h2>
+            <p class="mt-1 text-sm text-ink-500">Same colours, type and shapes, without the decoration. Shown here as a participant's dashboard.</p>
+        </div>
+
+        <div class="overflow-hidden rounded-card border border-ink-100 bg-canvas shadow-lift">
+            <div class="grid md:grid-cols-[230px_1fr]">
+                <aside class="hidden border-r border-ink-100 bg-white p-4 md:block">
+                    <div class="flex items-center gap-2.5 px-2 pb-6 pt-1">
+                        <img src="assets/logo-mark-sm.png" alt="" class="h-8 w-auto">
+                        <span class="leading-tight">
+                            <span class="block text-[13px] font-bold text-ink-900">Rehab Health</span>
+                            <span class="block text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-700">Events Portal</span>
+                        </span>
+                    </div>
+                    <nav class="space-y-0.5 text-sm">
+                        <a class="flex items-center gap-3 rounded-xl bg-brand-50 px-3 py-2.5 font-semibold text-brand-800" href="#"><span class="h-2 w-2 rounded-full bg-brand-600"></span>Dashboard</a>
+                        <a class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-ink-600 hover:bg-ink-50" href="#"><span class="h-2 w-2 rounded-full bg-ink-300"></span>Registration &amp; payment</a>
+                        <a class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-ink-600 hover:bg-ink-50" href="#"><span class="h-2 w-2 rounded-full bg-ink-300"></span>My abstracts</a>
+                        <a class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-ink-600 hover:bg-ink-50" href="#"><span class="h-2 w-2 rounded-full bg-ink-300"></span>Programme</a>
+                        <a class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-ink-600 hover:bg-ink-50" href="#"><span class="h-2 w-2 rounded-full bg-ink-300"></span>Invitation letter</a>
+                    </nav>
+                </aside>
+
+                <div class="space-y-6 p-5 sm:p-8">
+                    <div class="flex flex-wrap items-end justify-between gap-4">
+                        <div>
+                            <p class="eyebrow">2027 Summit</p>
+                            <h3 class="mt-1 text-2xl font-bold text-ink-900">Karibu, Dr. Amina</h3>
+                        </div>
+                        <button class="btn btn-secondary btn-sm">View programme</button>
+                    </div>
+
+                    <!-- Next step -->
+                    <div class="card flex flex-col gap-5 p-6 sm:flex-row sm:items-center">
+                        <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-sun-100 text-sun-800">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z"/></svg>
+                        </div>
+                        <div class="flex-1">
+                            <p class="eyebrow">Next step</p>
+                            <p class="mt-1 text-lg font-semibold text-ink-900">Pay your registration fee</p>
+                            <p class="text-sm text-ink-500">Professional (Tanzania) · pay by bank transfer or mobile money.</p>
+                        </div>
+                        <button class="btn btn-primary">Pay now</button>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="card p-5">
+                            <p class="text-xs font-medium text-ink-500">Registration</p>
+                            <p class="mt-2 text-xl font-bold text-ink-900">Professional</p>
+                            <span class="pill mt-3 bg-amber-50 text-amber-800"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Payment pending</span>
+                        </div>
+                        <div class="card p-5">
+                            <p class="text-xs font-medium text-ink-500">Abstracts</p>
+                            <p class="mt-2 text-xl font-bold text-ink-900">2 submitted</p>
+                            <span class="pill mt-3 bg-brand-50 text-brand-800"><span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>Under review</span>
+                        </div>
+                        <div class="card p-5">
+                            <p class="text-xs font-medium text-ink-500">Badge</p>
+                            <p class="mt-2 text-xl font-bold text-ink-900">Not ready</p>
+                            <span class="pill mt-3 bg-ink-100 text-ink-600"><span class="h-1.5 w-1.5 rounded-full bg-ink-400"></span>After payment</span>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="card overflow-hidden">
+                        <div class="flex items-center justify-between px-5 py-4">
+                            <p class="font-semibold text-ink-900">My abstracts</p>
+                            <a href="#" class="text-sm font-semibold text-brand-700 hover:text-brand-800">Submit another</a>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full min-w-[560px] text-left text-sm">
+                                <thead class="border-y border-ink-100 bg-ink-50 text-xs font-semibold uppercase tracking-wider text-ink-500">
+                                    <tr><th class="px-5 py-3">Title</th><th class="px-5 py-3">Topic</th><th class="px-5 py-3">Type</th><th class="px-5 py-3">Status</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-ink-100">
+                                    <tr class="hover:bg-ink-50/60">
+                                        <td class="px-5 py-3.5 font-medium text-ink-900">Community-based stroke rehabilitation in Dodoma</td>
+                                        <td class="px-5 py-3.5"><span class="pill bg-ember-50 text-ember-700">Home-Based</span></td>
+                                        <td class="px-5 py-3.5 text-ink-600">Oral</td>
+                                        <td class="px-5 py-3.5"><span class="pill bg-brand-50 text-brand-800">Under review</span></td>
+                                    </tr>
+                                    <tr class="hover:bg-ink-50/60">
+                                        <td class="px-5 py-3.5 font-medium text-ink-900">Low-cost prosthetics with 3D printing</td>
+                                        <td class="px-5 py-3.5"><span class="pill bg-sun-50 text-sun-700">Technology and AI</span></td>
+                                        <td class="px-5 py-3.5 text-ink-600">Poster</td>
+                                        <td class="px-5 py-3.5"><span class="pill bg-ink-100 text-ink-600">Draft</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="border-t border-ink-200 pt-6 text-xs text-ink-400">Rehab Health · Transforming Lives · design preview, not the live portal</footer>
+</main>
+
+<script>
+    // Colour ramps, drawn from the theme tokens so this page cannot drift from them.
+    (function () {
+        const ramps = [
+            ['brand', 'Brand teal', '700'],
+            ['ink', 'Ink', '800'],
+            ['ember', 'Ember (orange figure)', '500'],
+            ['coral', 'Coral (pink figure)', '400'],
+            ['olive', 'Olive (green figure)', '700'],
+            ['sun', 'Sun (yellow figure)', '400'],
+        ];
+        const steps = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
+        const root = document.getElementById('ramps');
+
+        const render = function () {
+            root.innerHTML = '';
+            ramps.forEach(function ([name, label, base]) {
+                const row = document.createElement('div');
+                row.innerHTML = '<p class="mb-2 text-sm font-semibold text-ink-900">' + label +
+                    ' <span class="font-normal text-ink-400">· ' + name + '-' + base + ' is the logo colour</span></p>';
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-5 gap-2 sm:grid-cols-10';
+                steps.forEach(function (step) {
+                    const value = getComputedStyle(document.documentElement).getPropertyValue('--color-' + name + '-' + step).trim();
+                    const cell = document.createElement('div');
+                    cell.innerHTML = '<div class="swatch' + (step === base ? ' ring-2 ring-offset-2 ring-ink-900' : '') +
+                        '" style="background:' + value + '"></div>' +
+                        '<p class="mt-1 text-[11px] font-semibold text-ink-700">' + step + '</p>' +
+                        '<p class="text-[10px] uppercase text-ink-400">' + value + '</p>';
+                    grid.appendChild(cell);
+                });
+                row.appendChild(grid);
+                root.appendChild(row);
+            });
+        };
+        // The Tailwind browser build injects the theme after it runs, so wait for it.
+        let tries = 0;
+        (function wait() {
+            const ready = getComputedStyle(document.documentElement).getPropertyValue('--color-brand-700').trim();
+            if (ready || tries++ > 40) return render();
+            setTimeout(wait, 50);
+        })();
+    })();
+</script>
+</body>
+</html>
