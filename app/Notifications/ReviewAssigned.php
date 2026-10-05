@@ -12,7 +12,7 @@ class ReviewAssigned extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -29,5 +29,17 @@ class ReviewAssigned extends Notification
         }
 
         return $mail->action('Start the review', route('reviews.edit', $this->assignment));
+    }
+
+    /** Shown under the bell in the portal. */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'title' => 'New abstract to review',
+            'body' => $this->assignment->abstract->blindId().' · '.$this->assignment->abstract->topic->name,
+            'url' => route('reviews.edit', $this->assignment),
+            'icon' => 'star',
+            'tone' => 'warning',
+        ];
     }
 }

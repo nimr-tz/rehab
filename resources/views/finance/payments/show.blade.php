@@ -6,9 +6,11 @@
 @endphp
 
 <x-layouts.portal :title="'Payment '.$registration->reference">
-    <x-page-header eyebrow="Finance" :title="$registration->user->name.' · '.$payment->formattedAmount()" :back="route('finance.payments.index')">
-        <x-status :tone="$payment->status->tone()">{{ $payment->status->label() }}</x-status>
-    </x-page-header>
+    <x-slot:header>
+        <x-page-header eyebrow="Finance" :title="$registration->user->name.' · '.$payment->formattedAmount()" :back="route('finance.payments.index')">
+            <x-status :tone="$payment->status->tone()">{{ $payment->status->label() }}</x-status>
+        </x-page-header>
+    </x-slot:header>
 
     <div class="grid gap-6 lg:grid-cols-[1fr_380px]">
         <x-card title="Proof of payment" :padding="false">

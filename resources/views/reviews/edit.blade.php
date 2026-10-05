@@ -6,9 +6,11 @@
 @endphp
 
 <x-layouts.portal :title="'Review '.$abstract->blindId()">
-    <x-page-header :eyebrow="'Review '.$abstract->blindId()" :title="$abstract->title" :back="route('reviews.index')">
-        <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $abstract->topic->chipClasses() }}">{{ $abstract->topic->name }}</span>
-    </x-page-header>
+    <x-slot:header>
+        <x-page-header :eyebrow="'Review '.$abstract->blindId()" :title="$abstract->title" :back="route('reviews.index')">
+            <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $abstract->topic->chipClasses() }}">{{ $abstract->topic->name }}</span>
+        </x-page-header>
+    </x-slot:header>
 
     <x-alert>
         <span class="font-semibold">Double-blind review.</span> The authors' names and affiliations are hidden from you, and yours from them.

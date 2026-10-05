@@ -54,6 +54,8 @@ class DemoSeeder extends Seeder
             throw new RuntimeException('The DemoSeeder fills the portal with sample data and must not run in production.');
         }
 
+        // Rendering ~150 sample slips with dompdf needs more than PHP's 128M CLI default.
+        ini_set('memory_limit', '512M');
         mt_srand(2027);
         $this->call(RoleSeeder::class);
 
@@ -63,6 +65,56 @@ class DemoSeeder extends Seeder
         $this->registrations($participants, $staff['finance']);
         $this->abstracts($participants, $staff['scientific']);
         $this->programme();
+        $this->deskAndNotifications();
+    }
+
+    /** $time if it is already past; otherwise a random moment between $after and now. */
+    private function past(CarbonImmutable $time, CarbonImmutable $after): CarbonImmutable
+    {
+        if ($time->isPast()) {
+            return $time;
+        }
+
+        $window = max(60, (int) $after->diffInSeconds(now()));
+
+        return $after->addSeconds(mt_rand(30, $window - 30));
+    }
+
+    /** Some badges already printed, and the bell filled for the demo accounts. */
+    private function deskAndNotifications(): void
+    {
+        Registration::where('edition_id', $this->edition->id)->where('status', RegistrationStatus::Confirmed)->get()
+            ->filter(fn () => mt_rand(1, 100) <= 45)
+            ->each(fn (Registration $r) => $r->update(['badge_printed_at' => $this->past(CarbonImmutable::parse($r->confirmed_at)->addDays(mt_rand(1, 6)), CarbonImmutable::parse($r->confirmed_at))]));
+
+        $notify = function (User $user, string $title, string $body, string $url, string $icon, string $tone, string $ago, bool $read) {
+            $user->notifications()->create([
+                'id' => (string) Str::uuid(),
+                'type' => 'demo',
+                'data' => compact('title', 'body', 'url', 'icon', 'tone'),
+                'read_at' => $read ? now()->modify($ago)->addHour() : null,
+                'created_at' => now()->modify($ago),
+                'updated_at' => now()->modify($ago),
+            ]);
+        };
+
+        $amina = User::where('email', 'participant@rehab.test')->first();
+        $accepted = $amina->abstracts()->where('status', AbstractStatus::Accepted)->first();
+        $pending = $amina->abstracts()->where('status', AbstractStatus::UnderReview)->first();
+        $amina->notifications()->delete();
+        $notify($amina, 'Registration confirmed', 'Your badge and invitation letter are ready to download.', route('registration.badge.show'), 'check-circle', 'success', '-20 days', true);
+        if ($pending) {
+            $notify($amina, 'Abstract received', '"'.$pending->title.'" is with the scientific committee.', route('abstracts.show', $pending), 'document', 'info', '-6 days', true);
+        }
+        if ($accepted) {
+            $notify($amina, 'Abstract accepted · '.$accepted->code, '"'.$accepted->title.'"', route('abstracts.show', $accepted), 'clipboard', 'success', '-2 days', false);
+        }
+        $notify($amina, 'Programme published', 'The '.$this->edition->name.' '.$this->edition->year.' programme is online. Plan your sessions.', route('programme'), 'calendar', 'info', '-5 hours', false);
+
+        $grace = User::where('email', 'reviewer@rehab.test')->first();
+        $grace->notifications()->delete();
+        $grace->reviewAssignments()->whereNull('completed_at')->with('abstract.topic', 'abstract.edition')->get()
+            ->each(fn ($a, $i) => $notify($grace, 'New abstract to review', $a->abstract->blindId().' · '.$a->abstract->topic->name, route('reviews.edit', $a), 'star', 'warning', '-'.($i * 2 + 1).' days', $i > 1));
     }
 
     private function edition(): void
@@ -85,6 +137,7 @@ class DemoSeeder extends Seeder
             'review_deadline' => '2027-06-30',
             'session_role_deadline' => '2027-07-15',
             'presentation_deadline' => '2027-09-10',
+            'registration_target' => 400,
             'is_current' => true,
         ]);
 
@@ -193,7 +246,7 @@ class DemoSeeder extends Seeder
             $make('newcomer@rehab.test', null, 'Joseph', 'Mrema', 'Dodoma Regional Referral Hospital', 'TZ', 'Physiotherapist', '-2 days'),
         ]);
 
-        for ($i = 0; $i < 58; $i++) {
+        for ($i = 0; $i < 198; $i++) {
             // About seven in ten participants are from Tanzania.
             [$institution, $country] = mt_rand(1, 100) <= 72
                 ? [$local[mt_rand(0, count($local) - 1)], 'TZ']
@@ -222,7 +275,7 @@ class DemoSeeder extends Seeder
                 continue; // registers live during the demo
             }
 
-            $student = in_array($user->profession, ['Physiotherapist', 'Occupational therapist'], true) && mt_rand(1, 100) <= 22;
+            $student = $user->email !== 'participant@rehab.test' && mt_rand(1, 100) <= 18;
             $category = $byKey($user->country === 'TZ', $student);
             $roll = $user->email === 'participant@rehab.test' ? 1 : mt_rand(1, 100);
             $status = match (true) {
@@ -231,11 +284,15 @@ class DemoSeeder extends Seeder
                 $roll <= 80 => 'rejected',
                 default => 'pending',
             };
-            $registeredAt = CarbonImmutable::now()->subDays(mt_rand(4, 120));
+            // Registrations cluster in recent weeks, as they do before a summit.
+            $registeredAt = CarbonImmutable::now()->subDays(1 + (int) round(150 * (mt_rand() / mt_getrandmax()) ** 1.7))->setTime(mt_rand(7, 20), mt_rand(0, 59));
+            if ($user->created_at->gt($registeredAt)) {
+                $user->forceFill(['created_at' => $registeredAt->subDay()])->save();
+            }
 
             $registration = Registration::updateOrCreate(['edition_id' => $this->edition->id, 'user_id' => $user->id], [
                 'registration_category_id' => $category->id,
-                'reference' => sprintf('RH27-%06d', 101 + $index),
+                'reference' => 'pending-'.Str::random(12),
                 'currency' => $category->currency,
                 'amount' => $category->amount,
                 'status' => RegistrationStatus::PendingPayment,
@@ -244,21 +301,32 @@ class DemoSeeder extends Seeder
                 'dietary_needs' => mt_rand(1, 6) === 1 ? 'Vegetarian' : null,
                 'qr_token' => Str::random(32),
             ]);
-            $registration->forceFill(['created_at' => $registeredAt])->save();
+            // Same scheme as RegistrationService: derived from the id, so it never collides.
+            $registration->forceFill([
+                'created_at' => $registeredAt,
+                'reference' => sprintf('%s%s-%06d', config('payments.reference_prefix'), $this->edition->shortYear(), $registration->id),
+            ])->save();
             $registration->payments()->delete();
 
             if ($status === 'pending') {
                 continue;
             }
 
+            // Payments still waiting for finance were sent in the last week; older ones are settled.
+            $paidOn = match ($status) {
+                'submitted' => CarbonImmutable::now()->subDays(mt_rand(0, 6))->max($registeredAt),
+                'rejected' => CarbonImmutable::now()->subDays(mt_rand(3, 15))->max($registeredAt),
+                default => $registeredAt->addDays(mt_rand(1, 5)),
+            };
+
             if ($status === 'rejected') {
-                $this->payment($registration, $registeredAt->addDays(2), PaymentStatus::Rejected, $finance,
+                $this->payment($registration, $paidOn, PaymentStatus::Rejected, $finance,
                     'The transaction reference does not appear on our bank statement. Please check it and upload a clearer slip.');
 
                 continue;
             }
 
-            $payment = $this->payment($registration, $registeredAt->addDays(mt_rand(1, 5)),
+            $payment = $this->payment($registration, $paidOn,
                 $status === 'confirmed' ? PaymentStatus::Verified : PaymentStatus::Submitted, $finance);
 
             $registration->update($status === 'confirmed'
@@ -271,7 +339,7 @@ class DemoSeeder extends Seeder
     {
         $providers = array_keys(config('payments.mobile_money.providers')) ?: ['mpesa'];
         $mobile = $registration->currency === 'TZS' && mt_rand(1, 100) <= 55;
-        $paidOn = $paidOn->min(CarbonImmutable::now()->subDay());
+        $paidOn = $paidOn->min(CarbonImmutable::now()->subHours(2));
 
         $payment = $registration->payments()->create([
             'method' => $mobile ? PaymentMethod::MobileMoney : PaymentMethod::BankTransfer,
@@ -284,10 +352,10 @@ class DemoSeeder extends Seeder
             'paid_on' => $paidOn->toDateString(),
             'status' => $status,
             'reviewed_by' => $status === PaymentStatus::Submitted ? null : $finance->id,
-            'reviewed_at' => $status === PaymentStatus::Submitted ? null : $paidOn->addDay()->setTime(11, 30),
+            'reviewed_at' => $status === PaymentStatus::Submitted ? null : $this->past($paidOn->addHours(mt_rand(3, 40)), $paidOn),
             'rejection_reason' => $reason,
         ]);
-        $payment->forceFill(['created_at' => $paidOn->setTime(15, 10)])->save();
+        $payment->forceFill(['created_at' => $paidOn->setTime(mt_rand(8, 18), mt_rand(0, 59))->min(CarbonImmutable::now()->subHour())])->save();
 
         // A sample slip, so the finance screens have something to look at.
         $path = 'payment-proofs/demo-'.$registration->reference.'-'.$payment->id.'.pdf';
@@ -296,6 +364,7 @@ class DemoSeeder extends Seeder
             'bank' => $mobile ? config("payments.mobile_money.providers.{$payment->provider}.label", 'Mobile money') : 'CRDB Bank PLC',
         ])->setPaper('a5', 'landscape')->output());
         $payment->update(['proof_path' => $path]);
+        gc_collect_cycles();
 
         return $payment;
     }
@@ -322,7 +391,11 @@ class DemoSeeder extends Seeder
                 $owner = $authors->first();
             }
 
-            $submittedAt = CarbonImmutable::now()->subDays(mt_rand(10, 90));
+            // Decided abstracts were submitted long enough ago to have been reviewed.
+            $minAge = match ($state) {
+                'accepted', 'rejected' => 16, 'under_review' => 4, default => 0
+            };
+            $submittedAt = CarbonImmutable::now()->subDays($minAge + (int) round(40 * (mt_rand() / mt_getrandmax()) ** 1.4))->setTime(mt_rand(7, 21), mt_rand(0, 59));
             $abstract = AbstractSubmission::create([
                 'edition_id' => $this->edition->id,
                 'user_id' => $owner->id,
@@ -373,7 +446,7 @@ class DemoSeeder extends Seeder
                     'recommendation' => $complete ? ($good ? (array_sum($scores) >= 17 ? Recommendation::AcceptOral : Recommendation::AcceptPoster) : Recommendation::Reject) : null,
                     'comments_for_author' => $complete ? self::COMMENTS[$good ? 'good' : 'weak'][mt_rand(0, 3)] : null,
                     'comments_for_committee' => $complete && mt_rand(1, 4) === 1 ? 'Strong local relevance; consider for the plenary-adjacent parallel session.' : null,
-                    'completed_at' => $complete ? $submittedAt->addDays(mt_rand(5, 20)) : null,
+                    'completed_at' => $complete ? $submittedAt->addDays(mt_rand(2, max(2, $minAge - 3)))->min(CarbonImmutable::now()->subHours(mt_rand(1, 30))) : null,
                 ]);
             }
 
@@ -384,7 +457,7 @@ class DemoSeeder extends Seeder
             }
 
             if ($state === 'rejected') {
-                $abstract->update(['status' => AbstractStatus::Rejected, 'decided_at' => $submittedAt->addDays(25),
+                $abstract->update(['status' => AbstractStatus::Rejected, 'decided_at' => $submittedAt->addDays($minAge - 1),
                     'decision_note' => 'The committee encourages you to strengthen the methods section and resubmit next year.']);
 
                 continue;
@@ -397,7 +470,7 @@ class DemoSeeder extends Seeder
                 'status' => AbstractStatus::Accepted,
                 'decision_type' => $type,
                 'code' => $prefix.str_pad((string) $number, 2, '0', STR_PAD_LEFT),
-                'decided_at' => $submittedAt->addDays(25),
+                'decided_at' => $submittedAt->addDays($minAge - 1),
             ]);
         }
 

@@ -11,8 +11,10 @@
 @endphp
 
 <x-layouts.portal title="Registration & payment">
-    <x-page-header :eyebrow="$summit->title()" title="Registration & payment"
-        :description="$registration ? null : 'Register once for the whole summit: all sessions, materials, meals and your CPD certificate.'" />
+    <x-slot:header>
+        <x-page-header :eyebrow="$summit->title()" title="Registration & payment"
+            :description="$registration ? null : 'Register once for the whole summit: all sessions, materials, meals and your CPD certificate.'" />
+    </x-slot:header>
 
     @if (! $registration)
         @if (! $edition?->registration_open || $categories->isEmpty())

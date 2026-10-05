@@ -1,10 +1,12 @@
 <x-layouts.portal title="Reviewers">
-    <x-page-header eyebrow="Scientific committee" title="Reviewers"
-        description="Workload across the review panel. Admins add reviewers under Users & roles.">
-        @role('admin')
-            <x-button variant="secondary" :href="route('admin.users.index', ['role' => 'reviewer'])" icon="shield">Manage reviewers</x-button>
-        @endrole
-    </x-page-header>
+    <x-slot:header>
+        <x-page-header eyebrow="Scientific committee" title="Reviewers"
+            description="Workload across the review panel. Admins add reviewers under Users & roles.">
+            @role('admin')
+                <x-button variant="secondary" :href="route('admin.users.index', ['role' => 'reviewer'])" icon="shield">Manage reviewers</x-button>
+            @endrole
+        </x-page-header>
+    </x-slot:header>
 
     <x-card :padding="false">
         @if ($reviewers->isEmpty())

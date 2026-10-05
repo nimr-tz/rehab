@@ -1,12 +1,14 @@
 @php $user = $registration->user; @endphp
 
 <x-layouts.portal :title="$user->name">
-    <x-page-header eyebrow="Participant" :title="$user->name" :back="route('admin.participants.index')">
-        <x-status :tone="$registration->status->tone()">{{ $registration->status->label() }}</x-status>
-        @if ($registration->isConfirmed())
-            <x-button variant="secondary" size="sm" :href="route('desk.badge', $registration)" icon="download">Badge</x-button>
-        @endif
-    </x-page-header>
+    <x-slot:header>
+        <x-page-header eyebrow="Participant" :title="$user->name" :back="route('admin.participants.index')">
+            <x-status :tone="$registration->status->tone()">{{ $registration->status->label() }}</x-status>
+            @if ($registration->isConfirmed())
+                <x-button variant="secondary" size="sm" :href="route('desk.badge', $registration)" icon="download">Badge</x-button>
+            @endif
+        </x-page-header>
+    </x-slot:header>
 
     <div class="grid gap-6 lg:grid-cols-3">
         <x-card title="Contact">

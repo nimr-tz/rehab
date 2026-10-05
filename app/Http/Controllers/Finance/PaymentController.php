@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Finance;
 
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
@@ -9,6 +10,7 @@ use App\Services\RegistrationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -18,10 +20,12 @@ class PaymentController extends Controller
     {
         $status = $request->query('status', PaymentStatus::Submitted->value);
         $search = trim((string) $request->query('q'));
+        $method = PaymentMethod::tryFrom((string) $request->query('method'));
 
         $payments = Payment::query()
             ->with('registration.user', 'registration.category')
             ->when($status !== 'all', fn ($q) => $q->where('status', $status))
+            ->when($method, fn ($q) => $q->where('method', $method))
             ->when($search !== '', fn ($q) => $q->where(fn ($q) => $q
                 ->where('transaction_reference', 'like', "%{$search}%")
                 ->orWhere('payer_name', 'like', "%{$search}%")
@@ -38,9 +42,34 @@ class PaymentController extends Controller
             'payments' => $payments,
             'status' => $status,
             'search' => $search,
+            'method' => $method,
             'counts' => $totals->groupBy(fn ($row) => $row->status->value)->map->sum('n'),
             'verifiedTotals' => $totals->filter(fn ($row) => $row->status === PaymentStatus::Verified)->pluck('total', 'currency'),
         ]);
+    }
+
+    /** CSV for reconciliation against the bank and mobile money statements. */
+    public function export(Request $request): StreamedResponse
+    {
+        $status = $request->validate(['status' => ['nullable', Rule::in(['all', 'submitted', 'verified', 'rejected'])]])['status'] ?? 'all';
+
+        $payments = Payment::with('registration.user', 'registration.category', 'reviewer')
+            ->when($status !== 'all', fn ($q) => $q->where('status', $status))
+            ->oldest()
+            ->get();
+
+        return response()->streamDownload(function () use ($payments) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Registration', 'Participant', 'Email', 'Category', 'Channel', 'Transaction reference', 'Paid on', 'Currency', 'Amount', 'Status', 'Reviewed by', 'Reviewed at', 'Rejection reason', 'Submitted at']);
+            foreach ($payments as $p) {
+                fputcsv($out, [
+                    $p->registration->reference, $p->registration->user->name, $p->registration->user->email, $p->registration->category->name,
+                    $p->channel(), $p->transaction_reference, $p->paid_on->toDateString(), $p->currency, $p->amount, $p->status->label(),
+                    $p->reviewer?->name, $p->reviewed_at?->toDateTimeString(), $p->rejection_reason, $p->created_at->toDateTimeString(),
+                ]);
+            }
+            fclose($out);
+        }, 'payments-'.$status.'-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     }
 
     public function show(Payment $payment): View

@@ -106,7 +106,7 @@ class AuthenticationTest extends TestCase
         $this->actingAs($user)->get($url)->assertRedirect('/dashboard?verified=1');
 
         $this->assertNotNull($user->fresh()->email_verified_at);
-        $this->get(route('dashboard'))->assertOk()->assertSee('Karibu');
+        $this->get(route('dashboard'))->assertOk()->assertSee('Welcome back');
     }
 
     public function test_a_verified_user_can_sign_in_and_out(): void

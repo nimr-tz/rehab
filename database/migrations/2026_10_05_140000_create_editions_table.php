@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('venue')->nullable();
             $table->string('city')->nullable();
             $table->string('country')->nullable();
+            $table->unsignedInteger('registration_target')->nullable();
             $table->boolean('registration_open')->default(false);
             $table->boolean('abstracts_open')->default(false);
             $table->date('abstract_deadline')->nullable();

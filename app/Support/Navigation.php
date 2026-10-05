@@ -17,66 +17,88 @@ use App\Models\User;
 class Navigation
 {
     /**
-     * @return list<array{label: ?string, items: list<array{label: string, route: string, icon: string, active: string, count?: int}>}>
+     * @return list<array{label: ?string, items: list<array<string, mixed>>}>
      */
     public static function for(User $user): array
     {
         $is = fn (Role ...$roles) => $user->hasAnyRole(array_map(fn (Role $role) => $role->value, $roles));
+        $item = fn (string $label, string $route, string $active, array $extra = []) => ['label' => $label, 'route' => $route, 'active' => $active] + $extra;
         $sections = [];
+
+        // Admins and the registration desk land on the executive summary and the registry instead.
+        $ownDashboard = ! $is(Role::Admin) && ! ($is(Role::RegistrationOfficer) && ! $is(Role::ScientificAdmin, Role::FinanceOfficer, Role::Reviewer, Role::Participant));
+        $overview = $ownDashboard ? [$item('Overview', 'dashboard', 'dashboard')] : [];
 
         if ($is(Role::Participant)) {
             $sections[] = ['label' => null, 'items' => [
-                ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'home', 'active' => 'dashboard'],
-                ['label' => 'Registration & payment', 'route' => 'registration.show', 'icon' => 'ticket', 'active' => 'registration.*'],
-                ['label' => 'My abstracts', 'route' => 'abstracts.index', 'icon' => 'document', 'active' => 'abstracts.*'],
-                ['label' => 'Programme', 'route' => 'programme', 'icon' => 'calendar', 'active' => 'programme'],
-                ['label' => 'Profile', 'route' => 'profile.edit', 'icon' => 'user', 'active' => 'profile.*'],
+                ...$overview,
+                $item('Registration & payment', 'registration.show', 'registration.show'),
+                $item('Badge & check-in', 'registration.badge.show', 'registration.badge.show'),
+                $item('My abstracts', 'abstracts.index', 'abstracts.*', ['count' => $user->abstracts()->whereIn('status', [AbstractStatus::Draft, AbstractStatus::UnderReview])->count()]),
+                $item('Programme', 'programme', 'programme'),
             ]];
-        } else {
-            $sections[] = ['label' => null, 'items' => [
-                ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'home', 'active' => 'dashboard'],
-                ['label' => 'Programme', 'route' => 'programme', 'icon' => 'calendar', 'active' => 'programme'],
-                ['label' => 'Profile', 'route' => 'profile.edit', 'icon' => 'user', 'active' => 'profile.*'],
-            ]];
+        } elseif ($overview) {
+            $sections[] = ['label' => null, 'items' => $overview];
         }
 
         if ($is(Role::Reviewer)) {
             $sections[] = ['label' => 'Reviewing', 'items' => [
-                ['label' => 'My reviews', 'route' => 'reviews.index', 'icon' => 'star', 'active' => 'reviews.*',
-                    'count' => ReviewAssignment::where('reviewer_id', $user->id)->whereNull('completed_at')->count()],
+                $item('Assigned abstracts', 'reviews.index', 'reviews.*', ['count' => ReviewAssignment::where('reviewer_id', $user->id)->whereNull('completed_at')->count()]),
             ]];
         }
 
         if ($is(Role::ScientificAdmin, Role::Admin)) {
+            $ready = AbstractSubmission::where('status', AbstractStatus::UnderReview)
+                ->whereDoesntHave('reviews', fn ($q) => $q->whereNull('completed_at'))->count();
             $sections[] = ['label' => 'Scientific committee', 'items' => [
-                ['label' => 'Abstracts', 'route' => 'scientific.abstracts.index', 'icon' => 'clipboard', 'active' => 'scientific.abstracts.*',
-                    'count' => AbstractSubmission::whereIn('status', [AbstractStatus::Submitted, AbstractStatus::UnderReview])->count()],
-                ['label' => 'Reviewers', 'route' => 'scientific.reviewers', 'icon' => 'users', 'active' => 'scientific.reviewers'],
+                $item('Abstracts', 'scientific.abstracts.index', 'scientific.abstracts.*', [
+                    'not_query' => ['status', 'ready'],
+                    'count' => AbstractSubmission::where('status', AbstractStatus::Submitted)->count(),
+                ]),
+                $item('Decision queue', 'scientific.abstracts.index', 'scientific.abstracts.index', ['params' => ['status' => 'ready'], 'query' => ['status', 'ready'], 'count' => $ready]),
+                $item('Reviewers', 'scientific.reviewers', 'scientific.reviewers'),
             ]];
         }
 
         if ($is(Role::FinanceOfficer, Role::Admin)) {
             $sections[] = ['label' => 'Finance', 'items' => [
-                ['label' => 'Payments', 'route' => 'finance.payments.index', 'icon' => 'banknotes', 'active' => 'finance.*',
-                    'count' => Payment::where('status', PaymentStatus::Submitted)->count()],
+                $item('Verification queue', 'finance.payments.index', 'finance.*', ['count' => Payment::where('status', PaymentStatus::Submitted)->count()]),
             ]];
         }
 
         if ($is(Role::RegistrationOfficer, Role::Admin)) {
             $sections[] = ['label' => 'Registration desk', 'items' => [
-                ['label' => 'Check-in', 'route' => 'desk.index', 'icon' => 'qr', 'active' => 'desk.*'],
+                $item('Registry & check-in', 'desk.index', 'desk.index'),
+                $item('Print queue', 'desk.queue', 'desk.queue'),
             ]];
         }
 
         if ($is(Role::Admin)) {
             $sections[] = ['label' => 'Administration', 'items' => [
-                ['label' => 'Overview', 'route' => 'admin.overview', 'icon' => 'chart', 'active' => 'admin.overview'],
-                ['label' => 'Participants', 'route' => 'admin.participants.index', 'icon' => 'users', 'active' => 'admin.participants.*'],
-                ['label' => 'Users & roles', 'route' => 'admin.users.index', 'icon' => 'shield', 'active' => 'admin.users.*'],
-                ['label' => 'Summit settings', 'route' => 'admin.settings.edit', 'icon' => 'cog', 'active' => 'admin.settings.*'],
+                $item('Executive summary', 'admin.overview', 'admin.overview'),
+                $item('Participants', 'admin.participants.index', 'admin.participants.*'),
+                $item('Users & roles', 'admin.users.index', 'admin.users.*'),
+                $item('Summit settings', 'admin.settings.edit', 'admin.settings.*'),
             ]];
         }
 
+        $sections[] = ['label' => 'Account', 'items' => [
+            $item('Profile', 'profile.edit', 'profile.*'),
+        ]];
+
         return $sections;
+    }
+
+    /** Placeholder for the search box in the top bar. */
+    public static function searchHint(User $user): string
+    {
+        return match (true) {
+            $user->hasRole(Role::Admin->value) => 'Search people, abstracts, payments…',
+            $user->hasRole(Role::ScientificAdmin->value) => 'Search abstracts, reviewers, codes…',
+            $user->hasRole(Role::FinanceOfficer->value) => 'Search name, reference, transaction…',
+            $user->hasRole(Role::RegistrationOfficer->value) => 'Search attendees…',
+            $user->hasRole(Role::Reviewer->value) => 'Search assigned abstracts…',
+            default => 'Search sessions and your abstracts…',
+        };
     }
 }

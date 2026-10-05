@@ -42,12 +42,22 @@ The portal doubles as a demonstration of the complete product. **Every link must
 
 - `app/Support/Summit.php`: the current edition, as views see it (`$summit` in every view). It falls back to `config/summit.php` when no edition exists.
 - `app/Services/RegistrationService.php`: registration and payments (locks, transactions, emails). `AbstractService.php`: abstracts, double-blind assignment, reviews, decisions and conference codes. `DocumentService.php`: badge and invitation letter PDFs.
-- `app/Support/Navigation.php`: the sidebar, one section per role.
+- `app/Support/Navigation.php`: the sidebar, one section per role, plus the top-bar search hint.
+- `app/Services/DashboardService.php`: the numbers behind each role's dashboard (`resources/views/dashboards/*`, the admin executive summary and the desk). Charts are plain SVG components in `resources/views/components/chart`, coloured from `App\Support\Palette` (validated categorical order; sequential brand ramp for heatmaps).
 - `resources/views/components`: the component library (button, card, status, stat, page-header, empty, form fields, icon).
 
 Port 8100 avoids the old portal, which often runs on 8000. Do not open this app through XAMPP's Apache (`localhost/rehab-events/public`), because that runs PHP 8.2.
 
 Do not upgrade or reconfigure XAMPP's PHP. Other projects depend on it.
+
+## Deployment (do not break)
+
+Pushing to `main` on `github.com/kmchaina/rehab` deploys automatically. John Mduda's `.github/workflows/build-and-deploy.yml` builds `ghcr.io/nimr-tz/rehab:sha-<commit>` from the `Dockerfile` and pins it in `nimr-tz/platform-gitops` (`clusters/msmt-02/research/rehab`). Argo CD then runs `php artisan migrate --force` and rolls out to https://rehabhealth.apps.nimr.or.tz.
+
+- Never force-push `main`, and never remove or edit the deploy workflow or `.dockerignore`.
+- Keep the Dockerfile contract: php-fpm on port 9000, app in `/var/www`, nginx sidecar, storage volume. The server is MySQL with `APP_ENV=production`.
+- Every migration must work on MySQL (identifiers at most 64 characters) and through the automatic migrate hook. `2026_10_05_090000_replace_legacy_portal_schema` moved the previous portal's tables to `legacy_*`; it does nothing on other databases.
+- Test a deploy locally with Docker: build from `git checkout-index` output, run `migrate --force` against MySQL 8, then serve through php-fpm and nginx.
 
 ## Rules
 

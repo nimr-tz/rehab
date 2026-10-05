@@ -63,3 +63,10 @@ Button (primary, secondary, ghost, danger; sm, md, lg) · Field (label, leading 
 - `logo-mark.png` (trimmed, transparent) goes in the portal header next to the live-text wordmark "Rehab Health" and "Events Portal".
 - `logo-2027-animated.webp` appears on the sign-in and public hero only, sized at 400px or smaller. It plays once over the still image `logo-2027-still.webp`. With reduced motion, only the still shows.
 - The client's files are raster images. A vector logo is still needed for printed badges and certificates.
+
+## Portal and dashboards
+
+- The portal uses a dark teal sidebar (`brand-700`) with sun-yellow active dots and counts. The top bar holds the page heading, search and notifications.
+- Headline numbers use the `x-kpi` tile: a small caps label, a large `brand-700` number, one line of context and a thin progress bar.
+- **Chart colours** come from `App\Support\Palette`, checked with the dataviz validator. Categorical order is brand-500 `#1b7fa3`, ember-600 `#bd520a`, sun-500 `#d69a00`, coral-600 `#d9574b`. A fifth category becomes a bar list instead of more colours. Olive and the light logo tints fail as chart fills: olive reads grey, and the light tints have too little contrast.
+- Heatmaps use the single-hue brand ramp. Every chart prints its values or shows them on hover, so colour never carries meaning alone.

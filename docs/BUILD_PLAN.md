@@ -64,6 +64,10 @@ The portal is a complete, working demonstration with sample data (`DemoSeeder`).
 - Review: double-blind assignment (authors and co-authors are excluded), scoring, recommendations, decisions, and conference codes.
 - Staff: role-based navigation and dashboards, the finance queue, the scientific committee, reviewer workload, the registration desk check-in, the admin overview, participants, users and roles, and summit settings.
 
+Role dashboards follow the client's Dashboards design: the participant journey, scientific readiness with a decision queue, the executive summary, the reviewer desk, the finance operations desk and the registration desk with batch badge printing. There are also in-app notifications, role-aware search, a CSV export of payments and a registration target.
+
+Deployment: pushing to `main` deploys through John Mduda's GitOps pipeline (see CLAUDE.md).
+
 Still to build for the live 2027 summit: group registration, sponsors, session chair and rapporteur applications, presentation uploads, programme editing in the portal (the demo programme is seeded), certificates, the abstract book, the staff scanning app API, and email campaigns.
 
 ### Phase 0: Foundation and design system

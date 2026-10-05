@@ -1,12 +1,18 @@
 <x-layouts.portal title="Abstracts">
-    <x-page-header eyebrow="Scientific committee" title="Abstracts"
-        description="Assign reviewers, follow the reviews and record decisions. Reviewers never see the authors." />
+    <x-slot:header>
+        <x-page-header eyebrow="Scientific committee" title="Abstracts"
+            description="Assign reviewers, follow the reviews and record decisions. Reviewers never see the authors." />
+    </x-slot:header>
 
     {{-- Status tabs --}}
     <div class="flex flex-wrap gap-2">
         <a href="{{ route('scientific.abstracts.index', array_filter(['topic' => $filters['topic'], 'q' => $filters['search']])) }}"
            @class(['rounded-full px-4 py-2 text-sm font-semibold transition', 'bg-brand-700 text-white' => ! $filters['status'], 'bg-white text-ink-600 ring-1 ring-ink-200 hover:bg-ink-50' => $filters['status']])>
-            All <span class="ml-1 opacity-70">{{ $counts->sum() }}</span>
+            All <span class="ml-1 opacity-70">{{ $counts->except('ready')->sum() }}</span>
+        </a>
+        <a href="{{ route('scientific.abstracts.index', array_filter(['status' => 'ready', 'topic' => $filters['topic'], 'q' => $filters['search']])) }}"
+           @class(['rounded-full px-4 py-2 text-sm font-semibold transition', 'bg-ember-600 text-white' => $filters['status'] === 'ready', 'bg-ember-50 text-ember-700 ring-1 ring-ember-200 hover:bg-ember-100' => $filters['status'] !== 'ready'])>
+            Ready for decision <span class="ml-1 opacity-70">{{ $counts['ready'] ?? 0 }}</span>
         </a>
         @foreach ($statuses as $s)
             <a href="{{ route('scientific.abstracts.index', array_filter(['status' => $s->value, 'topic' => $filters['topic'], 'q' => $filters['search']])) }}"

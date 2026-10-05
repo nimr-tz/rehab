@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('accessibility_needs')->nullable();
             $table->string('qr_token', 40)->unique();
             $table->timestamp('confirmed_at')->nullable();
+            $table->timestamp('badge_printed_at')->nullable();
             $table->timestamp('checked_in_at')->nullable();
             $table->timestamps();
 

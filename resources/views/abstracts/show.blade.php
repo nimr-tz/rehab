@@ -6,11 +6,13 @@
 @endphp
 
 <x-layouts.portal :title="$abstract->title">
-    <x-page-header :eyebrow="$abstract->code ?? 'Abstract'" :title="$abstract->title" :back="route('abstracts.index')">
-        @if ($abstract->status->isEditable() && $abstract->edition->acceptsAbstracts())
-            <x-button variant="secondary" :href="route('abstracts.edit', $abstract)" icon="pencil">Edit</x-button>
-        @endif
-    </x-page-header>
+    <x-slot:header>
+        <x-page-header :eyebrow="$abstract->code ?? 'Abstract'" :title="$abstract->title" :back="route('abstracts.index')">
+            @if ($abstract->status->isEditable() && $abstract->edition->acceptsAbstracts())
+                <x-button variant="secondary" :href="route('abstracts.edit', $abstract)" icon="pencil">Edit</x-button>
+            @endif
+        </x-page-header>
+    </x-slot:header>
 
     @if ($abstract->status === AbstractStatus::Accepted)
         <x-alert tone="success">

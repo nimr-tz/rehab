@@ -1,6 +1,8 @@
 <x-layouts.portal title="Users & roles">
-    <x-page-header eyebrow="Administration" title="Users & roles"
-        description="Give staff their roles. A person can hold several, for example participant and reviewer." />
+    <x-slot:header>
+        <x-page-header eyebrow="Administration" title="Users & roles"
+            description="Give staff their roles. A person can hold several, for example participant and reviewer." />
+    </x-slot:header>
 
     @error('roles') <x-alert tone="danger">{{ $message }}</x-alert> @enderror
 

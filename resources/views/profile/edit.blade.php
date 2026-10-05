@@ -1,5 +1,7 @@
 <x-layouts.portal title="Profile">
-    <x-page-header title="Profile" description="Your details as they appear on badges, certificates and letters." />
+    <x-slot:header>
+        <x-page-header title="Profile" description="Your details as they appear on badges, certificates and letters." />
+    </x-slot:header>
 
     <div class="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <x-card title="Personal details">

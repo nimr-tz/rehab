@@ -1,3 +1,4 @@
+{{-- One A6 badge per page. $badges: list of ['registration' => Registration, 'qr' => data URI]. --}}
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,12 +6,13 @@
     <style>
         @page { margin: 0; }
         body { margin: 0; font-family: DejaVu Sans, sans-serif; color: #232733; }
+        .page { position: relative; height: 419px; page-break-after: always; }
+        .page:last-child { page-break-after: auto; }
         .top { background: #024f6d; color: #fff; padding: 18px 20px 14px; }
         .top table { width: 100%; border-collapse: collapse; }
         .logo { width: 46px; }
         .event { font-size: 13px; font-weight: bold; line-height: 1.25; }
         .event small { display: block; font-size: 8.5px; font-weight: normal; letter-spacing: 1px; color: #b0dbe9; text-transform: uppercase; }
-        .stripe { height: 6px; }
         .stripe td { height: 6px; padding: 0; }
         .body { padding: 22px 20px 0; text-align: center; }
         .name { font-size: 21px; font-weight: bold; line-height: 1.2; color: #024f6d; }
@@ -23,26 +25,30 @@
     </style>
 </head>
 <body>
-    <div class="top">
-        <table><tr>
-            <td style="width: 54px"><img class="logo" src="{{ $logo }}" alt=""></td>
-            <td class="event">{{ $summit->title() }}<small>{{ $summit->dateRange() ?? $summit->get('year') }}{{ $summit->venueLine() ? ' · '.$summit->get('city') : '' }}</small></td>
-        </tr></table>
-    </div>
-    <table class="stripe" style="width: 100%; border-collapse: collapse;"><tr>
-        <td style="background: #df670d"></td><td style="background: #fd9a8f"></td><td style="background: #45582e"></td><td style="background: #f2b302"></td>
-    </tr></table>
+    @foreach ($badges as ['registration' => $registration, 'qr' => $qr])
+        <div class="page">
+            <div class="top">
+                <table><tr>
+                    <td style="width: 54px"><img class="logo" src="{{ $logo }}" alt=""></td>
+                    <td class="event">{{ $summit->title() }}<small>{{ $summit->dateRange() ?? $summit->get('year') }}{{ $summit->venueLine() ? ' · '.$summit->get('city') : '' }}</small></td>
+                </tr></table>
+            </div>
+            <table class="stripe" style="width: 100%; border-collapse: collapse;"><tr>
+                <td style="background: #df670d"></td><td style="background: #fd9a8f"></td><td style="background: #45582e"></td><td style="background: #f2b302"></td>
+            </tr></table>
 
-    <div class="body">
-        <div class="name">{{ $registration->displayName() }}</div>
-        @if ($registration->user->institution)
-            <div class="institution">{{ $registration->user->institution }}</div>
-        @endif
-        <div class="country">{{ $registration->user->countryName() }}</div>
-        <div class="qr"><img src="{{ $qr }}" alt=""></div>
-        <div class="ref">{{ $registration->reference }}</div>
-    </div>
+            <div class="body">
+                <div class="name">{{ $registration->displayName() }}</div>
+                @if ($registration->user->institution)
+                    <div class="institution">{{ $registration->user->institution }}</div>
+                @endif
+                <div class="country">{{ $registration->user->countryName() }}</div>
+                <div class="qr"><img src="{{ $qr }}" alt=""></div>
+                <div class="ref">{{ $registration->reference }}</div>
+            </div>
 
-    <div class="category">{{ $registration->category->is_student ? 'Student' : 'Participant' }}</div>
+            <div class="category">{{ $registration->category->is_student ? 'Student' : 'Participant' }}</div>
+        </div>
+    @endforeach
 </body>
 </html>

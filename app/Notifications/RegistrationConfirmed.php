@@ -13,7 +13,7 @@ class RegistrationConfirmed extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -31,5 +31,17 @@ class RegistrationConfirmed extends Notification
         }
 
         return $mail->action('Download your badge', route('registration.show'));
+    }
+
+    /** Shown under the bell in the portal. */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'title' => 'Registration confirmed',
+            'body' => 'Your badge'.($this->registration->needs_invitation_letter ? ' and invitation letter are' : ' is').' ready to download.',
+            'url' => route('registration.badge.show'),
+            'icon' => 'check-circle',
+            'tone' => 'success',
+        ];
     }
 }

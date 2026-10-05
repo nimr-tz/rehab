@@ -65,6 +65,13 @@ class RegistrationController extends Controller
             ->with('status', 'You are registered. Pay the fee below to confirm your place.');
     }
 
+    public function badgePage(Request $request): View
+    {
+        return view('registration.badge', [
+            'registration' => $request->user()->registrationFor($this->summit->edition())?->load('category'),
+        ]);
+    }
+
     public function badge(Request $request, DocumentService $documents): Response
     {
         $registration = $request->user()->registrationFor($this->summit->edition());

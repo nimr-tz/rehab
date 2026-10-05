@@ -12,7 +12,7 @@ class AbstractSubmitted extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -23,5 +23,17 @@ class AbstractSubmitted extends Notification
             ->line('We received your abstract "'.$this->abstract->title.'".')
             ->line('It will be reviewed double-blind by the scientific committee. You can still edit or withdraw it until review starts.')
             ->action('View your abstract', route('abstracts.show', $this->abstract));
+    }
+
+    /** Shown under the bell in the portal. */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'title' => 'Abstract received',
+            'body' => '"'.$this->abstract->title.'" is with the scientific committee.',
+            'url' => route('abstracts.show', $this->abstract),
+            'icon' => 'document',
+            'tone' => 'info',
+        ];
     }
 }

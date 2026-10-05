@@ -1,6 +1,8 @@
 <x-layouts.portal title="My reviews">
-    <x-page-header eyebrow="Reviewing" title="My reviews"
-        description="Reviews are double-blind: you see the abstract, never the authors. Score each one and recommend a decision." />
+    <x-slot:header>
+        <x-page-header eyebrow="Reviewing" title="My reviews"
+            description="Reviews are double-blind: you see the abstract, never the authors. Score each one and recommend a decision." />
+    </x-slot:header>
 
     <x-card title="Waiting for you" :padding="false">
         @if ($pending->isEmpty())

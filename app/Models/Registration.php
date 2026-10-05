@@ -20,6 +20,7 @@ class Registration extends Model
             'amount' => 'decimal:2',
             'needs_invitation_letter' => 'boolean',
             'confirmed_at' => 'datetime',
+            'badge_printed_at' => 'datetime',
             'checked_in_at' => 'datetime',
         ];
     }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeskController;
 use App\Http\Controllers\Finance\PaymentController as FinancePaymentController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgrammeController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Scientific\AbstractController as ScientificAbstractController;
 use App\Http\Controllers\Scientific\ReviewerController;
+use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'home')->name('home');
@@ -24,6 +26,9 @@ Route::get('/programme', ProgrammeController::class)->name('programme');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/search', SearchController::class)->name('search');
+    Route::get('/notifications/{id}', [NotificationController::class, 'open'])->name('notifications.open');
+    Route::post('/notifications/read', [NotificationController::class, 'readAll'])->name('notifications.read');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -33,6 +38,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:participant')->group(function () {
         Route::get('/registration', [RegistrationController::class, 'show'])->name('registration.show');
         Route::post('/registration', [RegistrationController::class, 'store'])->name('registration.store');
+        Route::get('/registration/badge-and-check-in', [RegistrationController::class, 'badgePage'])->name('registration.badge.show');
         Route::get('/registration/badge', [RegistrationController::class, 'badge'])->name('registration.badge');
         Route::get('/registration/invitation-letter', [RegistrationController::class, 'letter'])->name('registration.letter');
         Route::post('/registration/payments', [PaymentController::class, 'store'])->name('registration.payments.store');
@@ -66,6 +72,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Finance
     Route::middleware('role:finance_officer|admin')->prefix('finance')->name('finance.')->group(function () {
         Route::get('/payments', [FinancePaymentController::class, 'index'])->name('payments.index');
+        Route::get('/payments/export', [FinancePaymentController::class, 'export'])->name('payments.export');
         Route::get('/payments/{payment}', [FinancePaymentController::class, 'show'])->name('payments.show');
         Route::get('/payments/{payment}/proof', [FinancePaymentController::class, 'proof'])->name('payments.proof');
         Route::post('/payments/{payment}/verify', [FinancePaymentController::class, 'verify'])->name('payments.verify');
@@ -75,6 +82,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Registration desk
     Route::middleware('role:registration_officer|admin')->prefix('desk')->name('desk.')->group(function () {
         Route::get('/', [DeskController::class, 'index'])->name('index');
+        Route::get('/print-queue', [DeskController::class, 'queue'])->name('queue');
+        Route::post('/print-queue/batch', [DeskController::class, 'printBatch'])->name('print-batch');
         Route::post('/{registration}/check-in', [DeskController::class, 'checkIn'])->name('check-in');
         Route::get('/{registration}/badge', [DeskController::class, 'badge'])->name('badge');
     });

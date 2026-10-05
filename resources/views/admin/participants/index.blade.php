@@ -1,5 +1,7 @@
 <x-layouts.portal title="Participants">
-    <x-page-header eyebrow="Administration" title="Participants" :description="$registrations->total().' registrations for the '.$summit->title()" />
+    <x-slot:header>
+        <x-page-header eyebrow="Administration" title="Participants" :description="$registrations->total().' registrations for the '.$summit->title()" />
+    </x-slot:header>
 
     <x-card :padding="false">
         <form method="GET" class="flex flex-col gap-3 border-b border-ink-100 p-4 lg:flex-row">

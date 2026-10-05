@@ -8,8 +8,10 @@
 @endphp
 
 <x-layouts.portal title="Summit settings">
-    <x-page-header eyebrow="Administration" title="Summit settings"
-        description="Everything the public pages, registration and abstract submission read. Leave a field empty and it shows as “To be announced”." />
+    <x-slot:header>
+        <x-page-header eyebrow="Administration" title="Summit settings"
+            description="Everything the public pages, registration and abstract submission read. Leave a field empty and it shows as “To be announced”." />
+    </x-slot:header>
 
     @if ($errors->any())
         <x-alert tone="danger">Please check the highlighted fields.</x-alert>
@@ -45,6 +47,7 @@
                 <div class="space-y-4">
                     <x-form.checkbox name="registration_open" label="Registration is open" :checked="$edition->registration_open" hint="Participants can register and pay." />
                     <x-form.checkbox name="abstracts_open" label="Abstract submission is open" :checked="$edition->abstracts_open" hint="Closes automatically after the deadline." />
+                    <x-form.input name="registration_target" type="number" min="1" label="Registration target (optional)" :value="$edition->registration_target" hint="Drives the pace line on the executive summary." />
                 </div>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <x-form.input name="abstract_deadline" type="date" label="Abstract deadline" :value="$date('abstract_deadline')" />

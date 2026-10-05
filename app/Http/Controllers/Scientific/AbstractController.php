@@ -27,7 +27,9 @@ class AbstractController extends Controller
             ->where('edition_id', $edition?->id)
             ->where('status', '!=', AbstractStatus::Draft)
             ->with(['topic', 'submitter', 'reviews'])
-            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($status === 'ready', fn ($q) => $q->where('status', AbstractStatus::UnderReview)
+                ->whereHas('reviews')->whereDoesntHave('reviews', fn ($q) => $q->whereNull('completed_at')))
+            ->when($status && $status !== 'ready', fn ($q) => $q->where('status', $status))
             ->when($topic, fn ($q) => $q->where('topic_id', $topic))
             ->when($search !== '', fn ($q) => $q->where(fn ($q) => $q
                 ->where('title', 'like', "%{$search}%")
@@ -37,6 +39,9 @@ class AbstractController extends Controller
         $counts = AbstractSubmission::where('edition_id', $edition?->id)
             ->where('status', '!=', AbstractStatus::Draft)
             ->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+
+        $counts['ready'] = AbstractSubmission::where('edition_id', $edition?->id)->where('status', AbstractStatus::UnderReview)
+            ->whereHas('reviews')->whereDoesntHave('reviews', fn ($q) => $q->whereNull('completed_at'))->count();
 
         return view('scientific.abstracts.index', [
             'abstracts' => $query->latest('submitted_at')->paginate(15)->withQueryString(),

@@ -13,9 +13,11 @@
 @endphp
 
 <x-layouts.portal :title="$abstract ? 'Edit abstract' : 'New abstract'">
-    <x-page-header :eyebrow="$summit->title()" :title="$abstract ? 'Edit abstract' : 'Submit an abstract'"
-        :back="$abstract ? route('abstracts.show', $abstract) : route('abstracts.index')"
-        :description="'Up to '.AbstractSubmission::WORD_LIMIT.' words across the four sections. Do not put author names in the text: review is double-blind.'" />
+    <x-slot:header>
+        <x-page-header :eyebrow="$summit->title()" :title="$abstract ? 'Edit abstract' : 'Submit an abstract'"
+            :back="$abstract ? route('abstracts.show', $abstract) : route('abstracts.index')"
+            :description="'Up to '.AbstractSubmission::WORD_LIMIT.' words across the four sections. Do not put author names in the text: review is double-blind.'" />
+    </x-slot:header>
 
     @if ($errors->any())
         <x-alert tone="danger">Please check the highlighted fields.</x-alert>

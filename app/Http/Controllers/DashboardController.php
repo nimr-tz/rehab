@@ -2,46 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AbstractStatus;
-use App\Enums\PaymentStatus;
 use App\Enums\Role;
-use App\Models\AbstractSubmission;
-use App\Models\Payment;
+use App\Services\DashboardService;
 use App\Support\Summit;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * Each person lands on the dashboard of their main role. Admins land on the
+ * executive summary and registration officers on the registry, which are
+ * their dashboards.
+ */
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, Summit $summit): View
+    public function __invoke(Request $request, Summit $summit, DashboardService $dashboards): View|RedirectResponse
     {
         $user = $request->user();
         $edition = $summit->edition();
+        $is = fn (Role $role) => $user->hasRole($role->value);
 
-        $registration = $user->registrationFor($edition)?->load('category', 'latestPayment');
-        $abstracts = $edition
-            ? $user->abstracts()->where('edition_id', $edition->id)->with('topic')->latest()->get()
-            : collect();
-
-        return view('dashboard', [
-            'user' => $user,
-            'edition' => $edition,
-            'registration' => $registration,
-            'abstracts' => $abstracts,
-            'upcomingSessions' => $edition ? $edition->sessions()->where('kind', '!=', 'break')->limit(4)->get() : collect(),
-            'staff' => [
-                'reviews' => $user->hasRole(Role::Reviewer->value)
-                    ? $user->reviewAssignments()->whereNull('completed_at')->count() : null,
-                'payments' => $user->hasAnyRole([Role::FinanceOfficer->value, Role::Admin->value])
-                    ? Payment::where('status', PaymentStatus::Submitted)->count() : null,
-                'toAssign' => $user->hasAnyRole([Role::ScientificAdmin->value, Role::Admin->value])
-                    ? AbstractSubmission::where('status', AbstractStatus::Submitted)->count() : null,
-                'toDecide' => $user->hasAnyRole([Role::ScientificAdmin->value, Role::Admin->value])
-                    ? AbstractSubmission::where('status', AbstractStatus::UnderReview)
-                        ->whereDoesntHave('reviews', fn ($q) => $q->whereNull('completed_at'))->count() : null,
-                'isAdmin' => $user->hasRole(Role::Admin->value),
-                'isDesk' => $user->hasAnyRole([Role::RegistrationOfficer->value]),
-            ],
-        ]);
+        return match (true) {
+            $is(Role::Admin) => redirect()->route('admin.overview'),
+            $is(Role::ScientificAdmin) => view('dashboards.scientific', $dashboards->scientific($edition) + ['user' => $user]),
+            $is(Role::FinanceOfficer) => view('dashboards.finance', $dashboards->finance() + ['user' => $user]),
+            $is(Role::RegistrationOfficer) => redirect()->route('desk.index'),
+            $is(Role::Reviewer) => view('dashboards.reviewer', $dashboards->reviewer($user, $edition) + ['user' => $user, 'edition' => $edition]),
+            default => view('dashboards.participant', $dashboards->participant($user, $edition) + ['user' => $user, 'edition' => $edition]),
+        };
     }
 }

@@ -46,6 +46,7 @@ class SettingsController extends Controller
             'venue' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:120'],
             'country' => ['nullable', 'string', 'max:120'],
+            'registration_target' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'registration_open' => ['boolean'],
             'abstracts_open' => ['boolean'],
             'abstract_deadline' => ['nullable', 'date'],

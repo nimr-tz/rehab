@@ -4,8 +4,10 @@
 @endphp
 
 <x-layouts.portal title="Payments">
-    <x-page-header eyebrow="Finance" title="Payments"
-        description="Check each payment against the bank statement or mobile money account, then verify or reject it. Participants are emailed either way." />
+    <x-slot:header>
+        <x-page-header eyebrow="Finance" title="Payments"
+            description="Check each payment against the bank statement or mobile money account, then verify or reject it. Participants are emailed either way." />
+    </x-slot:header>
 
     <div class="grid gap-4 sm:grid-cols-3">
         <x-stat label="Waiting for verification" :value="$counts['submitted'] ?? 0" icon="clock" tint="bg-sun-100 text-sun-800" />

@@ -13,7 +13,7 @@ class AbstractDecided extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -37,5 +37,17 @@ class AbstractDecided extends Notification
 
         return $mail->line('The reviewers\' comments are available in the portal.')
             ->action('View the decision', route('abstracts.show', $this->abstract));
+    }
+
+    /** Shown under the bell in the portal. */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'title' => $this->abstract->status === AbstractStatus::Accepted ? 'Abstract accepted · '.$this->abstract->code : 'Decision on your abstract',
+            'body' => '"'.$this->abstract->title.'"',
+            'url' => route('abstracts.show', $this->abstract),
+            'icon' => 'clipboard',
+            'tone' => $this->abstract->status === AbstractStatus::Accepted ? 'success' : 'warning',
+        ];
     }
 }

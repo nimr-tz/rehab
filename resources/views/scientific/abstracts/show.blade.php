@@ -8,9 +8,11 @@
 @endphp
 
 <x-layouts.portal :title="$abstract->title">
-    <x-page-header :eyebrow="($abstract->code ?? $abstract->blindId()).' · '.$abstract->topic->name" :title="$abstract->title" :back="route('scientific.abstracts.index')">
-        <x-status :tone="$abstract->status->tone()">{{ $abstract->status->label() }}</x-status>
-    </x-page-header>
+    <x-slot:header>
+        <x-page-header :eyebrow="($abstract->code ?? $abstract->blindId()).' · '.$abstract->topic->name" :title="$abstract->title" :back="route('scientific.abstracts.index')">
+            <x-status :tone="$abstract->status->tone()">{{ $abstract->status->label() }}</x-status>
+        </x-page-header>
+    </x-slot:header>
 
     <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div class="space-y-6">

@@ -1,12 +1,14 @@
 <x-layouts.portal title="My abstracts">
-    <x-page-header :eyebrow="$summit->title()" title="My abstracts"
-        :description="$edition?->acceptsAbstracts()
-            ? 'Submission is open until '.\App\Support\Summit::formatDate($edition->abstract_deadline).'. You can edit a submitted abstract until review starts.'
-            : 'Abstract submission is closed.'">
-        @if ($edition?->acceptsAbstracts())
-            <x-button :href="route('abstracts.create')" icon="plus">New abstract</x-button>
-        @endif
-    </x-page-header>
+    <x-slot:header>
+        <x-page-header :eyebrow="$summit->title()" title="My abstracts"
+            :description="$edition?->acceptsAbstracts()
+                ? 'Submission is open until '.\App\Support\Summit::formatDate($edition->abstract_deadline).'. You can edit a submitted abstract until review starts.'
+                : 'Abstract submission is closed.'">
+            @if ($edition?->acceptsAbstracts())
+                <x-button :href="route('abstracts.create')" icon="plus">New abstract</x-button>
+            @endif
+        </x-page-header>
+    </x-slot:header>
 
     <x-card :padding="false">
         @if ($abstracts->isEmpty())
