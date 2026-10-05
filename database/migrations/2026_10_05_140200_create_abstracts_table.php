@@ -81,7 +81,7 @@ return new class extends Migration
             $table->foreignId('abstract_id')->constrained('abstracts')->cascadeOnDelete();
             $table->unsignedSmallInteger('position')->default(0);
 
-            $table->unique(['programme_session_id', 'abstract_id']);
+            $table->unique(['programme_session_id', 'abstract_id'], 'session_abstract_unique');
         });
     }
 
