@@ -19,11 +19,14 @@ The app needs PHP 8.4. This machine has two PHPs:
 | `php`, `composer` | 8.2 (XAMPP) | Other projects in htdocs. Do not use it here. |
 
 ```bash
-php84 artisan serve
+php84 artisan serve      # http://127.0.0.1:8100 (SERVER_PORT in .env)
+composer84 run dev       # server, queue, logs and Vite together
 php84 artisan test
 composer84 install
-npm run dev
+npm run build
 ```
+
+Port 8100 avoids the old portal, which often runs on 8000. Do not open this app through XAMPP's Apache (`localhost/rehab-events/public`), because that runs PHP 8.2.
 
 Do not upgrade or reconfigure XAMPP's PHP. Other projects depend on it.
 

@@ -3,7 +3,157 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/* Design tokens. design/theme.css is the reviewed copy; keep the two identical. */
+@theme section of resources/css/app.css.
+ | The static previews in this folder carry a copy inline. When a token changes,
+ | change it here first, then in the previews.
+ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+    /* Brand teal: the hand and crescent of the logo (700) */
+    --color-brand-50: #eff8fb;
+    --color-brand-100: #d7edf4;
+    --color-brand-200: #b0dbe9;
+    --color-brand-300: #7cc0d7;
+    --color-brand-400: #3f9dbe;
+    --color-brand-500: #1b7fa3;
+    --color-brand-600: #0b6688;
+    --color-brand-700: #024f6d;
+    --color-brand-800: #043f57;
+    --color-brand-900: #073348;
+    --color-brand-950: #04202e;
+
+    /* Ink: text and neutrals, anchored on the wordmark (800) */
+    --color-ink-50: #f6f8fa;
+    --color-ink-100: #eef1f5;
+    --color-ink-200: #dfe4eb;
+    --color-ink-300: #c3cad5;
+    --color-ink-400: #949cab;
+    --color-ink-500: #6b7386;
+    --color-ink-600: #515a6c;
+    --color-ink-700: #3e4556;
+    --color-ink-800: #303440;
+    --color-ink-900: #232733;
+    --color-ink-950: #161922;
+
+    /* Figure accents: categories only, never status */
+    --color-ember-50: #fff4ec;
+    --color-ember-100: #fee4cf;
+    --color-ember-200: #fcc79e;
+    --color-ember-300: #f9a265;
+    --color-ember-400: #ef8233;
+    --color-ember-500: #df670d;
+    --color-ember-600: #bd520a;
+    --color-ember-700: #963f0b;
+    --color-ember-800: #763310;
+    --color-ember-900: #5f2b10;
+
+    --color-coral-50: #fff4f2;
+    --color-coral-100: #ffe5e1;
+    --color-coral-200: #ffcdc6;
+    --color-coral-300: #feb2a9;
+    --color-coral-400: #fd9a8f;
+    --color-coral-500: #f2766a;
+    --color-coral-600: #d9574b;
+    --color-coral-700: #b5443a;
+    --color-coral-800: #923832;
+    --color-coral-900: #78322e;
+
+    --color-olive-50: #f4f7ef;
+    --color-olive-100: #e5ecd9;
+    --color-olive-200: #ccdab5;
+    --color-olive-300: #aac088;
+    --color-olive-400: #87a35f;
+    --color-olive-500: #688644;
+    --color-olive-600: #516a35;
+    --color-olive-700: #45582e;
+    --color-olive-800: #384628;
+    --color-olive-900: #2f3b23;
+
+    --color-sun-50: #fffbea;
+    --color-sun-100: #fff3c4;
+    --color-sun-200: #ffe685;
+    --color-sun-300: #ffd546;
+    --color-sun-400: #f2b302;
+    --color-sun-500: #d69a00;
+    --color-sun-600: #b07a00;
+    --color-sun-700: #8a5c04;
+    --color-sun-800: #71490b;
+    --color-sun-900: #603d0f;
+
+    /* Surfaces */
+    --color-canvas: #f3f8fb;
+
+    /* Shape and depth */
+    --radius-card: 1.5rem;
+    --radius-control: 0.75rem;
+    --shadow-soft: 0 1px 2px rgb(4 32 46 / 0.04), 0 12px 32px -14px rgb(2 79 109 / 0.18);
+    --shadow-lift: 0 2px 6px rgb(4 32 46 / 0.04), 0 28px 64px -24px rgb(2 79 109 / 0.32);
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 5.5rem;
+    }
+
+    h1, h2, h3, p {
+        text-wrap: pretty;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .wrap {
+        @apply mx-auto max-w-7xl px-4 sm:px-8;
+    }
+
+    .tba {
+        @apply font-semibold text-ink-400;
+    }
+
+    /* Public pages */
+    .eyebrow {
+        @apply text-[13px] font-bold uppercase tracking-[0.16em] text-ember-600;
+    }
+
+    .section-title {
+        @apply mt-3 text-[clamp(2.1rem,4vw,3.4rem)] font-extrabold leading-[1.05] tracking-tight text-brand-700;
+    }
+
+    .btn-pill {
+        @apply inline-flex items-center justify-center gap-2.5 whitespace-nowrap rounded-full px-7 py-4 text-base font-bold transition focus:outline-none focus-visible:ring-4;
+    }
+
+    /* Forms */
+    .field {
+        @apply h-12 w-full rounded-control border border-ink-200 bg-white px-4 text-[15px] text-ink-900 placeholder:text-ink-400 transition focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15;
+    }
+
+    .label {
+        @apply mb-1.5 block text-sm font-medium text-ink-800;
+    }
+}
+
+@keyframes drift {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -14px, 0); }
+}
+
+.orb {
+    animation: drift 9s ease-in-out infinite;
+}
+
+.orb-slow {
+    animation-duration: 13s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .orb {
+        animation: none;
+    }
 }
