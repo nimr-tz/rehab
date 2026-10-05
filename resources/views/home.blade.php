@@ -64,7 +64,7 @@
             @else
                 <span>Save the date: the {{ $summit->title() }}. Dates and venue will be announced soon.</span>
             @endif
-            <a href="#register" class="text-sun-300 hover:text-sun-200">Create your account →</a>
+            <a href="{{ route('register') }}" class="text-sun-300 hover:text-sun-200">Create your account →</a>
         </div>
     </div>
 
@@ -131,9 +131,9 @@
                 <span class="absolute left-[2%] top-[30%] h-2.5 w-2.5 rounded-full bg-brand-700"></span>
                 <div x-data="brandLogo('{{ asset('images/brand/logo-2027-animated.webp') }}')" class="relative aspect-square w-full">
                     <img src="{{ asset('images/brand/logo-2027-still.webp') }}" alt="{{ $summit->get('organiser') }} {{ $summit->get('year') }} Events Portal"
-                         :class="{ 'opacity-0': stillHidden }" class="h-full w-full object-contain transition-opacity duration-300">
-                    <img x-ref="anim" alt="" aria-hidden="true"
-                         :class="animated ? 'opacity-100' : 'opacity-0'" class="absolute inset-0 h-full w-full object-contain transition-opacity duration-300">
+                         :class="{ 'opacity-0': stillHidden }" class="h-full w-full object-contain">
+                    <img x-ref="anim" alt="" aria-hidden="true" style="display: none" :style="{ display: animated ? 'block' : 'none' }"
+                         class="absolute inset-0 h-full w-full object-contain">
                 </div>
             </div>
         </div>
@@ -220,9 +220,9 @@
                     @endforeach
                 </ol>
                 <div class="mt-10 flex flex-wrap gap-3">
-                    {{-- Registration screens come next in Phase 0; until then these lead to sign-in. --}}
-                    <a href="{{ route('login') }}" class="btn-pill bg-sun-400 text-ink-900 hover:bg-sun-300 focus-visible:ring-sun-300/50">Create your account →</a>
-                    <a href="{{ route('login') }}" class="btn-pill border-[1.5px] border-white/50 text-white hover:bg-white/10 focus-visible:ring-white/30">Register a group</a>
+                    <a href="{{ route('register') }}" class="btn-pill bg-sun-400 text-ink-900 hover:bg-sun-300 focus-visible:ring-sun-300/50">Create your account →</a>
+                    {{-- Group registration arrives in Phase 2; the leader starts with their own account. --}}
+                    <a href="{{ route('register') }}" class="btn-pill border-[1.5px] border-white/50 text-white hover:bg-white/10 focus-visible:ring-white/30">Register a group</a>
                 </div>
             </div>
 

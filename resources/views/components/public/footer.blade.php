@@ -25,7 +25,7 @@
             <div>
                 <h3 class="mb-3.5 text-sm font-bold text-white">Participants</h3>
                 <div class="grid gap-2 text-[15px]">
-                    <a href="{{ route('home') }}#register" class="hover:text-sun-300">Register</a>
+                    <a href="{{ route('register') }}" class="hover:text-sun-300">Register</a>
                     <a href="{{ route('login') }}" class="hover:text-sun-300">Log in</a>
                     <a href="{{ route('home') }}#faq" class="hover:text-sun-300">FAQ</a>
                 </div>

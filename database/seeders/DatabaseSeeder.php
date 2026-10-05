@@ -2,24 +2,32 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Role;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
-     * Seed the application's database.
+     * Local development data: the roles, an admin and one participant.
+     * Both sign in with the password "password".
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call(RoleSeeder::class);
 
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+            'title' => null,
+            'first_name' => 'Portal',
+            'last_name' => 'Admin',
+            'email' => 'admin@rehab.test',
+        ])->assignRole(Role::Admin->value);
+
+        User::factory()->create([
+            'title' => 'Dr',
+            'first_name' => 'Amina',
+            'last_name' => 'Participant',
+            'email' => 'participant@rehab.test',
+        ])->assignRole(Role::Participant->value);
     }
 }

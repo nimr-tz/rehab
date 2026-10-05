@@ -54,6 +54,8 @@ announcements, email_logs, feedback
 Each phase ends with working, tested features. The order follows the summit calendar: registration and abstracts open first, then review, the programme, the event days, and the close-out.
 
 ### Phase 0: Foundation and design system
+
+Done so far: the Laravel 13 app, design tokens, public home page, sign-in screens (Fortify: sign-in, registration, email verification and password reset), roles and the admin seeder, and the portal layout with a first dashboard. Remaining: the `editions` table with admin settings (it replaces `config/summit.php`), the rest of the component library, and role-based navigation.
 - Laravel 13 project, tooling (Pint, PHPUnit), CI, and README and CLAUDE.md.
 - Design tokens and a component library: button, field, select, card, table, badge, alert, modal, sidebar and page header.
 - Layouts: public, sign-in, and the portal with role-based navigation.

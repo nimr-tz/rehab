@@ -19,12 +19,15 @@ The app needs PHP 8.4. This machine has two PHPs:
 | `php`, `composer` | 8.2 (XAMPP) | Other projects in htdocs. Do not use it here. |
 
 ```bash
-php84 artisan serve      # http://127.0.0.1:8100 (SERVER_PORT in .env)
-composer84 run dev       # server, queue, logs and Vite together
+composer84 run dev       # server, queue, Mailpit and Vite together (all on PHP 8.4)
+php84 artisan serve      # server only: http://127.0.0.1:8100 (SERVER_PORT in .env)
 php84 artisan test
-composer84 install
+php84 vendor/bin/pint    # vendor/bin/pint alone runs on PHP 8.2 and fails
+php84 artisan migrate:fresh --seed
 npm run build
 ```
+
+Local email goes to Mailpit: http://127.0.0.1:8025. `composer84 run dev` starts it; with `artisan serve` alone, start `mailpit` yourself or emails fail. The seeded accounts are `admin@rehab.test` and `participant@rehab.test`, both with the password `password`. They exist locally only. Production uses `php artisan db:seed --class=DeploymentSeeder` with `ADMIN_EMAIL` set.
 
 Port 8100 avoids the old portal, which often runs on 8000. Do not open this app through XAMPP's Apache (`localhost/rehab-events/public`), because that runs PHP 8.2.
 
