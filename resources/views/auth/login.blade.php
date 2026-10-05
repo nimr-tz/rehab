@@ -33,23 +33,4 @@
         <x-icon name="user-plus" />
         New here? Create an account
     </a>
-
-    @if (config('app.demo'))
-        <div class="mt-8 rounded-2xl border border-dashed border-sun-400 bg-sun-50 p-4">
-            <p class="text-xs font-bold uppercase tracking-[0.16em] text-sun-800">Demo · sign in as</p>
-            <div class="mt-3 grid grid-cols-2 gap-2">
-                @foreach (\Database\Seeders\DemoSeeder::ACCOUNTS as $email => [$label, $role])
-                    <form method="POST" action="{{ route('login') }}">
-                        @csrf
-                        <input type="hidden" name="email" value="{{ $email }}">
-                        <input type="hidden" name="password" value="{{ \Database\Seeders\DemoSeeder::PASSWORD }}">
-                        <button class="w-full rounded-xl bg-white px-3 py-2 text-left text-xs shadow-soft ring-1 ring-sun-200 transition hover:ring-brand-300">
-                            <span class="block font-semibold text-ink-900">{{ $label }}</span>
-                            <span class="block text-ink-500">{{ $role }}</span>
-                        </button>
-                    </form>
-                @endforeach
-            </div>
-        </div>
-    @endif
 </x-auth.shell>

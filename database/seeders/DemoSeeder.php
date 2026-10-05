@@ -40,17 +40,6 @@ class DemoSeeder extends Seeder
 {
     public const PASSWORD = 'rehab2027';
 
-    /** Shown as one-click sign-ins on the login page when APP_DEMO=true. */
-    public const ACCOUNTS = [
-        'participant@rehab.test' => ['Dr Amina Mussa', 'Participant, accepted abstract'],
-        'newcomer@rehab.test' => ['Joseph Mrema', 'New participant'],
-        'reviewer@rehab.test' => ['Prof Grace Mwakyusa', 'Reviewer'],
-        'scientific@rehab.test' => ['Dr Peter Kimaro', 'Scientific admin'],
-        'finance@rehab.test' => ['Rehema Said', 'Finance officer'],
-        'desk@rehab.test' => ['Baraka Lyimo', 'Registration desk'],
-        'admin@rehab.test' => ['Portal Admin', 'Administrator'],
-    ];
-
     private Edition $edition;
 
     /** @var Collection<string, Topic> keyed by code */

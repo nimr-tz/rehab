@@ -34,7 +34,7 @@ Local email goes to Mailpit: http://127.0.0.1:8025. `composer84 run dev` starts 
 The portal doubles as a demonstration of the complete product. **Every link must lead to a working screen; no "coming soon" pages.**
 
 - `database/seeders/DemoSeeder.php` builds a sample 2027 summit: settings, staff for every role, about 60 participants at every payment stage, about 36 abstracts through review, and the programme. It refuses to run in production. `migrate:fresh --seed` runs it locally (it takes about 30 seconds because it renders sample bank slips).
-- Demo accounts (password `rehab2027`) are listed in `DemoSeeder::ACCOUNTS`. With `APP_DEMO=true` the sign-in page shows them as one-click buttons.
+- Demo accounts use the password `rehab2027` and are created in `DemoSeeder::staff()` and `participants()`. Never show credentials in the portal itself; share them with the user directly.
 - The sample bank and mobile money numbers live in `.env.example` and are marked as samples.
 - Only code and structure go into git. The database, uploaded proofs and `.env` stay local, so production starts empty: `php artisan migrate`, then `php artisan db:seed --class=DeploymentSeeder` with `ADMIN_EMAIL` set.
 

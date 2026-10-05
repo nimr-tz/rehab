@@ -42,12 +42,6 @@ return [
     'debug' => (bool) env('APP_DEBUG', false),
 
     /*
-    | Demo mode shows one-click demo accounts on the sign-in page. Never in production.
-    */
-
-    'demo' => (bool) env('APP_DEMO', false),
-
-    /*
     | First administrator, created by the DeploymentSeeder.
     */
 
