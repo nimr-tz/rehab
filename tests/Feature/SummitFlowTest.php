@@ -211,10 +211,13 @@ class SummitFlowTest extends TestCase
         $this->actingAs($this->user(Role::Reviewer))->get(route('reviews.edit', $assignment))->assertNotFound();
 
         $this->actingAs($reviewer)->put(route('reviews.update', $assignment), [
-            'score_relevance' => 5, 'score_originality' => 4, 'score_methods' => 4, 'score_clarity' => 5,
+            'score_originality' => 16, 'score_technical' => 34, 'score_significance' => 25, 'score_clarity' => 8,
+            'technical_checks' => ['title', 'methodology', 'analysis', 'relevance'],
             'recommendation' => 'accept_oral', 'comments_for_author' => 'Clear and practical; please add confidence intervals.',
         ])->assertRedirect(route('reviews.index'));
-        $this->assertSame(18, $assignment->fresh()->totalScore());
+        $this->assertSame(83, $assignment->fresh()->totalScore());
+        $this->assertSame('accept', $assignment->fresh()->band()['key']);
+        $this->assertSame(['title', 'methodology', 'analysis', 'relevance'], $assignment->fresh()->technical_checks);
 
         $this->actingAs($committee)->post(route('scientific.abstracts.decide', $abstract), ['decision' => 'oral'])->assertRedirect();
         $abstract->refresh();
@@ -223,6 +226,43 @@ class SummitFlowTest extends TestCase
         Notification::assertSentTo($author, AbstractDecided::class);
 
         $this->actingAs($author)->get(route('abstracts.show', $abstract))->assertSee('OR-HBR-01')->assertSee('confidence intervals');
+    }
+
+    public function test_rubric_scores_are_capped_per_criterion_and_the_reviewer_moves_to_the_next_abstract(): void
+    {
+        $committee = $this->user(Role::ScientificAdmin);
+        $reviewer = $this->user(Role::Reviewer);
+        foreach (['First abstract on home rehabilitation', 'Second abstract on home rehabilitation'] as $title) {
+            $this->actingAs($this->user())->post(route('abstracts.store'), $this->abstractForm(['title' => $title]))->assertRedirect();
+        }
+        foreach (AbstractSubmission::all() as $abstract) {
+            $this->actingAs($committee)->post(route('scientific.abstracts.assign', $abstract), ['reviewer_id' => $reviewer->id])->assertRedirect();
+        }
+        [$first, $second] = $reviewer->reviewAssignments()->orderBy('id')->get()->all();
+
+        $this->actingAs($reviewer)->get(route('reviews.edit', $first))
+            ->assertOk()->assertSee('Originality and novelty')->assertSee('Technical quality')->assertSee('Your queue');
+
+        $valid = [
+            'score_originality' => 12, 'score_technical' => 22, 'score_significance' => 18, 'score_clarity' => 6,
+            'recommendation' => 'accept_poster', 'comments_for_author' => 'Useful local data; tighten the methods and report effect sizes.',
+        ];
+
+        // Each criterion has its own ceiling, and an unknown check is refused.
+        $this->actingAs($reviewer)->put(route('reviews.update', $first), ['score_originality' => 21] + $valid)->assertSessionHasErrors('score_originality');
+        $this->actingAs($reviewer)->put(route('reviews.update', $first), ['score_technical' => 41] + $valid)->assertSessionHasErrors('score_technical');
+        $this->actingAs($reviewer)->put(route('reviews.update', $first), ['technical_checks' => ['bribery']] + $valid)->assertSessionHasErrors('technical_checks.0');
+        $this->actingAs($reviewer)->put(route('reviews.update', $first), array_diff_key($valid, ['score_clarity' => 1]))->assertSessionHasErrors('score_clarity');
+        $this->assertFalse($first->fresh()->isComplete());
+
+        // 58/100 is in the revisions band; the reviewer goes straight to the next abstract.
+        $this->actingAs($reviewer)->put(route('reviews.update', $first), $valid)->assertRedirect(route('reviews.edit', $second));
+        $this->assertSame(58, $first->fresh()->totalScore());
+        $this->assertSame('revise', $first->fresh()->band()['key']);
+        $this->assertSame([], $first->fresh()->technical_checks);
+
+        $this->actingAs($committee)->get(route('scientific.abstracts.show', $first->abstract_id))
+            ->assertOk()->assertSee('58')->assertSee('Accept with revisions')->assertSee('12/20');
     }
 
     private function expectsAssignmentRefused(User $committee, AbstractSubmission $abstract, User $reviewer): void

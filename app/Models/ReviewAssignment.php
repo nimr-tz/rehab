@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Recommendation;
+use App\Support\Rubric;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -10,18 +11,11 @@ class ReviewAssignment extends Model
 {
     protected $guarded = ['id'];
 
-    /** Each scored 1 to 5, for a total out of 20. */
-    public const CRITERIA = [
-        'score_relevance' => 'Relevance to the summit theme',
-        'score_originality' => 'Originality',
-        'score_methods' => 'Methods and evidence',
-        'score_clarity' => 'Clarity of writing',
-    ];
-
     protected function casts(): array
     {
         return [
             'recommendation' => Recommendation::class,
+            'technical_checks' => 'array',
             'due_on' => 'date',
             'completed_at' => 'datetime',
         ];
@@ -42,12 +36,19 @@ class ReviewAssignment extends Model
         return $this->completed_at !== null;
     }
 
+    /** Rubric total out of 100, once the review is complete. */
     public function totalScore(): ?int
     {
         if (! $this->isComplete()) {
             return null;
         }
 
-        return (int) collect(array_keys(self::CRITERIA))->sum(fn (string $field) => $this->{$field});
+        return (int) collect(Rubric::fields())->sum(fn (string $field) => $this->{$field});
+    }
+
+    /** The rubric's verdict band for this review's total. */
+    public function band(): ?array
+    {
+        return Rubric::band($this->totalScore());
     }
 }

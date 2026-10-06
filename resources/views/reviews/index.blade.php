@@ -35,7 +35,10 @@
                             <p class="font-mono text-xs font-semibold text-ink-500">{{ $assignment->abstract->blindId() }}</p>
                             <p class="font-medium text-ink-900">{{ $assignment->abstract->title }}</p>
                         </div>
-                        <span class="text-sm font-semibold text-ink-700">{{ $assignment->totalScore() }}/20</span>
+                        <span class="text-right leading-tight">
+                            <span class="text-lg font-extrabold tabular-nums {{ \App\Support\Rubric::scoreClass($assignment->totalScore()) }}">{{ $assignment->totalScore() }}</span><span class="text-xs font-semibold text-ink-400">/{{ \App\Support\Rubric::max() }}</span>
+                            <span class="block text-[11px] font-semibold text-ink-500">{{ $assignment->band()['label'] }}</span>
+                        </span>
                         <x-status :tone="$assignment->recommendation->tone()">{{ $assignment->recommendation->label() }}</x-status>
                         <x-button variant="ghost" size="sm" :href="route('reviews.edit', $assignment)">View</x-button>
                     </li>

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Notifications\AbstractDecided;
 use App\Notifications\AbstractSubmitted;
 use App\Notifications\ReviewAssigned;
+use App\Support\Rubric;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -148,7 +149,9 @@ class AbstractService
     }
 
     /**
-     * @param  array{score_relevance: int, score_originality: int, score_methods: int, score_clarity: int, recommendation: string, comments_for_author: string, comments_for_committee?: ?string}  $data
+     * Rubric points per criterion (see config/review.php), plus the optional technical sub-checks.
+     *
+     * @param  array{score_originality: int, score_technical: int, score_significance: int, score_clarity: int, technical_checks?: ?list<string>, recommendation: string, comments_for_author: string, comments_for_committee?: ?string}  $data
      */
     public function review(ReviewAssignment $assignment, array $data): void
     {
@@ -156,11 +159,8 @@ class AbstractService
             throw new InvalidArgumentException('A decision has already been made on this abstract.');
         }
 
-        $assignment->update([
-            'score_relevance' => $data['score_relevance'],
-            'score_originality' => $data['score_originality'],
-            'score_methods' => $data['score_methods'],
-            'score_clarity' => $data['score_clarity'],
+        $assignment->update(collect(Rubric::fields())->mapWithKeys(fn (string $field) => [$field => (int) $data[$field]])->all() + [
+            'technical_checks' => array_values(array_unique($data['technical_checks'] ?? [])),
             'recommendation' => Recommendation::from($data['recommendation']),
             'comments_for_author' => $data['comments_for_author'],
             'comments_for_committee' => $data['comments_for_committee'] ?? null,

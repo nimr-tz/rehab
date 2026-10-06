@@ -239,7 +239,8 @@ class DashboardService
         $pending = $assignments->reject->isComplete()->sortBy('due_on')->values();
         $deadline = $edition?->review_deadline;
 
-        $bands = ['<10' => [0, 9], '10–12' => [10, 12], '13–15' => [13, 15], '16–18' => [16, 18], '19–20' => [19, 20]];
+        // Totals out of 100; the cut points follow the rubric's 50 and 70 bands.
+        $bands = ['<50' => [0, 49], '50–69' => [50, 69], '70–79' => [70, 79], '80–89' => [80, 89], '90+' => [90, 100]];
         $panel = ReviewAssignment::whereNotNull('completed_at')->get();
         $share = fn (Collection $set, array $band) => $set->count()
             ? round($set->filter(fn ($r) => $r->totalScore() >= $band[0] && $r->totalScore() <= $band[1])->count() / $set->count() * 100) : 0;

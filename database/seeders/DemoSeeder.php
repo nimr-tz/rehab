@@ -17,6 +17,7 @@ use App\Models\Registration;
 use App\Models\RegistrationCategory;
 use App\Models\Topic;
 use App\Models\User;
+use App\Support\Rubric;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
@@ -433,17 +434,18 @@ class DemoSeeder extends Seeder
             foreach ($panel as $r => $reviewer) {
                 $complete = $state !== 'under_review' || $r === 0 || ($reviewer->email !== 'reviewer@rehab.test' && mt_rand(0, 1));
                 $good = $positive ?? (mt_rand(1, 100) <= 65);
-                $scores = $good ? [mt_rand(4, 5), mt_rand(3, 5), mt_rand(3, 5), mt_rand(4, 5)] : [mt_rand(2, 3), mt_rand(1, 3), mt_rand(1, 3), mt_rand(2, 4)];
+                // Rubric points: originality /20, technical /40, significance /30, clarity /10.
+                $checks = collect(array_keys(Rubric::checks()))->shuffle(mt_rand())->take($good ? mt_rand(3, 5) : mt_rand(0, 2))->values()->all();
+                $scores = $good
+                    ? ['score_originality' => mt_rand(13, 19), 'score_technical' => min(40, count($checks) * 8 + mt_rand(-2, 3)), 'score_significance' => mt_rand(20, 28), 'score_clarity' => mt_rand(7, 10)]
+                    : ['score_originality' => mt_rand(5, 12), 'score_technical' => max(6, count($checks) * 8 + mt_rand(4, 10)), 'score_significance' => mt_rand(9, 18), 'score_clarity' => mt_rand(3, 7)];
 
-                $abstract->reviews()->create([
+                $abstract->reviews()->create(collect($scores)->map(fn ($v) => $complete ? $v : null)->all() + [
                     'reviewer_id' => $reviewer->id,
                     'assigned_by' => $scientific->id,
                     'due_on' => $this->edition->review_deadline,
-                    'score_relevance' => $complete ? $scores[0] : null,
-                    'score_originality' => $complete ? $scores[1] : null,
-                    'score_methods' => $complete ? $scores[2] : null,
-                    'score_clarity' => $complete ? $scores[3] : null,
-                    'recommendation' => $complete ? ($good ? (array_sum($scores) >= 17 ? Recommendation::AcceptOral : Recommendation::AcceptPoster) : Recommendation::Reject) : null,
+                    'technical_checks' => $complete ? $checks : null,
+                    'recommendation' => $complete ? ($good ? (array_sum($scores) >= 80 ? Recommendation::AcceptOral : Recommendation::AcceptPoster) : Recommendation::Reject) : null,
                     'comments_for_author' => $complete ? self::COMMENTS[$good ? 'good' : 'weak'][mt_rand(0, 3)] : null,
                     'comments_for_committee' => $complete && mt_rand(1, 4) === 1 ? 'Strong local relevance; consider for the plenary-adjacent parallel session.' : null,
                     'completed_at' => $complete ? $submittedAt->addDays(mt_rand(2, max(2, $minAge - 3)))->min(CarbonImmutable::now()->subHours(mt_rand(1, 30))) : null,

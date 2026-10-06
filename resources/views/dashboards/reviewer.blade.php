@@ -1,5 +1,6 @@
 @php
-    use App\Models\ReviewAssignment;
+    use App\Support\Palette;
+    use App\Support\Rubric;
 
     $left = $pending->count();
     $bandMax = max(1, $bands->max('you'), $bands->max('panel'));
@@ -39,7 +40,7 @@
             <x-kpi label="Assigned" :value="$assignments->count()" :hint="$assignments->pluck('abstract.topic.name')->unique()->take(1)->implode('')" />
             <x-kpi label="Completed" :value="$done->count()" :hint="$left.' remaining'" hint-tone="good" />
             <x-kpi label="Overdue" :value="$overdue" :hint="$overdue ? 'Past their due date' : 'Nothing overdue'" :hint-tone="$overdue ? 'danger' : 'muted'" />
-            <x-kpi label="Your average" :value="$average !== null ? $average.'/20' : '—'" :hint="$panelAverage !== null ? 'Panel average '.$panelAverage.'/20' : null" hint-tone="warning" />
+            <x-kpi label="Your average" :value="$average !== null ? $average.'/'.Rubric::max() : '—'" :hint="$panelAverage !== null ? 'Panel average '.$panelAverage.'/'.Rubric::max() : null" hint-tone="warning" />
         </div>
     </div>
 
@@ -80,7 +81,7 @@
     <div class="grid gap-5 lg:grid-cols-3">
         <x-card>
             <h2 class="text-lg font-bold text-ink-900">Your scores vs the panel</h2>
-            <p class="mt-1 text-xs text-ink-500">Share of reviews in each total-score band (out of 20)</p>
+            <p class="mt-1 text-xs text-ink-500">Share of reviews in each total-score band (out of {{ Rubric::max() }})</p>
             <div class="mt-5 flex h-44 items-end gap-3">
                 @foreach ($bands as $band)
                     <div class="flex flex-1 flex-col items-center gap-1.5">
@@ -98,16 +99,20 @@
             </p>
         </x-card>
 
-        <x-card title="Scoring criteria">
+        <x-card title="Scoring rubric">
             <ul class="space-y-4">
-                @foreach (ReviewAssignment::CRITERIA as $field => $label)
+                @foreach (Rubric::criteria() as $criterion)
                     <li>
-                        <div class="flex justify-between text-sm"><span class="font-medium text-ink-800">{{ $label }}</span><span class="font-bold text-ink-900">25%</span></div>
-                        <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-ink-100"><div class="h-full w-1/4 rounded-full" style="background: {{ \App\Support\Palette::categorical($loop->index) }}"></div></div>
+                        <div class="flex justify-between text-sm"><span class="font-medium text-ink-800">{{ $criterion['label'] }}</span><span class="font-bold text-ink-900">{{ $criterion['max'] }} pts</span></div>
+                        <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-ink-100"><div class="h-full rounded-full" style="width: {{ $criterion['max'] / Rubric::max() * 100 }}%; background: {{ Palette::categorical($loop->index) }}"></div></div>
                     </li>
                 @endforeach
             </ul>
-            <p class="mt-4 text-xs text-ink-500">Each criterion is scored 1–5; the total is out of 20.</p>
+            <div class="mt-5 flex flex-wrap gap-1.5">
+                @foreach (Rubric::bands() as $band)
+                    <x-status :tone="$band['tone']">{{ $band['min'] > 0 ? '≥'.$band['min'] : '<'.Rubric::bands()[$loop->index - 1]['min'] }} · {{ $band['label'] }}</x-status>
+                @endforeach
+            </div>
         </x-card>
 
         <x-card title="Recently completed" :padding="false">
@@ -119,7 +124,7 @@
                                 <span class="block font-mono text-xs font-bold text-ink-700">{{ $review->abstract->blindId() }}</span>
                                 <span class="block text-xs text-ink-500">{{ $review->recommendation->label() }} · {{ $review->completed_at->format('j M') }}</span>
                             </span>
-                            <span class="text-xl font-extrabold {{ $review->totalScore() >= 15 ? 'text-olive-700' : ($review->totalScore() >= 11 ? 'text-sun-700' : 'text-red-700') }}">{{ $review->totalScore() }}</span>
+                            <span class="text-xl font-extrabold tabular-nums {{ Rubric::scoreClass($review->totalScore()) }}">{{ $review->totalScore() }}</span>
                         </a>
                     </li>
                 @empty

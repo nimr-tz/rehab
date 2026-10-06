@@ -84,7 +84,7 @@ class AbstractSubmission extends Model
         return '#A'.$this->edition->shortYear().'-'.Str::padLeft((string) $this->id, 3, '0');
     }
 
-    /** Average total score (out of 20) across completed reviews. */
+    /** Average rubric total (out of 100) across completed reviews. */
     public function averageScore(): ?float
     {
         $done = $this->reviews->filter->isComplete();

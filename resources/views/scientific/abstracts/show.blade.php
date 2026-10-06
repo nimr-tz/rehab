@@ -1,10 +1,13 @@
 @php
     use App\Enums\AbstractStatus;
-    use App\Models\ReviewAssignment;
+    use App\Support\Palette;
+    use App\Support\Rubric;
 
     $open = in_array($abstract->status, [AbstractStatus::Submitted, AbstractStatus::UnderReview], true);
     $completed = $abstract->reviews->filter->isComplete();
     $recommendations = $completed->countBy(fn ($r) => $r->recommendation->value);
+    $average = $abstract->averageScore();
+    $averageBand = Rubric::band($average);
 @endphp
 
 <x-layouts.portal :title="$abstract->title">
@@ -29,7 +32,7 @@
             </x-card>
 
             {{-- Reviews --}}
-            <x-card title="Reviews" :description="$completed->count().' of '.$abstract->reviews->count().' completed'.($abstract->averageScore() ? ' · average '.$abstract->averageScore().'/20' : '')">
+            <x-card title="Reviews" :description="$completed->count().' of '.$abstract->reviews->count().' completed'.($average !== null ? ' · average '.$average.'/'.Rubric::max() : '')">
                 @forelse ($abstract->reviews as $review)
                     <div class="border-b border-ink-100 py-4 first:pt-0 last:border-0 last:pb-0">
                         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -42,8 +45,11 @@
                                 </p>
                             </div>
                             @if ($review->isComplete())
-                                <div class="flex items-center gap-2">
-                                    <span class="text-sm font-bold text-ink-900">{{ $review->totalScore() }}/20</span>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-right leading-tight">
+                                        <span class="text-xl font-extrabold tabular-nums {{ Rubric::scoreClass($review->totalScore()) }}">{{ $review->totalScore() }}</span><span class="text-xs font-semibold text-ink-400">/{{ Rubric::max() }}</span>
+                                        <span class="block text-[11px] font-semibold text-ink-500">{{ $review->band()['label'] }}</span>
+                                    </span>
                                     <x-status :tone="$review->recommendation->tone()">{{ $review->recommendation->label() }}</x-status>
                                 </div>
                             @else
@@ -59,14 +65,25 @@
                             @endif
                         </div>
                         @if ($review->isComplete())
-                            <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                                @foreach (ReviewAssignment::CRITERIA as $field => $label)
-                                    <div class="rounded-xl bg-canvas px-3 py-2">
-                                        <p class="text-[11px] text-ink-500">{{ $label }}</p>
-                                        <p class="font-bold text-ink-900">{{ $review->{$field} }}/5</p>
+                            <div class="mt-3 grid gap-x-5 gap-y-2.5 rounded-xl bg-canvas px-4 py-3 sm:grid-cols-2">
+                                @foreach (Rubric::criteria() as $field => $criterion)
+                                    <div>
+                                        <div class="flex justify-between text-xs">
+                                            <span class="font-medium text-ink-600">{{ $criterion['label'] }}</span>
+                                            <span class="font-bold tabular-nums text-ink-900">{{ $review->{$field} }}/{{ $criterion['max'] }}</span>
+                                        </div>
+                                        <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-white">
+                                            <div class="h-full rounded-full" style="width: {{ round($review->{$field} / $criterion['max'] * 100) }}%; background: {{ Palette::categorical($loop->index) }}"></div>
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
+                            @if ($review->technical_checks !== null)
+                                <p class="mt-2 text-xs text-ink-500">
+                                    <span class="font-semibold text-ink-700">Technical checks met:</span>
+                                    {{ collect(Rubric::checks())->only($review->technical_checks)->pluck('label')->implode(', ') ?: 'none' }}
+                                </p>
+                            @endif
                             <p class="mt-3 whitespace-pre-line text-sm text-ink-700"><span class="font-semibold">For the author:</span> {{ $review->comments_for_author }}</p>
                             @if ($review->comments_for_committee)
                                 <p class="mt-2 whitespace-pre-line rounded-xl bg-sun-50 px-3 py-2 text-sm text-sun-900"><span class="font-semibold">Confidential:</span> {{ $review->comments_for_committee }}</p>
@@ -109,6 +126,15 @@
                 </x-card>
 
                 <x-card title="Decision" :description="$completed->isEmpty() ? 'Wait for at least one review.' : 'Reviewers recommend: '.$recommendations->map(fn ($n, $r) => $n.'× '.strtolower(\App\Enums\Recommendation::from($r)->label()))->implode(', ')">
+                    @if ($averageBand)
+                        <div class="mb-4 flex items-center gap-3 rounded-xl bg-canvas px-4 py-3">
+                            <span class="text-2xl font-extrabold tabular-nums {{ Rubric::scoreClass($average) }}">{{ $average }}</span>
+                            <span class="leading-tight">
+                                <span class="block text-xs text-ink-500">Average of {{ $completed->count() }} {{ \Illuminate\Support\Str::plural('review', $completed->count()) }}, out of {{ Rubric::max() }}</span>
+                                <x-status :tone="$averageBand['tone']" class="mt-1">{{ $averageBand['label'] }}</x-status>
+                            </span>
+                        </div>
+                    @endif
                     <form method="POST" action="{{ route('scientific.abstracts.decide', $abstract) }}" class="space-y-4" x-data="{ decision: '' }">
                         @csrf
                         <div class="grid gap-2">

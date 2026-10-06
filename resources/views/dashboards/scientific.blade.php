@@ -68,7 +68,8 @@
                     <tbody class="divide-y divide-ink-100">
                         @foreach ($ready->take(6) as $abstract)
                             @php
-                                $score = round(($abstract->averageScore() ?? 0) / 20 * 100);
+                                $score = $abstract->averageScore();
+                                $band = \App\Support\Rubric::band($score);
                                 [$agree, $dot] = $agreement($abstract);
                                 $recs = $abstract->reviews->filter->isComplete()->map(fn ($r) => strtolower($r->recommendation->label()))->countBy()->map(fn ($n, $r) => $n.'× '.$r)->implode(', ');
                             @endphp
@@ -78,7 +79,10 @@
                                     <a href="{{ route('scientific.abstracts.show', $abstract) }}" class="font-semibold text-ink-900 hover:text-brand-700">{{ $abstract->title }}</a>
                                     <p class="text-xs text-ink-500">{{ $abstract->topic->name }} · {{ $recs }}</p>
                                 </td>
-                                <td class="px-3 py-4 text-xl font-extrabold {{ $score >= 75 ? 'text-olive-700' : ($score >= 60 ? 'text-sun-700' : 'text-red-700') }}">{{ $score }}</td>
+                                <td class="px-3 py-4">
+                                    <span class="text-xl font-extrabold tabular-nums {{ \App\Support\Rubric::scoreClass($score) }}">{{ $score !== null ? round($score) : '—' }}</span>
+                                    @if ($band)<span class="block text-[11px] font-semibold text-ink-500">{{ $band['label'] }}</span>@endif
+                                </td>
                                 <td class="px-3 py-4"><span class="inline-flex items-center gap-1.5 font-medium text-ink-700"><span class="h-2 w-2 rounded-full {{ $dot }}"></span>{{ $agree }}</span></td>
                                 <td class="px-6 py-4">
                                     <div class="flex gap-1.5">
