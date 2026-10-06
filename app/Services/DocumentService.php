@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AwardEntry;
 use App\Models\Registration;
 use App\Support\Qr;
 use App\Support\Summit;
@@ -9,7 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
 
-/** Badges and invitation letters, generated on request from the registration. */
+/** Badges, invitation letters and award certificates, generated on request. */
 class DocumentService
 {
     public function __construct(private Summit $summit) {}
@@ -42,5 +43,19 @@ class DocumentService
             'logo' => public_path('images/brand/logo-mark.png'),
         ])->setPaper('a4')
             ->download('invitation-letter-'.$registration->reference.'.pdf');
+    }
+
+    /** A4 landscape certificate for an announced winner. */
+    public function awardCertificate(AwardEntry $entry): Response
+    {
+        $entry->loadMissing('category.edition', 'abstract');
+
+        return Pdf::loadView('pdf.award-certificate', [
+            'entry' => $entry,
+            'category' => $entry->category,
+            'summit' => $this->summit,
+            'logo' => public_path('images/brand/logo-mark.png'),
+        ])->setPaper('a4', 'landscape')
+            ->download('award-certificate-'.$entry->certificateNumber().'.pdf');
     }
 }

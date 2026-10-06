@@ -67,6 +67,7 @@ class DemoSeeder extends Seeder
         $this->abstracts($participants, $staff['scientific']);
         $this->programme();
         $this->deskAndNotifications();
+        $this->call(AwardsSeeder::class);
         $this->call(GallerySeeder::class);
     }
 

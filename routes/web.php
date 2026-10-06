@@ -5,6 +5,10 @@ use App\Http\Controllers\Admin\OverviewController;
 use App\Http\Controllers\Admin\ParticipantController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AwardController;
+use App\Http\Controllers\Awards\CategoryController as AwardCategoryController;
+use App\Http\Controllers\Awards\EntryController as AwardEntryController;
+use App\Http\Controllers\Awards\JudgingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeskController;
 use App\Http\Controllers\Finance\PaymentController as FinancePaymentController;
@@ -33,6 +37,7 @@ Route::get('/gallery/photos/{photo}/download', [GalleryController::class, 'downl
 Route::get('/gallery/photos/{photo}/{size}', [GalleryController::class, 'photo'])->whereIn('size', ['thumb', 'display'])->name('gallery.photos.show');
 Route::post('/gallery/photos/{photo}/removal', [GalleryController::class, 'requestRemoval'])->middleware('throttle:5,1')->name('gallery.photos.removal');
 Route::get('/gallery/{album:slug}', [GalleryController::class, 'album'])->name('gallery.album');
+Route::get('/awards', [AwardController::class, 'index'])->name('awards.index');
 
 // Sign-in, registration, password reset and email verification routes come from Fortify.
 
@@ -45,6 +50,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
+
+    // Awards: anyone with an account can nominate, and winners download their certificates.
+    Route::get('/my-awards', [AwardController::class, 'mine'])->name('awards.mine');
+    Route::post('/my-awards/nominations', [AwardController::class, 'nominate'])->middleware('throttle:10,1')->name('awards.nominate');
+    Route::get('/my-awards/{entry}/certificate', [AwardController::class, 'certificate'])->name('awards.certificate');
 
     // Participants
     Route::middleware('role:participant')->group(function () {
@@ -79,6 +89,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/abstracts/{abstract}/reviewers/{assignment}', [ScientificAbstractController::class, 'unassign'])->name('abstracts.unassign');
         Route::post('/abstracts/{abstract}/decision', [ScientificAbstractController::class, 'decide'])->name('abstracts.decide');
         Route::get('/reviewers', ReviewerController::class)->name('reviewers');
+    });
+
+    // Awards judges score the finalists of the awards they are assigned to.
+    Route::middleware('role:judge')->prefix('judging')->name('judging.')->group(function () {
+        Route::get('/', [JudgingController::class, 'index'])->name('index');
+        Route::get('/entries/{entry}', [JudgingController::class, 'edit'])->name('edit');
+        Route::put('/entries/{entry}', [JudgingController::class, 'update'])->name('update');
+    });
+
+    // Awards committee: the scientific committee and admins
+    Route::middleware('role:scientific_admin|admin')->prefix('committee/awards')->name('committee.awards.')->group(function () {
+        Route::get('/', [AwardCategoryController::class, 'index'])->name('index');
+        Route::post('/suggested', [AwardCategoryController::class, 'suggested'])->name('suggested');
+        Route::get('/new', [AwardCategoryController::class, 'create'])->name('create');
+        Route::post('/', [AwardCategoryController::class, 'store'])->name('store');
+        Route::get('/{category}', [AwardCategoryController::class, 'show'])->name('show');
+        Route::get('/{category}/edit', [AwardCategoryController::class, 'edit'])->name('edit');
+        Route::put('/{category}', [AwardCategoryController::class, 'update'])->name('update');
+        Route::delete('/{category}', [AwardCategoryController::class, 'destroy'])->name('destroy');
+        Route::put('/{category}/judges', [AwardCategoryController::class, 'judges'])->name('judges');
+        Route::post('/{category}/entries', [AwardEntryController::class, 'store'])->name('entries.store');
+        Route::delete('/{category}/entries/{entry}', [AwardEntryController::class, 'destroy'])->name('entries.destroy');
+        Route::get('/{category}/entries/{entry}/certificate', [AwardEntryController::class, 'certificate'])->name('entries.certificate');
+        Route::put('/{category}/places', [AwardEntryController::class, 'places'])->name('places');
+        Route::post('/{category}/announcement', [AwardEntryController::class, 'announce'])->name('announce');
+        Route::delete('/{category}/announcement', [AwardEntryController::class, 'withdraw'])->name('withdraw');
     });
 
     // Finance

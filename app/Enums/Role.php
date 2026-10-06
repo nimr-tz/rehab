@@ -17,6 +17,7 @@ enum Role: string
     case FinanceOfficer = 'finance_officer';
     case RegistrationOfficer = 'registration_officer';
     case Photographer = 'photographer';
+    case Judge = 'judge';
     case Admin = 'admin';
 
     public function label(): string
@@ -31,6 +32,7 @@ enum Role: string
             self::FinanceOfficer => 'Finance officer',
             self::RegistrationOfficer => 'Registration officer',
             self::Photographer => 'Photographer',
+            self::Judge => 'Awards judge',
             self::Admin => 'Administrator',
         };
     }

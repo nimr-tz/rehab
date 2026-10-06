@@ -59,6 +59,11 @@ class Edition extends Model
         return $this->hasMany(Album::class);
     }
 
+    public function awardCategories(): HasMany
+    {
+        return $this->hasMany(AwardCategory::class)->ordered();
+    }
+
     /** Abstract submission is open when switched on and the deadline has not passed. */
     public function acceptsAbstracts(): bool
     {

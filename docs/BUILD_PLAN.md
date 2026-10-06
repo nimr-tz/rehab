@@ -68,6 +68,8 @@ Role dashboards follow the client's Dashboards design: the participant journey, 
 
 Photo gallery: photographers have their own accounts, upload into albums by day or programme session, and publish their own photos (no approval step). The public gallery shows albums by day with highlights, a lightbox and full-resolution downloads. Anyone in a photo can ask for it to be removed; admins decide and the person is emailed. Photos are stored on the server's own disk for now (`GALLERY_DISK`).
 
+Awards: the scientific committee sets up each summit's awards (a suggested set comes from `config/awards.php`: Best Oral Presentation, Best Poster, Student Research Award, Innovation in Rehabilitation, Rehabilitation Champion and Distinguished Service). Presentation awards shortlist accepted abstracts, and judges (role `judge`) score the finalists at the summit on four criteria; nobody scores an abstract they wrote or co-wrote. Honours take nominations from participants or a committee choice. The committee picks up to three places from the ranking and announces them: winners appear on the public `/awards` page, are emailed, and download an award certificate. Attendee voting is deliberately not included.
+
 Deployment: pushing to `main` deploys through John Mduda's GitOps pipeline (see CLAUDE.md).
 
 Still to build for the live 2027 summit: group registration, sponsors, session chair and rapporteur applications, presentation uploads, programme editing in the portal (the demo programme is seeded), certificates, the abstract book, the staff scanning app API, and email campaigns.

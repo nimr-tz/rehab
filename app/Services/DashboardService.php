@@ -7,6 +7,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
 use App\Models\AbstractSubmission;
+use App\Models\AwardEntry;
 use App\Models\Edition;
 use App\Models\Payment;
 use App\Models\Registration;
@@ -51,6 +52,18 @@ class DashboardService
         $sessions = $edition ? $edition->sessions()->where('kind', '!=', 'break')->with('abstracts')->get() : collect();
         $mine = $abstracts->flatMap->sessions->pluck('id');
 
+        // Shortlisted abstracts, and honours once announced.
+        $awards = $edition
+            ? AwardEntry::query()
+                ->whereHas('category', fn ($q) => $q->where('edition_id', $edition->id))
+                ->where(fn ($q) => $q->where('user_id', $user->id)->orWhereHas('abstract', fn ($q) => $q->where('user_id', $user->id)))
+                ->with('category', 'abstract')
+                ->get()
+                ->filter(fn (AwardEntry $entry) => $entry->category->isPresentation() || $entry->isWinner())
+                ->sortByDesc(fn (AwardEntry $entry) => $entry->isWinner())
+                ->values()
+            : collect();
+
         return [
             'registration' => $registration,
             'latestPayment' => $latest,
@@ -63,6 +76,7 @@ class DashboardService
             'agenda' => $sessions->groupBy(fn ($s) => $s->starts_at->toDateString()),
             'mySessions' => $mine,
             'cpdSessions' => $sessions->count(),
+            'awards' => $awards,
         ];
     }
 

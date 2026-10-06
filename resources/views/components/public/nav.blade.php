@@ -8,6 +8,7 @@
         $home.'#topics' => 'Topics',
         route('programme') => 'Programme',
         route('gallery.index') => 'Gallery',
+        route('awards.index') => 'Awards',
         $home.'#venue' => 'Venue',
         $home.'#faq' => 'FAQ',
     ];

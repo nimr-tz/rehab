@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -66,6 +67,12 @@ class User extends Authenticatable implements MustVerifyEmail
     public function reviewAssignments(): HasMany
     {
         return $this->hasMany(ReviewAssignment::class, 'reviewer_id');
+    }
+
+    /** Award categories this person judges. */
+    public function judgedAwards(): BelongsToMany
+    {
+        return $this->belongsToMany(AwardCategory::class, 'award_category_judge');
     }
 
     public function registrationFor(?Edition $edition): ?Registration

@@ -6,6 +6,8 @@ use App\Enums\AbstractStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\Role;
 use App\Models\AbstractSubmission;
+use App\Models\AwardEntry;
+use App\Models\Edition;
 use App\Models\Payment;
 use App\Models\PhotoRemovalRequest;
 use App\Models\ReviewAssignment;
@@ -26,10 +28,11 @@ class Navigation
         $item = fn (string $label, string $route, string $active, array $extra = []) => ['label' => $label, 'route' => $route, 'active' => $active] + $extra;
         $sections = [];
 
-        // Admins, the registration desk and photographers land on the executive summary, the registry and their albums instead.
+        // Admins, the registration desk, photographers and judges land on the executive summary, the registry, their albums and their scoring instead.
         $ownDashboard = ! $is(Role::Admin)
             && ! ($is(Role::RegistrationOfficer) && ! $is(Role::ScientificAdmin, Role::FinanceOfficer, Role::Reviewer, Role::Participant))
-            && ! ($is(Role::Photographer) && ! $is(Role::ScientificAdmin, Role::FinanceOfficer, Role::RegistrationOfficer, Role::Reviewer, Role::Participant));
+            && ! ($is(Role::Photographer) && ! $is(Role::ScientificAdmin, Role::FinanceOfficer, Role::RegistrationOfficer, Role::Reviewer, Role::Participant))
+            && ! ($is(Role::Judge) && ! $is(Role::ScientificAdmin, Role::FinanceOfficer, Role::RegistrationOfficer, Role::Reviewer, Role::Participant, Role::Photographer));
         $overview = $ownDashboard ? [$item('Overview', 'dashboard', 'dashboard')] : [];
 
         if ($is(Role::Participant)) {
@@ -39,6 +42,7 @@ class Navigation
                 $item('Badge & check-in', 'registration.badge.show', 'registration.badge.show'),
                 $item('My abstracts', 'abstracts.index', 'abstracts.*', ['count' => $user->abstracts()->whereIn('status', [AbstractStatus::Draft, AbstractStatus::UnderReview])->count()]),
                 $item('Programme', 'programme', 'programme'),
+                $item('Awards', 'awards.mine', 'awards.mine'),
             ]];
         } elseif ($overview) {
             $sections[] = ['label' => null, 'items' => $overview];
@@ -60,6 +64,13 @@ class Navigation
                 ]),
                 $item('Decision queue', 'scientific.abstracts.index', 'scientific.abstracts.index', ['params' => ['status' => 'ready'], 'query' => ['status', 'ready'], 'count' => $ready]),
                 $item('Reviewers', 'scientific.reviewers', 'scientific.reviewers'),
+                $item('Awards', 'committee.awards.index', 'committee.awards.*'),
+            ]];
+        }
+
+        if ($is(Role::Judge)) {
+            $sections[] = ['label' => 'Awards judging', 'items' => [
+                $item('Finalists to score', 'judging.index', 'judging.*', ['count' => self::unscoredFinalists($user)]),
             ]];
         }
 
@@ -100,6 +111,20 @@ class Navigation
         return $sections;
     }
 
+    /** Finalists in this judge's open awards that they have not scored and did not write. */
+    private static function unscoredFinalists(User $judge): int
+    {
+        return AwardEntry::query()
+            ->whereHas('category', fn ($q) => $q->whereNull('announced_at')
+                ->where('edition_id', Edition::current()?->id)
+                ->whereHas('judges', fn ($q) => $q->whereKey($judge->id)))
+            ->whereDoesntHave('scores', fn ($q) => $q->where('judge_id', $judge->id))
+            ->with('abstract.authors')
+            ->get()
+            ->reject(fn (AwardEntry $entry) => $entry->conflictsWith($judge))
+            ->count();
+    }
+
     /** Placeholder for the search box in the top bar. */
     public static function searchHint(User $user): string
     {
@@ -109,7 +134,7 @@ class Navigation
             $user->hasRole(Role::FinanceOfficer->value) => 'Search name, reference, transaction…',
             $user->hasRole(Role::RegistrationOfficer->value) => 'Search attendees…',
             $user->hasRole(Role::Reviewer->value) => 'Search assigned abstracts…',
-            $user->hasRole(Role::Photographer->value) => 'Search sessions…',
+            $user->hasRole(Role::Photographer->value), $user->hasRole(Role::Judge->value) => 'Search sessions…',
             default => 'Search sessions and your abstracts…',
         };
     }

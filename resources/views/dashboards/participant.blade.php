@@ -80,6 +80,28 @@
         </div>
     </div>
 
+    {{-- Awards: shortlisted or won --}}
+    @foreach ($awards as $award)
+        @php $won = $award->isWinner(); @endphp
+        <a href="{{ route('awards.mine') }}" class="flex flex-col gap-4 rounded-card border p-5 shadow-soft transition hover:shadow-lift sm:flex-row sm:items-center sm:p-6 {{ $won ? 'border-sun-200 bg-gradient-to-r from-sun-50 to-ember-50' : 'border-brand-100 bg-white' }}">
+            @if ($won)
+                <x-award.medal :place="$award->place" />
+            @else
+                <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700"><x-icon name="trophy" class="h-5 w-5" /></span>
+            @endif
+            <span class="min-w-0 flex-1">
+                <span class="block text-[11px] font-bold uppercase tracking-[0.16em] {{ $won ? 'text-ember-600' : 'text-brand-600' }}">
+                    {{ $won ? $award->category->placeLabel($award->place) : ($award->category->isAnnounced() ? 'Finalist' : 'Shortlisted for an award') }}
+                </span>
+                <span class="mt-1 block text-lg font-bold text-ink-900">{{ $award->category->name }}</span>
+                @if ($award->abstract)
+                    <span class="block truncate text-sm text-ink-600">“{{ $award->abstract->title }}”</span>
+                @endif
+            </span>
+            <span class="text-sm font-bold text-brand-700">{{ $won ? 'Download certificate' : 'View' }} →</span>
+        </a>
+    @endforeach
+
     {{-- Payment + badge --}}
     <div class="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <x-card>

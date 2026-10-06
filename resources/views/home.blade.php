@@ -47,6 +47,7 @@
         ['How does the review work?', 'Abstracts are reviewed double-blind: reviewers do not see who wrote them, and authors do not see who reviewed them. The scientific committee then decides, and you are notified by email and on your dashboard.'],
         ['How do I pay the registration fee?', 'Pay by bank transfer or mobile money using the payment reference shown in your dashboard, then upload the receipt. A finance officer confirms the payment, after which your badge becomes available.'],
         ['I need a visa. Can I get an invitation letter?', 'Yes. Once you have registered, you can download an official invitation letter from your dashboard to support your visa application.'],
+        ['How are the awards decided?', 'The scientific committee shortlists finalists from the accepted abstracts, and a panel of judges scores them during the summit. Judges never score their own work. Some honours are nominated by participants: sign in and choose "Awards" to nominate someone while nominations are open.'],
         ['Will I receive a CPD certificate?', 'Attendance is recorded at each session you attend. Certificates are issued in the portal after the summit, based on that recorded attendance.'],
     ];
 @endphp
@@ -327,6 +328,35 @@
             @endforeach
         </div>
     </section>
+
+    {{-- Awards --}}
+    @php $awardCategories = $summit->edition()?->awardCategories ?? collect(); @endphp
+    @if ($awardCategories->isNotEmpty())
+        <section id="awards" class="wrap pt-28">
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <p class="eyebrow">Awards</p>
+                    <h2 class="section-title">Recognising excellence</h2>
+                    <p class="mt-3.5 max-w-2xl text-lg text-ink-600">Judges score shortlisted presentations during the summit, and the winners are announced at the closing ceremony.</p>
+                </div>
+                <a href="{{ route('awards.index') }}" class="text-base font-bold text-brand-700 hover:text-brand-800">See the awards →</a>
+            </div>
+            <ul class="mt-10 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($awardCategories as $category)
+                    @php [$tint, $iconColour] = [['bg-ember-50', 'text-ember-600'], ['bg-sun-50', 'text-sun-700'], ['bg-olive-50', 'text-olive-700'], ['bg-coral-50', 'text-coral-700']][$loop->index % 4]; @endphp
+                    <li>
+                        <a href="{{ route('awards.index') }}#award-{{ $category->id }}" class="flex h-full gap-4 rounded-[20px] p-6 transition hover:shadow-soft {{ $tint }}">
+                            <x-icon name="trophy" class="h-7 w-7 shrink-0 {{ $iconColour }}" />
+                            <span>
+                                <span class="block text-lg font-bold leading-tight text-ink-900">{{ $category->name }}</span>
+                                <span class="mt-1 block text-sm text-ink-600">{{ $category->isAnnounced() ? 'Winners announced' : $category->eligibility() }}</span>
+                            </span>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
 
     {{-- Venue --}}
     <section id="venue" class="wrap pt-28">

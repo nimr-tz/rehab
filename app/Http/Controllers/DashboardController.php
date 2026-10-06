@@ -11,8 +11,8 @@ use Illuminate\View\View;
 
 /**
  * Each person lands on the dashboard of their main role. Admins land on the
- * executive summary, registration officers on the registry and photographers
- * on their albums, which are their dashboards.
+ * executive summary, registration officers on the registry, photographers
+ * on their albums and judges on their scoring, which are their dashboards.
  */
 class DashboardController extends Controller
 {
@@ -29,6 +29,7 @@ class DashboardController extends Controller
             $is(Role::RegistrationOfficer) => redirect()->route('desk.index'),
             $is(Role::Reviewer) => view('dashboards.reviewer', $dashboards->reviewer($user, $edition) + ['user' => $user, 'edition' => $edition]),
             $is(Role::Photographer) && ! $is(Role::Participant) => redirect()->route('media.albums.index'),
+            $is(Role::Judge) && ! $is(Role::Participant) => redirect()->route('judging.index'),
             default => view('dashboards.participant', $dashboards->participant($user, $edition) + ['user' => $user, 'edition' => $edition]),
         };
     }
