@@ -66,6 +66,8 @@ The portal is a complete, working demonstration with sample data (`DemoSeeder`).
 
 Role dashboards follow the client's Dashboards design: the participant journey, scientific readiness with a decision queue, the executive summary, the reviewer desk, the finance operations desk and the registration desk with batch badge printing. There are also in-app notifications, role-aware search, a CSV export of payments and a registration target.
 
+Photo gallery: photographers have their own accounts, upload into albums by day or programme session, and publish their own photos (no approval step). The public gallery shows albums by day with highlights, a lightbox and full-resolution downloads. Anyone in a photo can ask for it to be removed; admins decide and the person is emailed. Photos are stored on the server's own disk for now (`GALLERY_DISK`).
+
 Deployment: pushing to `main` deploys through John Mduda's GitOps pipeline (see CLAUDE.md).
 
 Still to build for the live 2027 summit: group registration, sponsors, session chair and rapporteur applications, presentation uploads, programme editing in the portal (the demo programme is seeded), certificates, the abstract book, the staff scanning app API, and email campaigns.

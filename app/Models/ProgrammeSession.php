@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProgrammeSession extends Model
 {
@@ -41,6 +42,11 @@ class ProgrammeSession extends Model
         return $this->belongsToMany(AbstractSubmission::class, 'programme_session_abstract', 'programme_session_id', 'abstract_id')
             ->withPivot('position')
             ->orderByPivot('position');
+    }
+
+    public function albums(): HasMany
+    {
+        return $this->hasMany(Album::class);
     }
 
     public function kindLabel(): string

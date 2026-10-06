@@ -11,7 +11,7 @@ class ProgrammeController extends Controller
     {
         $edition = $summit->edition();
         $sessions = $edition
-            ? $edition->sessions()->with(['topic', 'abstracts.authors', 'abstracts.topic'])->get()
+            ? $edition->sessions()->with(['topic', 'abstracts.authors', 'abstracts.topic', 'albums' => fn ($q) => $q->visible()])->get()
             : collect();
 
         return view('programme', [

@@ -19,6 +19,7 @@
                     <a href="{{ route('home') }}#about" class="hover:text-sun-300">About</a>
                     <a href="{{ route('home') }}#programme" class="hover:text-sun-300">Programme</a>
                     <a href="{{ route('home') }}#speakers" class="hover:text-sun-300">Speakers</a>
+                    <a href="{{ route('gallery.index') }}" class="hover:text-sun-300">Gallery</a>
                     <a href="{{ route('home') }}#venue" class="hover:text-sun-300">Venue</a>
                 </div>
             </div>

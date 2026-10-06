@@ -66,6 +66,7 @@ class DemoSeeder extends Seeder
         $this->abstracts($participants, $staff['scientific']);
         $this->programme();
         $this->deskAndNotifications();
+        $this->call(GallerySeeder::class);
     }
 
     /** $time if it is already past; otherwise a random moment between $after and now. */

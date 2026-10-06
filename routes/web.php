@@ -8,6 +8,11 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeskController;
 use App\Http\Controllers\Finance\PaymentController as FinancePaymentController;
+use App\Http\Controllers\GalleryController;
+use App\Http\Controllers\Media\AlbumController as MediaAlbumController;
+use App\Http\Controllers\Media\PhotoController as MediaPhotoController;
+use App\Http\Controllers\Media\RemovalRequestController;
+use App\Http\Controllers\Media\UploadController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
@@ -21,6 +26,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'home')->name('home');
 Route::get('/programme', ProgrammeController::class)->name('programme');
+
+// Photo gallery
+Route::get('/gallery', [GalleryController::class, 'index'])->name('gallery.index');
+Route::get('/gallery/photos/{photo}/download', [GalleryController::class, 'download'])->name('gallery.photos.download');
+Route::get('/gallery/photos/{photo}/{size}', [GalleryController::class, 'photo'])->whereIn('size', ['thumb', 'display'])->name('gallery.photos.show');
+Route::post('/gallery/photos/{photo}/removal', [GalleryController::class, 'requestRemoval'])->middleware('throttle:5,1')->name('gallery.photos.removal');
+Route::get('/gallery/{album:slug}', [GalleryController::class, 'album'])->name('gallery.album');
 
 // Sign-in, registration, password reset and email verification routes come from Fortify.
 
@@ -86,6 +98,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/print-queue/batch', [DeskController::class, 'printBatch'])->name('print-batch');
         Route::post('/{registration}/check-in', [DeskController::class, 'checkIn'])->name('check-in');
         Route::get('/{registration}/badge', [DeskController::class, 'badge'])->name('badge');
+    });
+
+    // Photographers: albums, uploads and publishing
+    Route::middleware('role:photographer|admin')->prefix('media')->name('media.')->group(function () {
+        Route::get('/albums', [MediaAlbumController::class, 'index'])->name('albums.index');
+        Route::get('/albums/new', [MediaAlbumController::class, 'create'])->name('albums.create');
+        Route::post('/albums', [MediaAlbumController::class, 'store'])->name('albums.store');
+        Route::get('/albums/{album}', [MediaAlbumController::class, 'show'])->name('albums.show');
+        Route::get('/albums/{album}/edit', [MediaAlbumController::class, 'edit'])->name('albums.edit');
+        Route::put('/albums/{album}', [MediaAlbumController::class, 'update'])->name('albums.update');
+        Route::delete('/albums/{album}', [MediaAlbumController::class, 'destroy'])->name('albums.destroy');
+        Route::post('/albums/{album}/uploads', UploadController::class)->name('albums.uploads');
+        Route::post('/albums/{album}/photos', [MediaPhotoController::class, 'bulk'])->name('albums.photos');
+
+        Route::middleware('role:admin')->group(function () {
+            Route::get('/removal-requests', [RemovalRequestController::class, 'index'])->name('removal-requests.index');
+            Route::put('/removal-requests/{removal}', [RemovalRequestController::class, 'update'])->name('removal-requests.update');
+        });
     });
 
     // Administration

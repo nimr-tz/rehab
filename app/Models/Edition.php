@@ -54,6 +54,11 @@ class Edition extends Model
         return $this->hasMany(ProgrammeSession::class)->orderBy('starts_at');
     }
 
+    public function albums(): HasMany
+    {
+        return $this->hasMany(Album::class);
+    }
+
     /** Abstract submission is open when switched on and the deadline has not passed. */
     public function acceptsAbstracts(): bool
     {

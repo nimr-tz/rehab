@@ -7,6 +7,7 @@
         $home.'#register' => 'Fees',
         $home.'#topics' => 'Topics',
         route('programme') => 'Programme',
+        route('gallery.index') => 'Gallery',
         $home.'#venue' => 'Venue',
         $home.'#faq' => 'FAQ',
     ];

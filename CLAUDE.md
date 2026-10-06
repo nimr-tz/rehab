@@ -33,7 +33,7 @@ Local email goes to Mailpit: http://127.0.0.1:8025. `composer84 run dev` starts 
 
 The portal doubles as a demonstration of the complete product. **Every link must lead to a working screen; no "coming soon" pages.**
 
-- `database/seeders/DemoSeeder.php` builds a sample 2027 summit: settings, staff for every role, about 60 participants at every payment stage, about 36 abstracts through review, and the programme. It refuses to run in production. `migrate:fresh --seed` runs it locally (it takes about 30 seconds because it renders sample bank slips).
+- `database/seeders/DemoSeeder.php` builds a sample 2027 summit: settings, staff for every role, about 60 participants at every payment stage, about 36 abstracts through review, and the programme. `GallerySeeder` adds two photographers and seven albums of generated sample photos. Both refuse to run in production. `migrate:fresh --seed` runs it locally (it takes about 30 seconds because it renders sample bank slips).
 - Demo accounts use the password `rehab2027` and are created in `DemoSeeder::staff()` and `participants()`. Never show credentials in the portal itself; share them with the user directly.
 - The sample bank and mobile money numbers live in `.env.example` and are marked as samples.
 - Only code and structure go into git. The database, uploaded proofs and `.env` stay local, so production starts empty: `php artisan migrate`, then `php artisan db:seed --class=DeploymentSeeder` with `ADMIN_EMAIL` set.
@@ -43,6 +43,7 @@ The portal doubles as a demonstration of the complete product. **Every link must
 - `app/Support/Summit.php`: the current edition, as views see it (`$summit` in every view). It falls back to `config/summit.php` when no edition exists.
 - `app/Services/RegistrationService.php`: registration and payments (locks, transactions, emails). `AbstractService.php`: abstracts, double-blind assignment, reviews, decisions and conference codes. `DocumentService.php`: badge and invitation letter PDFs.
 - `app/Support/Navigation.php`: the sidebar, one section per role, plus the top-bar search hint.
+- Photo gallery: photographers (role `photographer`) upload into albums at `/media/albums`; the public browses `/gallery`. `GalleryService` receives chunked uploads (`resources/js/photo-uploader.js`) and `PhotoProcessor` makes the stored copies: the original (upright, GPS and camera metadata removed), a 2048px display copy and a 720px thumbnail. Processing runs in the request, because production has no queue worker. Files are served through `GalleryController`, so unpublished photos stay private. The lightbox is PhotoSwipe (`resources/js/gallery.js`).
 - `app/Services/DashboardService.php`: the numbers behind each role's dashboard (`resources/views/dashboards/*`, the admin executive summary and the desk). Charts are plain SVG components in `resources/views/components/chart`, coloured from `App\Support\Palette` (validated categorical order; sequential brand ramp for heatmaps).
 - `resources/views/components`: the component library (button, card, status, stat, page-header, empty, form fields, icon).
 

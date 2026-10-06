@@ -7,6 +7,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\Role;
 use App\Models\AbstractSubmission;
 use App\Models\Payment;
+use App\Models\PhotoRemovalRequest;
 use App\Models\ReviewAssignment;
 use App\Models\User;
 
@@ -25,8 +26,10 @@ class Navigation
         $item = fn (string $label, string $route, string $active, array $extra = []) => ['label' => $label, 'route' => $route, 'active' => $active] + $extra;
         $sections = [];
 
-        // Admins and the registration desk land on the executive summary and the registry instead.
-        $ownDashboard = ! $is(Role::Admin) && ! ($is(Role::RegistrationOfficer) && ! $is(Role::ScientificAdmin, Role::FinanceOfficer, Role::Reviewer, Role::Participant));
+        // Admins, the registration desk and photographers land on the executive summary, the registry and their albums instead.
+        $ownDashboard = ! $is(Role::Admin)
+            && ! ($is(Role::RegistrationOfficer) && ! $is(Role::ScientificAdmin, Role::FinanceOfficer, Role::Reviewer, Role::Participant))
+            && ! ($is(Role::Photographer) && ! $is(Role::ScientificAdmin, Role::FinanceOfficer, Role::RegistrationOfficer, Role::Reviewer, Role::Participant));
         $overview = $ownDashboard ? [$item('Overview', 'dashboard', 'dashboard')] : [];
 
         if ($is(Role::Participant)) {
@@ -73,6 +76,14 @@ class Navigation
             ]];
         }
 
+        if ($is(Role::Photographer, Role::Admin)) {
+            $sections[] = ['label' => 'Photo gallery', 'items' => [
+                $item('Albums & uploads', 'media.albums.index', 'media.albums.*'),
+                ...($is(Role::Admin) ? [$item('Removal requests', 'media.removal-requests.index', 'media.removal-requests.*', ['count' => PhotoRemovalRequest::pending()->count()])] : []),
+                $item('Public gallery', 'gallery.index', 'gallery.*'),
+            ]];
+        }
+
         if ($is(Role::Admin)) {
             $sections[] = ['label' => 'Administration', 'items' => [
                 $item('Executive summary', 'admin.overview', 'admin.overview'),
@@ -98,6 +109,7 @@ class Navigation
             $user->hasRole(Role::FinanceOfficer->value) => 'Search name, reference, transaction…',
             $user->hasRole(Role::RegistrationOfficer->value) => 'Search attendees…',
             $user->hasRole(Role::Reviewer->value) => 'Search assigned abstracts…',
+            $user->hasRole(Role::Photographer->value) => 'Search sessions…',
             default => 'Search sessions and your abstracts…',
         };
     }
