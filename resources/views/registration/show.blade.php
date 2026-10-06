@@ -77,6 +77,10 @@
                     <x-button size="lg" icon="check">Register</x-button>
                 </div>
                 @error('confirm') <p class="text-xs font-medium text-red-700">{{ $message }}</p> @enderror
+                <p class="flex items-start gap-2 text-xs text-ink-500">
+                    <x-icon name="camera" class="h-4 w-4 shrink-0" />
+                    <span>Photos are taken at the summit and published in the public <a href="{{ route('gallery.index') }}" class="font-semibold text-brand-700 hover:underline">gallery</a>. If you appear in one and would like it removed, open it in the gallery and choose the flag.</span>
+                </p>
             </form>
         @endif
     @else

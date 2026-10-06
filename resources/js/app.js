@@ -1,4 +1,5 @@
 import Alpine from 'alpinejs';
+import photoUploader from './photo-uploader';
 import scorecard from './scorecard';
 
 Alpine.data('scorecard', scorecard);
@@ -46,6 +47,13 @@ Alpine.data('brandLogo', (animatedSrc) => ({
         img.src = animatedSrc;
     },
 }));
+
+Alpine.data('photoUploader', photoUploader);
+
+// The gallery lightbox loads only on pages with a photo grid.
+if (document.querySelector('[data-gallery]')) {
+    import('./gallery');
+}
 
 window.Alpine = Alpine;
 Alpine.start();

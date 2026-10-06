@@ -52,6 +52,11 @@
                                     <h2 class="mt-1.5 text-xl font-bold text-ink-900">{{ $session->title }}</h2>
                                     @if ($session->description)<p class="mt-1 text-ink-600">{{ $session->description }}</p>@endif
                                     @if ($session->chair)<p class="mt-1 text-sm text-ink-500">Chair: {{ $session->chair }}</p>@endif
+                                    @foreach ($session->albums as $album)
+                                        <a href="{{ route('gallery.album', $album) }}" class="mt-3 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3.5 py-1.5 text-sm font-semibold text-brand-700 hover:bg-brand-100">
+                                            <x-icon name="photo" class="h-4 w-4" /> Photos: {{ $album->title }}
+                                        </a>
+                                    @endforeach
 
                                     @if ($session->abstracts->isNotEmpty())
                                         <ol class="mt-4 divide-y divide-ink-100 rounded-2xl border border-ink-100">
