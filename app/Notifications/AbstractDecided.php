@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Enums\AbstractStatus;
+use App\Enums\PresentationType;
 use App\Models\AbstractSubmission;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -25,8 +26,8 @@ class AbstractDecided extends Notification
             ->greeting('Hello '.$notifiable->first_name.',');
 
         if ($accepted) {
-            $mail->line('Congratulations. Your abstract "'.$this->abstract->title.'" has been accepted as a '.strtolower($this->abstract->decision_type->label()).'.')
-                ->line('Its conference code is '.$this->abstract->code.'. Please use it in all correspondence and on your slides or poster.');
+            $mail->line('Congratulations. Your abstract "'.$this->abstract->title.'" has been '.lcfirst($this->abstract->decision_type->acceptedLabel()).'.')
+                ->line('Its conference code is '.$this->abstract->code.'. Please use it in all correspondence and on your '.($this->abstract->decision_type === PresentationType::Poster ? 'poster' : 'slides').'.');
         } else {
             $mail->line('Thank you for submitting "'.$this->abstract->title.'". After review, the scientific committee was not able to accept it this year.');
         }

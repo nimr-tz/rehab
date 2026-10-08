@@ -26,7 +26,7 @@
                 <div class="flex flex-wrap items-center gap-2">
                     @if ($abstract?->code)<span class="font-mono text-xs font-semibold text-ink-500">{{ $abstract->code }}</span>@endif
                     @if ($abstract?->topic)<span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $abstract->topic->chipClasses() }}">{{ $abstract->topic->name }}</span>@endif
-                    @if ($abstract?->decision_type)<x-status tone="info">{{ $abstract->decision_type->label() }}</x-status>@endif
+                    @if ($abstract?->decision_type && \App\Enums\PresentationType::postersEnabled())<x-status tone="info">{{ $abstract->decision_type->label() }}</x-status>@endif
                 </div>
                 <h2 class="mt-3 text-xl font-bold leading-snug text-ink-900">{{ $abstract?->title }}</h2>
                 @if ($session)

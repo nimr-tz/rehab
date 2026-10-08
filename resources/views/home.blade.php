@@ -15,17 +15,21 @@
         'Posters' => 'text-olive-700',
         'Panel' => 'text-sun-700',
     ];
+    // Without posters, the afternoon slots are more oral sessions.
+    $afternoon = \App\Enums\PresentationType::postersEnabled()
+        ? ['Posters', 'Poster session', 'Presenters at their posters']
+        : ['Parallel', 'Afternoon oral sessions', 'More abstract presentations by topic'];
     $programme = [
         ['Day 1 · Opening', [
             ['Plenary', 'Opening ceremony and keynote', 'Welcome and the summit theme'],
             ['Parallel', 'Oral sessions by topic', 'Abstract presentations across halls'],
-            ['Posters', 'Poster session', 'Presenters at their posters'],
+            $afternoon,
         ]],
         ['Day 2 · Evidence and practice', [
             ['Plenary', 'Keynote plenary', 'Morning plenary hall'],
             ['Panel', 'Panel discussions', 'Policy, financing and practice'],
             ['Parallel', 'Oral sessions by topic', 'Abstract presentations across halls'],
-            ['Posters', 'Poster session', 'Presenters at their posters'],
+            $afternoon,
         ]],
         ['Day 3 · Closing', [
             ['Parallel', 'Oral sessions by topic', 'Abstract presentations across halls'],
@@ -156,7 +160,7 @@
         <div class="mt-16 grid gap-4 md:grid-cols-3">
             <div class="rounded-[20px] bg-ember-50 p-7">
                 <p class="text-[2.75rem] font-extrabold tracking-tight text-ember-600">{{ $summit->get('days') }} days</p>
-                <p class="mt-1.5 text-[17px] leading-snug text-ink-600">of plenaries, parallel sessions and posters</p>
+                <p class="mt-1.5 text-[17px] leading-snug text-ink-600">of plenaries, parallel sessions{{ \App\Enums\PresentationType::postersEnabled() ? ', panels and posters' : ' and panels' }}</p>
             </div>
             <div class="rounded-[20px] bg-sun-50 p-7">
                 <p class="text-[2.75rem] font-extrabold tracking-tight text-brand-700">{{ count($topics) }} topics</p>

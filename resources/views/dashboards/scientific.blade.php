@@ -71,7 +71,7 @@
                                 $score = $abstract->averageScore();
                                 $band = \App\Support\Rubric::band($score);
                                 [$agree, $dot] = $agreement($abstract);
-                                $recs = $abstract->reviews->filter->isComplete()->map(fn ($r) => strtolower($r->recommendation->label()))->countBy()->map(fn ($n, $r) => $n.'× '.$r)->implode(', ');
+                                $recs = $abstract->roundReviews()->filter->isComplete()->map(fn ($r) => strtolower($r->recommendation->label()))->countBy()->map(fn ($n, $r) => $n.'× '.$r)->implode(', ');
                             @endphp
                             <tr>
                                 <td class="px-6 py-4 font-mono text-xs font-semibold text-ink-500">{{ $abstract->blindId() }}</td>
@@ -86,13 +86,14 @@
                                 <td class="px-3 py-4"><span class="inline-flex items-center gap-1.5 font-medium text-ink-700"><span class="h-2 w-2 rounded-full {{ $dot }}"></span>{{ $agree }}</span></td>
                                 <td class="px-6 py-4">
                                     <div class="flex gap-1.5">
-                                        @foreach (['oral' => 'Oral', 'poster' => 'Poster', 'reject' => 'Reject'] as $value => $label)
+                                        @foreach ($abstract->decisionOptions(short: true) as $value => $label)
                                             <form method="POST" action="{{ route('scientific.abstracts.decide', $abstract) }}">
                                                 @csrf
                                                 <input type="hidden" name="decision" value="{{ $value }}">
                                                 <button @class([
                                                     'rounded-lg px-3 py-1.5 text-xs font-bold transition',
-                                                    'bg-olive-700 text-white hover:bg-olive-800' => $value !== 'reject',
+                                                    'bg-olive-700 text-white hover:bg-olive-800' => ! in_array($value, ['reject', 'revise'], true),
+                                                    'border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100' => $value === 'revise',
                                                     'border border-ink-200 text-ink-600 hover:border-red-300 hover:text-red-700' => $value === 'reject',
                                                 ])>{{ $label }}</button>
                                             </form>

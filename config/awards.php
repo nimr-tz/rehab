@@ -62,7 +62,7 @@ return [
             'kind' => 'presentation',
             'students_only' => true,
             'places' => 1,
-            'description' => 'For the best oral or poster presentation by a student registered at the summit.',
+            'description' => 'For the best presentation by a student registered at the summit.',
         ],
         [
             'name' => 'Innovation in Rehabilitation Award',

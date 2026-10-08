@@ -95,7 +95,7 @@
             <x-card title="Fair judging">
                 <ul class="space-y-3 text-sm text-ink-600">
                     <li class="flex gap-2.5"><x-icon name="shield" class="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />You never score an abstract you wrote or co-wrote.</li>
-                    <li class="flex gap-2.5"><x-icon name="eye" class="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />Attend each presentation or poster before you score it.</li>
+                    <li class="flex gap-2.5"><x-icon name="eye" class="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />Attend each {{ \App\Enums\PresentationType::postersEnabled() ? 'presentation or poster' : 'presentation' }} before you score it.</li>
                     <li class="flex gap-2.5"><x-icon name="pencil" class="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />You can change your scores until the winners are announced.</li>
                 </ul>
             </x-card>

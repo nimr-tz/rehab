@@ -95,16 +95,32 @@ class AwardsTest extends TestCase
         $this->actingAs($committee)->post(route('committee.awards.suggested'))->assertRedirect(route('committee.awards.index'));
         $this->actingAs($committee)->post(route('committee.awards.suggested'))->assertSessionHas('status', 'This summit already has every suggested award.');
 
-        $this->assertSame(count(config('awards.suggested')), $this->edition->awardCategories()->count());
+        // Best Poster is left out while posters are off.
+        $this->assertSame(count(config('awards.suggested')) - 1, $this->edition->awardCategories()->count());
         $champion = $this->edition->awardCategories()->where('name', 'Rehabilitation Champion Award')->sole();
         $this->assertSame('2027-08-15', $champion->nominations_close_on->toDateString()); // a month before the summit
         $this->assertTrue($champion->acceptsNominations());
 
-        $this->actingAs($committee)->get(route('committee.awards.index'))->assertOk()->assertSee('Best Poster')->assertSee('Shortlisting');
+        $this->actingAs($committee)->get(route('committee.awards.index'))->assertOk()
+            ->assertSee('Best Oral Presentation')->assertDontSee('Best Poster')->assertSee('Shortlisting');
+    }
+
+    public function test_a_poster_award_needs_posters_switched_on(): void
+    {
+        $committee = $this->user(Role::Admin);
+        $form = ['name' => 'Best Poster', 'kind' => 'presentation', 'presentation_type' => 'poster', 'students_only' => '0', 'places' => '2'];
+
+        $this->actingAs($committee)->post(route('committee.awards.store'), $form)->assertSessionHasErrors('presentation_type');
+        $this->assertSame(0, AwardCategory::count());
+
+        config(['review.posters' => true]);
+        $this->actingAs($committee)->post(route('committee.awards.suggested'))->assertRedirect();
+        $this->assertTrue($this->edition->awardCategories()->where('name', 'Best Poster')->exists());
     }
 
     public function test_the_committee_creates_and_edits_an_award(): void
     {
+        config(['review.posters' => true]);
         $committee = $this->user(Role::Admin);
 
         $this->actingAs($committee)->post(route('committee.awards.store'), [

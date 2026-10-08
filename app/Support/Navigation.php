@@ -42,8 +42,7 @@ class Navigation
                 ]),
                 $item('Decision queue', 'scientific.abstracts.index', 'scientific.abstracts.index', [
                     'params' => ['status' => 'ready'], 'query' => ['status', 'ready'],
-                    'count' => AbstractSubmission::where('status', AbstractStatus::UnderReview)
-                        ->whereDoesntHave('reviews', fn ($q) => $q->whereNull('completed_at'))->count(),
+                    'count' => AbstractSubmission::awaitingDecision()->count(),
                 ]),
                 $item('Reviewers', 'scientific.reviewers', 'scientific.reviewers'),
                 $item('Awards', 'committee.awards.index', 'committee.awards.*'),
@@ -75,7 +74,7 @@ class Navigation
             default => $user->hasRole(Role::Participant->value) ? [
                 $item('Registration & payment', 'registration.show', 'registration.show'),
                 $item('Badge & check-in', 'registration.badge.show', 'registration.badge.show'),
-                $item('My abstracts', 'abstracts.index', 'abstracts.*', ['count' => $user->abstracts()->whereIn('status', [AbstractStatus::Draft, AbstractStatus::UnderReview])->count()]),
+                $item('My abstracts', 'abstracts.index', 'abstracts.*', ['count' => $user->abstracts()->whereIn('status', [AbstractStatus::Draft, AbstractStatus::RevisionRequested])->count()]),
                 $item('Programme', 'programme', 'programme'),
                 $item('Awards', 'awards.mine', 'awards.mine'),
             ] : [

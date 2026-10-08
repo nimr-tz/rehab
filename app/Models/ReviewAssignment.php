@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AbstractStatus;
 use App\Enums\Recommendation;
 use App\Support\Rubric;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,7 @@ class ReviewAssignment extends Model
     protected function casts(): array
     {
         return [
+            'round' => 'integer',
             'recommendation' => Recommendation::class,
             'technical_checks' => 'array',
             'due_on' => 'date',
@@ -34,6 +36,19 @@ class ReviewAssignment extends Model
     public function isComplete(): bool
     {
         return $this->completed_at !== null;
+    }
+
+    /**
+     * The reviewer can still submit or change this review: its round is the
+     * one under way and nothing has been decided.
+     */
+    public function isOpen(): bool
+    {
+        return match ($this->abstract->status) {
+            AbstractStatus::Submitted, AbstractStatus::UnderReview => $this->round === 1,
+            AbstractStatus::Revised => $this->round === 2,
+            default => false,
+        };
     }
 
     /** Rubric total out of 100, once the review is complete. */

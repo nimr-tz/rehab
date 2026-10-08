@@ -103,7 +103,7 @@ class DashboardService
         $abstracts = AbstractSubmission::where('edition_id', $edition?->id)->where('status', '!=', AbstractStatus::Draft)
             ->with('topic', 'reviews.reviewer', 'submitter')->get();
         $reviews = $abstracts->flatMap->reviews;
-        $ready = $abstracts->filter(fn ($a) => $a->status === AbstractStatus::UnderReview && $a->reviews->isNotEmpty() && $a->reviews->every->isComplete());
+        $ready = $abstracts->filter->awaitsDecision();
         $decided = $abstracts->whereIn('status', [AbstractStatus::Accepted, AbstractStatus::Rejected]);
 
         $daily = collect(range(29, 0))->map(function ($ago) use ($abstracts) {
@@ -113,19 +113,19 @@ class DashboardService
         })->values()->all();
 
         $agreement = function (AbstractSubmission $a) {
-            $recs = $a->reviews->filter->isComplete()->map(fn ($r) => $r->recommendation->value)->unique();
+            $recs = $a->roundReviews()->filter->isComplete()->map(fn ($r) => $r->recommendation->isAcceptance() ? 'accept' : $r->recommendation->value)->unique();
             if ($recs->count() <= 1) {
                 return ['High', 'bg-emerald-500'];
             }
 
-            return $recs->contains('reject') ? ['Low', 'bg-red-500'] : ['Medium', 'bg-amber-500'];
+            return $recs->contains('accept') && $recs->contains('reject') ? ['Low', 'bg-red-500'] : ['Medium', 'bg-amber-500'];
         };
 
         $topics = ($edition?->topics ?? collect())->map(fn ($topic) => [
             'name' => $topic->name,
             'cells' => [
                 'Submitted' => $abstracts->where('topic_id', $topic->id)->where('status', AbstractStatus::Submitted)->count(),
-                'In review' => $abstracts->where('topic_id', $topic->id)->where('status', AbstractStatus::UnderReview)->count(),
+                'In review' => $abstracts->where('topic_id', $topic->id)->whereIn('status', [AbstractStatus::UnderReview, AbstractStatus::RevisionRequested, AbstractStatus::Revised])->count(),
                 'Accepted' => $abstracts->where('topic_id', $topic->id)->where('status', AbstractStatus::Accepted)->count(),
                 'Not accepted' => $abstracts->where('topic_id', $topic->id)->where('status', AbstractStatus::Rejected)->count(),
             ],

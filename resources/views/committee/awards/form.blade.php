@@ -26,8 +26,10 @@
                 ]" />
 
                 <div x-show="kind === 'presentation'" class="space-y-5">
-                    <x-form.select name="presentation_type" label="Which presentations" :value="$category->presentation_type?->value"
-                        :options="['oral' => 'Oral presentations only', 'poster' => 'Posters only']" placeholder="Oral presentations and posters" />
+                    @if (\App\Enums\PresentationType::postersEnabled())
+                        <x-form.select name="presentation_type" label="Which presentations" :value="$category->presentation_type?->value"
+                            :options="['oral' => 'Oral presentations only', 'poster' => 'Posters only']" placeholder="Oral presentations and posters" />
+                    @endif
                     <x-form.checkbox name="students_only" label="Students only" :checked="$category->students_only"
                         hint="Only abstracts submitted by someone registered in a student category." />
                 </div>

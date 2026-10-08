@@ -188,7 +188,7 @@ class SummitFlowTest extends TestCase
         $this->actingAs($this->user())->get(route('abstracts.show', $draft))->assertNotFound();
     }
 
-    public function test_the_review_is_double_blind_and_the_decision_assigns_a_code(): void
+    public function test_the_review_is_double_blind_and_two_acceptances_accept_the_abstract(): void
     {
         $author = $this->user();
         $this->actingAs($author)->post(route('abstracts.store'), $this->abstractForm())->assertRedirect();
@@ -219,13 +219,90 @@ class SummitFlowTest extends TestCase
         $this->assertSame('accept', $assignment->fresh()->band()['key']);
         $this->assertSame(['title', 'methodology', 'analysis', 'relevance'], $assignment->fresh()->technical_checks);
 
-        $this->actingAs($committee)->post(route('scientific.abstracts.decide', $abstract), ['decision' => 'oral'])->assertRedirect();
+        // One review is not enough to decide.
+        $this->assertSame(AbstractStatus::UnderReview, $abstract->fresh()->status);
+        $this->actingAs($committee)->post(route('scientific.abstracts.decide', $abstract), ['decision' => 'oral'])
+            ->assertSessionHasErrors(['decision' => 'Every review must be in before you decide.']);
+
+        // The second reviewer accepts too, so the abstract is accepted without the committee.
+        $second = $this->user(Role::Reviewer);
+        $this->actingAs($committee)->post(route('scientific.abstracts.assign', $abstract), ['reviewer_id' => $second->id])->assertRedirect();
+        $this->actingAs($second)->put(route('reviews.update', $abstract->reviews()->where('reviewer_id', $second->id)->sole()), [
+            'score_originality' => 15, 'score_technical' => 30, 'score_significance' => 24, 'score_clarity' => 8,
+            'recommendation' => 'accept_oral', 'comments_for_author' => 'A useful pilot; the conclusions match the results.',
+        ])->assertRedirect();
+
         $abstract->refresh();
         $this->assertSame(AbstractStatus::Accepted, $abstract->status);
+        $this->assertTrue($abstract->accepted_automatically);
         $this->assertSame('OR-HBR-01', $abstract->code);
         Notification::assertSentTo($author, AbstractDecided::class);
 
+        $this->actingAs($committee)->get(route('scientific.abstracts.show', $abstract))->assertSee('Accepted automatically: both reviewers accepted.');
         $this->actingAs($author)->get(route('abstracts.show', $abstract))->assertSee('OR-HBR-01')->assertSee('confidence intervals');
+    }
+
+    public function test_without_posters_every_abstract_is_an_oral_presentation(): void
+    {
+        $author = $this->user();
+        $this->actingAs($author)->get(route('abstracts.create'))->assertOk()->assertDontSee('Preferred presentation');
+        $this->actingAs($author)->post(route('abstracts.store'), $this->abstractForm(['preferred_type' => 'poster']))->assertSessionHasErrors('preferred_type');
+        $this->actingAs($author)->post(route('abstracts.store'), $this->abstractForm())->assertRedirect();
+        $abstract = AbstractSubmission::sole();
+
+        $committee = $this->user(Role::ScientificAdmin);
+        $reviewer = $this->user(Role::Reviewer);
+        $this->actingAs($committee)->post(route('scientific.abstracts.assign', $abstract), ['reviewer_id' => $reviewer->id])->assertRedirect();
+        $assignment = $abstract->reviews()->sole();
+
+        // Every acceptance is oral, so the choices are simply Accept and Reject.
+        $this->actingAs($reviewer)->get(route('reviews.edit', $assignment))->assertOk()
+            ->assertSee('Accept')->assertDontSee('Accept as oral')->assertDontSee('Accept as poster')->assertDontSee('Prefers oral');
+        $review = [
+            'score_originality' => 14, 'score_technical' => 30, 'score_significance' => 22, 'score_clarity' => 8,
+            'comments_for_author' => 'Clear and practical; please add confidence intervals.',
+        ];
+        $this->actingAs($reviewer)->put(route('reviews.update', $assignment), $review + ['recommendation' => 'accept_poster'])->assertSessionHasErrors('recommendation');
+        $this->actingAs($reviewer)->put(route('reviews.update', $assignment), $review + ['recommendation' => 'accept_oral'])->assertRedirect();
+
+        // The second reviewer disagrees, so the committee decides.
+        $second = $this->user(Role::Reviewer);
+        $this->actingAs($committee)->post(route('scientific.abstracts.assign', $abstract), ['reviewer_id' => $second->id])->assertRedirect();
+        $this->actingAs($second)->put(route('reviews.update', $abstract->reviews()->where('reviewer_id', $second->id)->sole()),
+            ['score_originality' => 6, 'score_technical' => 14, 'score_significance' => 12, 'score_clarity' => 5, 'recommendation' => 'reject', 'comments_for_author' => 'The methods are too thin to support the conclusions.'])
+            ->assertRedirect();
+
+        $this->actingAs($committee)->get(route('scientific.abstracts.show', $abstract))->assertOk()
+            ->assertSee('1× accept')->assertDontSee('Accept as oral')->assertDontSee('Accept as poster');
+        $this->actingAs($committee)->post(route('scientific.abstracts.decide', $abstract), ['decision' => 'poster'])->assertSessionHasErrors('decision');
+        $this->assertSame(AbstractStatus::UnderReview, $abstract->fresh()->status);
+
+        $this->actingAs($committee)->post(route('scientific.abstracts.decide', $abstract), ['decision' => 'oral'])->assertRedirect();
+        $this->assertSame('OR-HBR-01', $abstract->fresh()->code);
+        $this->actingAs($author)->get(route('abstracts.show', $abstract))->assertSee('Accepted.')->assertDontSee('oral presentation');
+    }
+
+    public function test_posters_come_back_when_switched_on(): void
+    {
+        config(['review.posters' => true]);
+
+        $author = $this->user();
+        $this->actingAs($author)->get(route('abstracts.create'))->assertOk()->assertSee('Preferred presentation');
+        $this->actingAs($author)->post(route('abstracts.store'), $this->abstractForm(['preferred_type' => 'poster']))->assertRedirect();
+        $abstract = AbstractSubmission::sole();
+
+        // Both reviewers say poster, so it is accepted as a poster.
+        $committee = $this->user(Role::ScientificAdmin);
+        foreach ([$this->user(Role::Reviewer), $this->user(Role::Reviewer)] as $reviewer) {
+            $this->actingAs($committee)->post(route('scientific.abstracts.assign', $abstract), ['reviewer_id' => $reviewer->id])->assertRedirect();
+            $this->actingAs($reviewer)->put(route('reviews.update', $abstract->reviews()->where('reviewer_id', $reviewer->id)->sole()), [
+                'score_originality' => 14, 'score_technical' => 30, 'score_significance' => 22, 'score_clarity' => 8,
+                'recommendation' => 'accept_poster', 'comments_for_author' => 'Clear and practical; please add confidence intervals.',
+            ])->assertRedirect();
+        }
+
+        $this->assertSame('PO-HBR-01', $abstract->fresh()->code);
+        $this->actingAs($author)->get(route('abstracts.show', $abstract))->assertSee('Accepted as a poster.');
     }
 
     public function test_rubric_scores_are_capped_per_criterion_and_the_reviewer_moves_to_the_next_abstract(): void
@@ -245,7 +322,7 @@ class SummitFlowTest extends TestCase
 
         $valid = [
             'score_originality' => 12, 'score_technical' => 22, 'score_significance' => 18, 'score_clarity' => 6,
-            'recommendation' => 'accept_poster', 'comments_for_author' => 'Useful local data; tighten the methods and report effect sizes.',
+            'recommendation' => 'accept_oral', 'comments_for_author' => 'Useful local data; tighten the methods and report effect sizes.',
         ];
 
         // Each criterion has its own ceiling, and an unknown check is refused.
@@ -267,14 +344,9 @@ class SummitFlowTest extends TestCase
 
     private function expectsAssignmentRefused(User $committee, AbstractSubmission $abstract, User $reviewer): void
     {
-        try {
-            $this->withoutExceptionHandling()->actingAs($committee)->post(route('scientific.abstracts.assign', $abstract), ['reviewer_id' => $reviewer->id]);
-            $this->fail('A co-author was allowed to review.');
-        } catch (\InvalidArgumentException) {
-            $this->assertSame(0, $abstract->reviews()->count());
-        } finally {
-            $this->withExceptionHandling();
-        }
+        $this->actingAs($committee)->post(route('scientific.abstracts.assign', $abstract), ['reviewer_id' => $reviewer->id])
+            ->assertSessionHasErrors(['reviewer_id' => 'This reviewer cannot review this abstract.']);
+        $this->assertSame(0, $abstract->reviews()->count());
     }
 
     public function test_each_area_is_limited_to_its_roles(): void

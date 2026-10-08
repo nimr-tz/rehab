@@ -4,7 +4,13 @@
     use App\Support\Rubric;
 
     $abstract = $assignment->abstract;
-    $locked = in_array($abstract->status->value, ['accepted', 'rejected', 'withdrawn'], true);
+    $locked = ! $assignment->isOpen();
+    $lockedReason = match (true) {
+        $abstract->status->isDecided() => 'A decision has been made on this abstract, so the review is closed.',
+        $abstract->status === \App\Enums\AbstractStatus::Withdrawn => 'The authors withdrew this abstract, so the review is closed.',
+        default => 'The committee asked the authors to revise this abstract, so the first review is closed.',
+    };
+    $round2 = $assignment->round === 2;
     $criteria = Rubric::criteria();
     $colours = collect(array_keys($criteria))->mapWithKeys(fn ($field, $i) => [$field => Palette::categorical($i)]);
     $levels = array_reverse(Rubric::LEVELS, true); // lowest first
@@ -31,12 +37,18 @@
         'locked' => $locked,
         'useDraft' => ! $locked && ! $assignment->isComplete() && ! $errors->any(),
         'draftKey' => 'review-draft:'.$assignment->id,
+        'canRevise' => in_array(\App\Enums\Recommendation::Revise, $recommendations, true),
     ];
 
     $choices = [
-        'accept_oral' => ['icon' => 'users', 'blurb' => 'Strong enough to present from the podium'],
+        'accept_oral' => ['icon' => 'users', 'blurb' => $round2 ? 'The revision answers your concerns' : 'Strong enough to present from the podium'],
         'accept_poster' => ['icon' => 'document', 'blurb' => 'Worth sharing, best as a poster'],
-        'reject' => ['icon' => 'x-circle', 'blurb' => 'Not ready for this summit'],
+        'revise' => ['icon' => 'pencil', 'blurb' => 'Worth accepting once the authors make the changes in your comments'],
+        'reject' => ['icon' => 'x-circle', 'blurb' => $round2 ? 'The revision does not answer your concerns' : 'Not ready for this summit'],
+    ];
+    $choiceStyles = [
+        'reject' => ['border-red-300 bg-red-50/60 ring-2 ring-red-500/30', 'bg-red-50 text-red-700'],
+        'revise' => ['border-amber-300 bg-amber-50/60 ring-2 ring-amber-500/30', 'bg-amber-50 text-amber-700'],
     ];
 @endphp
 
@@ -67,6 +79,38 @@
             <button type="button" @click="discardDraft()" class="font-semibold text-brand-700 hover:underline">Start over</button>
         </div>
 
+        {{-- Round 2: what changed since the first review --}}
+        @if ($round2)
+            <section class="rounded-card border border-ink-100 bg-white shadow-soft">
+                <header class="flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 px-6 py-4">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-[0.16em] text-amber-700">Revised version · second review</p>
+                        <h2 class="mt-1 text-lg font-bold text-ink-900">What the authors changed</h2>
+                    </div>
+                    <span class="text-xs font-medium text-ink-500">Revised {{ $abstract->revised_at->format('j M Y') }}</span>
+                </header>
+                <div class="grid gap-5 px-6 py-5 lg:grid-cols-2">
+                    <div class="rounded-2xl bg-brand-50 p-4">
+                        <p class="text-xs font-bold uppercase tracking-wider text-brand-800">The authors' response</p>
+                        <p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-brand-900">{{ $abstract->revision_response }}</p>
+                    </div>
+                    @if ($earlier)
+                        <div class="rounded-2xl border border-ink-100 p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-xs font-bold uppercase tracking-wider text-ink-500">Your first review</p>
+                                <span class="flex items-center gap-2">
+                                    <span class="text-sm font-extrabold tabular-nums {{ Rubric::scoreClass($earlier->totalScore()) }}">{{ $earlier->totalScore() }}/{{ Rubric::max() }}</span>
+                                    <x-status :tone="$earlier->recommendation->tone()">{{ $earlier->recommendation->label() }}</x-status>
+                                </span>
+                            </div>
+                            <p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink-700">{{ $earlier->comments_for_author }}</p>
+                        </div>
+                    @endif
+                </div>
+                <x-abstract-comparison :abstract="$abstract" class="border-t border-ink-100 px-6 py-5" />
+            </section>
+        @endif
+
         <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)]">
 
             {{-- The abstract, pinned while the reviewer scores --}}
@@ -74,7 +118,7 @@
                 <header class="border-b border-ink-100 px-6 py-4">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-500"><x-icon name="eye-slash" class="h-4 w-4" /> Double-blind · authors hidden</span>
-                        <span class="text-xs font-medium text-ink-500">Prefers {{ strtolower($abstract->preferred_type->label()) }}</span>
+                        @if (\App\Enums\PresentationType::postersEnabled())<span class="text-xs font-medium text-ink-500">Prefers {{ strtolower($abstract->preferred_type->label()) }}</span>@endif
                     </div>
                     <div class="mt-3 flex items-center gap-3">
                         <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
@@ -266,17 +310,24 @@
                 {{-- Recommendation --}}
                 <section class="rounded-card border border-ink-100 bg-white p-5 shadow-soft sm:p-6">
                     <h3 class="text-[17px] font-bold text-ink-900">Your recommendation</h3>
-                    <p class="mt-0.5 text-sm text-ink-500">The committee makes the final decision. Your scores guide it.</p>
+                    <p class="mt-0.5 text-sm text-ink-500">
+                        @if ($round2)
+                            Only one revision is allowed, so the choice now is to accept or reject.
+                        @else
+                            If both reviewers accept, the abstract is accepted. Otherwise the committee decides, and may ask the authors to revise.
+                        @endif
+                    </p>
 
-                    <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div @class(['mt-4 grid gap-3', 'sm:grid-cols-3' => count($recommendations) === 3, 'sm:grid-cols-2' => count($recommendations) !== 3])>
                         @foreach ($recommendations as $option)
-                            @php $choice = $choices[$option->value] ?? ['icon' => 'check', 'blurb' => '']; @endphp
+                            @php
+                                $choice = $choices[$option->value] ?? ['icon' => 'check', 'blurb' => ''];
+                                [$selected, $badge] = $choiceStyles[$option->value] ?? ['border-brand-300 bg-brand-50 ring-2 ring-brand-500/30', 'bg-brand-50 text-brand-700'];
+                            @endphp
                             <label class="relative flex cursor-pointer flex-col gap-2 rounded-2xl border p-4 transition has-[:disabled]:cursor-default has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-brand-500/20"
-                                   :class="recommendation === '{{ $option->value }}'
-                                        ? '{{ $option->value === 'reject' ? 'border-red-300 bg-red-50/60 ring-2 ring-red-500/30' : 'border-brand-300 bg-brand-50 ring-2 ring-brand-500/30' }}'
-                                        : 'border-ink-200 hover:border-ink-300'">
+                                   :class="recommendation === '{{ $option->value }}' ? '{{ $selected }}' : 'border-ink-200 hover:border-ink-300'">
                                 <input type="radio" name="recommendation" value="{{ $option->value }}" x-model="recommendation" class="sr-only" @disabled($locked) required>
-                                <span class="grid h-9 w-9 place-items-center rounded-xl {{ $option->value === 'reject' ? 'bg-red-50 text-red-700' : 'bg-brand-50 text-brand-700' }}">
+                                <span class="grid h-9 w-9 place-items-center rounded-xl {{ $badge }}">
                                     <x-icon :name="$choice['icon']" class="h-5 w-5" />
                                 </span>
                                 <span class="text-sm font-bold text-ink-900">{{ $option->label() }}</span>
@@ -285,7 +336,7 @@
                             </label>
                         @endforeach
                     </div>
-                    @error('recommendation') <p class="mt-2 text-xs font-medium text-red-700">Choose a recommendation.</p> @enderror
+                    @error('recommendation') <p class="mt-2 text-xs font-medium text-red-700">{{ $message === 'The recommendation field is required.' ? 'Choose a recommendation.' : $message }}</p> @enderror
 
                     <div x-show="nudge" x-cloak x-transition.opacity class="mt-4 flex gap-3 rounded-2xl border p-4 text-sm"
                          :class="nudge?.tone === 'warning' ? 'border-amber-100 bg-amber-50 text-amber-900' : 'border-brand-100 bg-brand-50 text-brand-900'">
@@ -319,7 +370,7 @@
                     </div>
 
                     @if ($locked)
-                        <p class="rounded-xl bg-canvas px-4 py-3 text-sm text-ink-600">A decision has been made on this abstract, so the review is closed.</p>
+                        <p class="rounded-xl bg-canvas px-4 py-3 text-sm text-ink-600">{{ $lockedReason }}</p>
                     @else
                         <div x-ref="footer" class="flex flex-col gap-3 border-t border-ink-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
                             <p class="text-sm text-ink-500">

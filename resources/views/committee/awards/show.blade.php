@@ -202,7 +202,7 @@
                                                 <td class="px-5 py-3"><input type="checkbox" name="abstracts[]" value="{{ $abstract->id }}" x-model="picked" id="abstract-{{ $abstract->id }}" class="h-4 w-4 rounded border-ink-300 accent-brand-700"></td>
                                                 <td class="max-w-md px-5 py-3">
                                                     <label for="abstract-{{ $abstract->id }}" class="block cursor-pointer font-medium text-ink-900">{{ $abstract->title }}</label>
-                                                    <p class="text-xs text-ink-500"><span class="font-mono">{{ $abstract->code }}</span> · {{ $abstract->presenter()?->name }} · {{ $abstract->decision_type?->label() }}</p>
+                                                    <p class="text-xs text-ink-500"><span class="font-mono">{{ $abstract->code }}</span> · {{ $abstract->presenter()?->name }}@if (\App\Enums\PresentationType::postersEnabled()) · {{ $abstract->decision_type?->label() }}@endif</p>
                                                 </td>
                                                 <td class="px-5 py-3"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $abstract->topic->chipClasses() }}">{{ $abstract->topic->code }}</span></td>
                                                 <td class="px-5 py-3 font-semibold {{ \App\Support\Rubric::scoreClass($abstract->averageScore()) }}">{{ $abstract->averageScore() ?? '—' }}</td>

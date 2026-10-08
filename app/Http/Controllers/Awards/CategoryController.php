@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Awards;
 
 use App\Enums\AwardKind;
+use App\Enums\PresentationType;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\AwardCategory;
@@ -132,7 +133,7 @@ class CategoryController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:1000'],
             'kind' => ['required', Rule::enum(AwardKind::class)],
-            'presentation_type' => ['nullable', 'in:oral,poster'],
+            'presentation_type' => ['nullable', Rule::in(array_column(PresentationType::decisions(), 'value'))],
             'students_only' => ['boolean'],
             'places' => ['required', 'integer', 'between:1,3'],
             'prize' => ['nullable', 'string', 'max:160'],

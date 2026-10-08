@@ -22,7 +22,7 @@
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[680px] text-left text-sm">
                     <thead class="border-b border-ink-100 bg-ink-50 text-xs font-semibold uppercase tracking-wider text-ink-500">
-                        <tr><th class="px-5 py-3">Title</th><th class="px-5 py-3">Topic</th><th class="px-5 py-3">Type</th><th class="px-5 py-3">Status</th><th class="px-5 py-3"></th></tr>
+                        <tr><th class="px-5 py-3">Title</th><th class="px-5 py-3">Topic</th>@if (\App\Enums\PresentationType::postersEnabled())<th class="px-5 py-3">Type</th>@endif<th class="px-5 py-3">Status</th><th class="px-5 py-3"></th></tr>
                     </thead>
                     <tbody class="divide-y divide-ink-100">
                         @foreach ($abstracts as $abstract)
@@ -32,7 +32,7 @@
                                     @if ($abstract->code)<p class="font-mono text-xs text-ink-500">{{ $abstract->code }}</p>@endif
                                 </td>
                                 <td class="px-5 py-3.5"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $abstract->topic->chipClasses() }}">{{ $abstract->topic->code }}</span></td>
-                                <td class="px-5 py-3.5 text-ink-600">{{ ($abstract->decision_type ?? $abstract->preferred_type)->label() }}</td>
+                                @if (\App\Enums\PresentationType::postersEnabled())<td class="px-5 py-3.5 text-ink-600">{{ ($abstract->decision_type ?? $abstract->preferred_type)->label() }}</td>@endif
                                 <td class="px-5 py-3.5"><x-status :tone="$abstract->status->tone()">{{ $abstract->status->label() }}</x-status></td>
                                 <td class="px-5 py-3.5 text-right"><x-button variant="ghost" size="sm" :href="route('abstracts.show', $abstract)">Open</x-button></td>
                             </tr>

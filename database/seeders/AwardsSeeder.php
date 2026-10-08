@@ -21,7 +21,7 @@ use RuntimeException;
  * SAMPLE AWARDS FOR THE DEMONSTRATION. Never runs in production.
  *
  * The suggested award categories, three judges, and every stage at once:
- * Best Oral Presentation announced (the demo participant wins it), Best Poster
+ * Best Oral Presentation announced (the demo participant wins it), Best Poster (when posters are on)
  * and the Student Research Award being judged (the demo judge has finalists
  * waiting), the Innovation award ready for the committee to decide, the
  * Rehabilitation Champion Award open for nominations, and the Distinguished
@@ -80,10 +80,12 @@ class AwardsSeeder extends Seeder
         $this->announce($oral);
 
         // Best Poster: four finalists. Two judges have scored them all; the demo judge has scored two.
-        $poster = $categories['Best Poster'];
-        $awards->shortlist($poster, $awards->eligibleAbstracts($poster)->take(4)->pluck('id')->all());
-        $this->score($awards, $poster, $judges->slice(1), fn () => mt_rand(5, 9));
-        $this->score($awards, $poster, $judges->take(1), fn () => mt_rand(5, 9), limit: 2);
+        // (Only when posters are on; otherwise the award is not suggested.)
+        if ($poster = $categories['Best Poster'] ?? null) {
+            $awards->shortlist($poster, $awards->eligibleAbstracts($poster)->take(4)->pluck('id')->all());
+            $this->score($awards, $poster, $judges->slice(1), fn () => mt_rand(5, 9));
+            $this->score($awards, $poster, $judges->take(1), fn () => mt_rand(5, 9), limit: 2);
+        }
 
         // Student Research Award: the demo judge has not started.
         $student = $categories['Student Research Award'];

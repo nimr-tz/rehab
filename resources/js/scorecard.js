@@ -10,6 +10,7 @@ export default (config) => ({
     comment: config.comment,
     note: config.note,
     locked: config.locked,
+    canRevise: config.canRevise,
     draftKey: config.draftKey,
     shownTotal: 0,
     heroVisible: true,
@@ -102,24 +103,34 @@ export default (config) => ({
 
     // Recommendation guidance
 
+    // accept | revise | reject, for a recommendation value such as accept_oral.
+    kind(value) {
+        return value === 'reject' || value === 'revise' ? value : 'accept';
+    },
+
+    // The recommendation the score band points to. Without a revise option
+    // (the second review), the revisions band can go either way.
+    get expected() {
+        if (!this.band) return null;
+        return this.band.key === 'revise' && !this.canRevise ? null : this.band.key;
+    },
+
     fits(value) {
         if (!this.band) return false;
-        return this.band.key === 'reject' ? value === 'reject' : value !== 'reject';
+        return this.expected ? this.kind(value) === this.expected : this.kind(value) !== 'revise';
     },
 
     get nudge() {
         if (!this.band || !this.recommendation) return null;
-        const accepting = this.recommendation !== 'reject';
+        const chosen = this.kind(this.recommendation);
         const band = `“${this.band.label.toLowerCase()}” band`;
+        const words = { accept: 'acceptance', revise: 'revisions', reject: 'rejection' };
 
-        if (this.band.key === 'reject' && accepting) {
-            return { tone: 'warning', text: `Your scores are in the ${band}. If you still recommend acceptance, tell the committee why in the confidential note.` };
+        if (this.expected && chosen !== this.expected) {
+            return { tone: 'warning', text: `Your scores are in the ${band}. If you still recommend ${words[chosen]}, tell the committee why in the confidential note.` };
         }
-        if (this.band.key !== 'reject' && !accepting) {
-            return { tone: 'warning', text: `Your scores are in the ${band}. If you still recommend rejection, tell the committee why in the confidential note.` };
-        }
-        if (this.band.key === 'revise') {
-            return { tone: 'info', text: `Your scores are in the ${band}. List the changes the author must make in your comments.` };
+        if (chosen === 'revise') {
+            return { tone: 'info', text: 'List the changes the authors must make in your comments. They see them when asked to revise.' };
         }
         return null;
     },

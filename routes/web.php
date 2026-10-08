@@ -75,6 +75,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/abstracts/{abstract}', [AbstractController::class, 'update'])->name('abstracts.update');
         Route::post('/abstracts/{abstract}/withdraw', [AbstractController::class, 'withdraw'])->name('abstracts.withdraw');
     });
+        Route::get('/abstracts/{abstract}/revision', [AbstractController::class, 'revision'])->name('abstracts.revision.edit');
+        Route::put('/abstracts/{abstract}/revision', [AbstractController::class, 'submitRevision'])->name('abstracts.revision.update');
 
     // Reviewers: double-blind, they never see who wrote an abstract.
     Route::middleware('role:reviewer')->group(function () {
@@ -91,6 +93,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/abstracts/{abstract}/reviewers/{assignment}', [ScientificAbstractController::class, 'unassign'])->name('abstracts.unassign');
         Route::post('/abstracts/{abstract}/decision', [ScientificAbstractController::class, 'decide'])->name('abstracts.decide');
         Route::get('/reviewers', ReviewerController::class)->name('reviewers');
+        Route::put('/abstracts/{abstract}/revision-due', [ScientificAbstractController::class, 'extendRevision'])->name('abstracts.revision-due');
     });
 
     // Awards judges score the finalists of the awards they are assigned to.

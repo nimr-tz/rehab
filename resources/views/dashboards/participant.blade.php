@@ -187,7 +187,8 @@
                     $doneReviews = $abstract->reviews->filter->isComplete()->count();
                     $progress = match ($abstract->status) {
                         AbstractStatus::Draft => 15, AbstractStatus::Submitted => 30,
-                        AbstractStatus::UnderReview => 40 + ($total ? $doneReviews / $total * 45 : 0),
+                        AbstractStatus::UnderReview => 40 + ($total ? $doneReviews / $total * 30 : 0),
+                        AbstractStatus::RevisionRequested => 70, AbstractStatus::Revised => 85,
                         default => 100,
                     };
                 @endphp
@@ -208,8 +209,8 @@
                                 </span>
                             </div>
                         </div>
-                        <x-button variant="secondary" size="sm" :href="$abstract->status === AbstractStatus::Draft ? route('abstracts.edit', $abstract) : route('abstracts.show', $abstract)">
-                            {{ $abstract->status === AbstractStatus::Draft ? 'Continue' : 'View' }}
+                        <x-button variant="secondary" size="sm" :href="match ($abstract->status) { AbstractStatus::Draft => route('abstracts.edit', $abstract), AbstractStatus::RevisionRequested => route('abstracts.revision.edit', $abstract), default => route('abstracts.show', $abstract) }">
+                            {{ match ($abstract->status) { AbstractStatus::Draft => 'Continue', AbstractStatus::RevisionRequested => 'Revise', default => 'View' } }}
                         </x-button>
                     </div>
                 </div>

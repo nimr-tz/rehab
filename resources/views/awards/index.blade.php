@@ -4,7 +4,7 @@
     $accentBorders = ['border-t-ember-500', 'border-t-coral-400', 'border-t-olive-700', 'border-t-sun-400'];
 @endphp
 
-<x-layouts.public class="bg-white" :title="'Awards · '.$title" :description="'Awards at the '.$title.': best presentations, posters, student research and service to rehabilitation.'">
+<x-layouts.public class="bg-white" :title="'Awards · '.$title" :description="'Awards at the '.$title.': best presentations'.(\App\Enums\PresentationType::postersEnabled() ? ', posters' : '').', student research and service to rehabilitation.'">
     <x-public.nav />
 
     <header class="bg-gradient-to-b from-white to-brand-50">

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AbstractStatus;
 use App\Enums\AwardKind;
+use App\Enums\PresentationType;
 use App\Enums\Role;
 use App\Models\AbstractSubmission;
 use App\Models\AwardCategory;
@@ -32,7 +33,8 @@ class AwardService
         $added = 0;
 
         foreach (config('awards.suggested') as $suggestion) {
-            if ($existing->contains(Str::lower($suggestion['name']))) {
+            $type = PresentationType::tryFrom($suggestion['presentation_type'] ?? '');
+            if ($existing->contains(Str::lower($suggestion['name'])) || ($type && ! in_array($type, PresentationType::decisions(), true))) {
                 continue;
             }
 

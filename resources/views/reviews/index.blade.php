@@ -12,7 +12,9 @@
                 @foreach ($pending as $assignment)
                     <li class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:px-6">
                         <div class="min-w-0 flex-1">
-                            <p class="font-mono text-xs font-semibold text-ink-500">{{ $assignment->abstract->blindId() }}</p>
+                            <p class="font-mono text-xs font-semibold text-ink-500">{{ $assignment->abstract->blindId() }}
+                                @if ($assignment->round === 2)<x-status tone="warning" class="ml-1 font-sans">Revised · second review</x-status>@endif
+                            </p>
                             <p class="font-semibold text-ink-900">{{ $assignment->abstract->title }}</p>
                             <span class="mt-1 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $assignment->abstract->topic->chipClasses() }}">{{ $assignment->abstract->topic->name }}</span>
                         </div>

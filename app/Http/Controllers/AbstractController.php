@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AbstractStatus;
 use App\Enums\PresentationType;
 use App\Models\AbstractSubmission;
 use App\Services\AbstractService;
@@ -97,10 +98,56 @@ class AbstractController extends Controller
             ->with('status', $submit ? 'Your abstract has been saved and submitted.' : 'Draft saved.');
     }
 
+    /** The revision form: open after the deadline too, until the committee decides. */
+    public function revision(Request $request, AbstractSubmission $abstract): View|RedirectResponse
+    {
+        $this->authorizeOwner($request, $abstract);
+
+        if ($abstract->status !== AbstractStatus::RevisionRequested) {
+            return redirect()->route('abstracts.show', $abstract)->with('status', 'This abstract is not waiting for a revision.');
+        }
+
+        return view('abstracts.revise', [
+            'abstract' => $abstract->load('topic', 'reviews', 'edition'),
+            'feedback' => $abstract->roundReviews(1)->filter->isComplete()->values(),
+        ]);
+    }
+
+    public function submitRevision(Request $request, AbstractSubmission $abstract, AbstractService $service): RedirectResponse
+    {
+        $this->authorizeOwner($request, $abstract);
+        abort_unless($abstract->status === AbstractStatus::RevisionRequested, 403, 'This abstract is not waiting for a revision.');
+
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:200'],
+            'background' => ['required', 'string', 'max:3000'],
+            'methods' => ['required', 'string', 'max:3000'],
+            'results' => ['required', 'string', 'max:3000'],
+            'conclusions' => ['required', 'string', 'max:3000'],
+            'keywords' => ['nullable', 'string', 'max:255'],
+            'revision_response' => ['required', 'string', 'min:20', 'max:3000'],
+        ], [
+            'revision_response.required' => 'Tell the reviewers what you changed.',
+            'revision_response.min' => 'Tell the reviewers what you changed, in a sentence or two at least.',
+        ]);
+
+        $words = AbstractSubmission::countWords(implode(' ', [$data['background'], $data['methods'], $data['results'], $data['conclusions']]));
+        if ($words > AbstractSubmission::WORD_LIMIT) {
+            throw ValidationException::withMessages([
+                'background' => "The abstract has {$words} words. The limit is ".AbstractSubmission::WORD_LIMIT.'.',
+            ]);
+        }
+
+        $service->submitRevision($abstract, $data);
+
+        return redirect()->route('abstracts.show', $abstract)
+            ->with('status', 'Thank you. Your revised abstract has gone back to the reviewers.');
+    }
+
     public function withdraw(Request $request, AbstractSubmission $abstract, AbstractService $service): RedirectResponse
     {
         $this->authorizeOwner($request, $abstract);
-        abort_unless($abstract->status->isEditable(), 403);
+        abort_unless($abstract->status->isEditable() || $abstract->status === AbstractStatus::RevisionRequested, 403);
 
         $service->withdraw($abstract);
 
@@ -120,7 +167,7 @@ class AbstractController extends Controller
 
         $data = $request->validate([
             'topic_id' => ['required', Rule::exists('topics', 'id')->where('edition_id', $edition->id)],
-            'preferred_type' => ['required', Rule::enum(PresentationType::class)],
+            'preferred_type' => ['required', Rule::in(array_column(PresentationType::preferences(), 'value'))],
             'title' => ['required', 'string', 'max:200'],
             'background' => [$required, 'string', 'max:3000'],
             'methods' => [$required, 'string', 'max:3000'],

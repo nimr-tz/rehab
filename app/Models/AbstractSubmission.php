@@ -4,10 +4,12 @@ namespace App\Models;
 
 use App\Enums\AbstractStatus;
 use App\Enums\PresentationType;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
@@ -22,6 +24,11 @@ class AbstractSubmission extends Model
 
     public const WORD_LIMIT = 300;
 
+    public const SECTIONS = ['background' => 'Background', 'methods' => 'Methods', 'results' => 'Results', 'conclusions' => 'Conclusions'];
+
+    /** What an author may change in a revision. Topic, type and authors stay as reviewed. */
+    public const REVISABLE = ['title', 'background', 'methods', 'results', 'conclusions', 'keywords'];
+
     protected function casts(): array
     {
         return [
@@ -30,7 +37,112 @@ class AbstractSubmission extends Model
             'decision_type' => PresentationType::class,
             'submitted_at' => 'datetime',
             'decided_at' => 'datetime',
+            'accepted_automatically' => 'boolean',
+            'revision_requested_at' => 'datetime',
+            'revision_due_on' => 'date',
+            'original_version' => 'array',
+            'revised_at' => 'datetime',
         ];
+    }
+
+    /** Reviewers per abstract (config/review.php): two. */
+    public static function reviewersNeeded(): int
+    {
+        return (int) config('review.reviewers_per_abstract');
+    }
+
+    /** 1 for the first review; 2 once the author has sent a revised version. */
+    public function currentRound(): int
+    {
+        return $this->revised_at ? 2 : 1;
+    }
+
+    /** @return Collection<int, ReviewAssignment> */
+    public function roundReviews(?int $round = null): Collection
+    {
+        $round ??= $this->currentRound();
+
+        return $this->reviews->where('round', $round)->values();
+    }
+
+    /**
+     * Reviewers a round needs: two at first. The revision goes only to the
+     * reviewers who did not accept.
+     */
+    public function reviewersNeededInRound(?int $round = null): int
+    {
+        $round ??= $this->currentRound();
+
+        return $round === 1
+            ? self::reviewersNeeded()
+            : $this->roundReviews(1)->filter(fn (ReviewAssignment $r) => $r->isComplete() && ! $r->recommendation->isAcceptance())->count();
+    }
+
+    /** The round-1 reviewers who did not accept, and so review the revised version. */
+    public function revisionReviewers(): Collection
+    {
+        return $this->roundReviews(1)->filter(fn (ReviewAssignment $r) => $r->isComplete() && ! $r->recommendation->isAcceptance())->values();
+    }
+
+    /**
+     * Every review of the current round is in, and the committee must decide.
+     * (When they all accept, the abstract is accepted automatically instead.)
+     */
+    public function awaitsDecision(): bool
+    {
+        $reviews = match ($this->status) {
+            AbstractStatus::UnderReview => $this->roundReviews(1),
+            AbstractStatus::Revised => $this->roundReviews(2),
+            default => null,
+        };
+
+        if (! $reviews || $reviews->isEmpty() || ! $reviews->every->isComplete()) {
+            return false;
+        }
+
+        // Round 1 needs both reviews. In round 2 the committee may have removed a reviewer.
+        return $this->status === AbstractStatus::Revised || $reviews->count() >= self::reviewersNeeded();
+    }
+
+    /** The same rule as awaitsDecision(), as a query. */
+    public function scopeAwaitingDecision(Builder $query): void
+    {
+        $query->where(fn (Builder $q) => $q
+            ->where(fn (Builder $q) => $q->where('status', AbstractStatus::UnderReview)
+                ->whereHas('reviews', fn (Builder $q) => $q->where('round', 1), '>=', self::reviewersNeeded())
+                ->whereDoesntHave('reviews', fn (Builder $q) => $q->where('round', 1)->whereNull('completed_at')))
+            ->orWhere(fn (Builder $q) => $q->where('status', AbstractStatus::Revised)
+                ->whereHas('reviews', fn (Builder $q) => $q->where('round', 2))
+                ->whereDoesntHave('reviews', fn (Builder $q) => $q->where('round', 2)->whereNull('completed_at'))));
+    }
+
+    public function isRevisionOverdue(): bool
+    {
+        return $this->status === AbstractStatus::RevisionRequested && $this->revision_due_on?->lt(today());
+    }
+
+    /**
+     * The committee's choices now: accept or reject, plus a revision request
+     * in the first round.
+     *
+     * @return array<string, string>
+     */
+    public function decisionOptions(bool $short = false): array
+    {
+        $options = PresentationType::decisionOptions($short);
+
+        if ($this->status === AbstractStatus::UnderReview) {
+            $reject = array_pop($options);
+            $options += ['revise' => $short ? 'Revise' : 'Request revisions', 'reject' => $reject];
+        }
+
+        return $options;
+    }
+
+    /** A section as it was before the revision, or null when there was no revision. */
+    public function originalText(string $field): ?string
+    {
+        return $this->original_version[$field] ?? null;
     }
 
     public function edition(): BelongsTo
@@ -84,10 +196,10 @@ class AbstractSubmission extends Model
         return '#A'.$this->edition->shortYear().'-'.Str::padLeft((string) $this->id, 3, '0');
     }
 
-    /** Average rubric total (out of 100) across completed reviews. */
-    public function averageScore(): ?float
+    /** Average rubric total (out of 100) across the completed reviews of a round (the current one by default). */
+    public function averageScore(?int $round = null): ?float
     {
-        $done = $this->reviews->filter->isComplete();
+        $done = $this->roundReviews($round)->filter->isComplete();
 
         return $done->isEmpty() ? null : round($done->avg(fn (ReviewAssignment $review) => $review->totalScore()), 1);
     }

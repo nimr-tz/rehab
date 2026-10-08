@@ -25,7 +25,7 @@ class GallerySeeder extends Seeder
     private const ALBUMS = [
         ['Official opening and keynote', 'Official opening and keynote address', null, 'Welcome addresses from Rehab Health and the Ministry of Health, and the keynote on rehabilitation in universal health coverage.', 'neema', 9, 0],
         ['Panel: rehabilitation in primary health care', 'Rehabilitation in primary health care: from policy to practice', null, null, 'daudi', 6, 0],
-        ['Poster session I', 'Poster session I', null, 'Presenters with their posters in the Exhibition Hall.', 'neema', 7, 0],
+        ['Parallel oral sessions', null, 1, 'Presenters sharing their research in the parallel oral sessions in Halls A and B.', 'neema', 7, 0],
         ['Keynote: assistive technology for all', 'Keynote: Assistive technology for all', null, null, 'daudi', 6, 0],
         ['Exhibition and partner stands', null, 2, 'Partners and exhibitors showing assistive devices, services and training programmes.', 'neema', 7, 0],
         ['Gala dinner', null, 2, 'An evening of music, recognition and conversation.', 'daudi', 8, 0],

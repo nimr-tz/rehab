@@ -72,6 +72,25 @@ return [
     ],
 
     /*
+    | Poster presentations. While this is off, every accepted abstract is an
+    | oral presentation: authors are not asked about posters, reviewers and the
+    | scientific committee choose only between oral and reject, and the poster
+    | award is not suggested. ABSTRACT_POSTERS=true brings posters back.
+    */
+    'posters' => (bool) env('ABSTRACT_POSTERS', false),
+
+    /*
+    | Every abstract has exactly this many reviewers. When they all accept,
+    | the abstract is accepted automatically; otherwise the committee decides,
+    | and may ask the author for one round of revisions.
+    */
+    'reviewers_per_abstract' => 2,
+
+    // Days the author has to revise, and days the reviewers then have to review the revision.
+    'revision_days' => 14,
+    'second_round_days' => 7,
+
+    /*
     | Verdict bands on the total (out of 100), highest first. A reviewer's
     | recommendation stays their own; the band is guidance shown beside it.
     */

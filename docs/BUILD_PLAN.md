@@ -15,6 +15,7 @@ The new portal for the annual Rehabilitation Summit run by Rehab Health, startin
 | Payments | Bank transfer and mobile money, confirmed inside the system by finance officers. No GePG. Automated mobile money gateways plug in later. |
 | Mobile app | Staff-only scanner for badge check-in and session attendance. |
 | CPD point rules | Deferred until the organisers define them. |
+| Presentations | Oral only for now: no posters anywhere in the portal. `ABSTRACT_POSTERS=true` brings posters back (October 2026). |
 
 ## Stack
 

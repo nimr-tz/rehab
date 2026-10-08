@@ -41,9 +41,13 @@
                 <div class="grid gap-5 sm:grid-cols-2">
                     <x-form.select name="topic_id" label="Topic" placeholder="Select a topic" required
                         :options="$edition->topics->pluck('name', 'id')->all()" :value="$abstract?->topic_id" />
-                    <x-form.select name="preferred_type" label="Preferred presentation" required
-                        :options="collect(PresentationType::cases())->mapWithKeys(fn ($t) => [$t->value => $t->label()])->all()"
-                        :value="$abstract?->preferred_type?->value ?? 'either'" />
+                    @if (count(PresentationType::preferences()) > 1)
+                        <x-form.select name="preferred_type" label="Preferred presentation" required
+                            :options="collect(PresentationType::preferences())->mapWithKeys(fn ($t) => [$t->value => $t->label()])->all()"
+                            :value="$abstract?->preferred_type?->value ?? 'either'" />
+                    @else
+                        <input type="hidden" name="preferred_type" value="{{ PresentationType::Oral->value }}">
+                    @endif
                 </div>
                 <x-form.input name="keywords" label="Keywords (optional)" :value="$abstract?->keywords" placeholder="e.g. stroke, community rehabilitation, Tanzania" />
             </div>

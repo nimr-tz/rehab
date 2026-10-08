@@ -90,7 +90,7 @@ class AwardCategory extends Model
         $type = match ($this->presentation_type) {
             PresentationType::Oral => 'Oral presentations',
             PresentationType::Poster => 'Posters',
-            default => 'Oral presentations and posters',
+            default => PresentationType::postersEnabled() ? 'Oral presentations and posters' : 'Oral presentations',
         };
 
         return $type.($this->students_only ? ' by students' : '');
