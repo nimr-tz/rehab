@@ -9,12 +9,14 @@ use App\Enums\PresentationType;
 use App\Enums\Recommendation;
 use App\Enums\RegistrationStatus;
 use App\Enums\Role;
+use App\Enums\WaiverReason;
 use App\Models\AbstractSubmission;
 use App\Models\Edition;
 use App\Models\Payment;
 use App\Models\ProgrammeSession;
 use App\Models\Registration;
 use App\Models\RegistrationCategory;
+use App\Models\ReviewAssignment;
 use App\Models\Topic;
 use App\Models\User;
 use App\Support\Rubric;
@@ -64,6 +66,7 @@ class DemoSeeder extends Seeder
         $staff = $this->staff();
         $participants = $this->participants();
         $this->registrations($participants, $staff['finance']);
+        $this->waivers($staff['finance']);
         $this->abstracts($participants, $staff['scientific']);
         $this->programme();
         $this->deskAndNotifications();
@@ -103,11 +106,12 @@ class DemoSeeder extends Seeder
 
         $amina = User::where('email', 'participant@rehab.test')->first();
         $accepted = $amina->abstracts()->where('status', AbstractStatus::Accepted)->first();
-        $pending = $amina->abstracts()->where('status', AbstractStatus::UnderReview)->first();
+        $revising = $amina->abstracts()->where('status', AbstractStatus::RevisionRequested)->first();
         $amina->notifications()->delete();
         $notify($amina, 'Registration confirmed', 'Your badge and invitation letter are ready to download.', route('registration.badge.show'), 'check-circle', 'success', '-20 days', true);
-        if ($pending) {
-            $notify($amina, 'Abstract received', '"'.$pending->title.'" is with the scientific committee.', route('abstracts.show', $pending), 'document', 'info', '-6 days', true);
+        if ($revising) {
+            $notify($amina, 'Abstract received', '"'.$revising->title.'" is with the scientific committee.', route('abstracts.show', $revising), 'document', 'info', '-12 days', true);
+            $notify($amina, 'Revisions requested', '"'.$revising->title.'" · due '.$revising->revision_due_on->format('j M'), route('abstracts.revision.edit', $revising), 'pencil', 'warning', '-3 days', false);
         }
         if ($accepted) {
             $notify($amina, 'Abstract accepted · '.$accepted->code, '"'.$accepted->title.'"', route('abstracts.show', $accepted), 'clipboard', 'success', '-2 days', false);
@@ -117,7 +121,7 @@ class DemoSeeder extends Seeder
         $grace = User::where('email', 'reviewer@rehab.test')->first();
         $grace->notifications()->delete();
         $grace->reviewAssignments()->whereNull('completed_at')->with('abstract.topic', 'abstract.edition')->get()
-            ->each(fn ($a, $i) => $notify($grace, 'New abstract to review', $a->abstract->blindId().' · '.$a->abstract->topic->name, route('reviews.edit', $a), 'star', 'warning', '-'.($i * 2 + 1).' days', $i > 1));
+            ->each(fn ($a, $i) => $notify($grace, $a->round === 2 ? 'Revised abstract to review' : 'New abstract to review', $a->abstract->blindId().' · '.$a->abstract->topic->name, route('reviews.edit', $a), 'star', 'warning', '-'.($i * 2 + 1).' days', $i > 1));
     }
 
     private function edition(): void
@@ -194,10 +198,10 @@ class DemoSeeder extends Seeder
 
         $staff = [
             'admin' => $make('admin@rehab.test', null, 'Portal', 'Admin', [Role::Admin->value], 'Rehab Health', 'Summit secretariat'),
+            'executive' => $make('executive@rehab.test', 'Dr', 'Mwajuma', 'Hassan', [Role::Executive->value], 'Rehab Health', 'Executive director'),
             'scientific' => $make('scientific@rehab.test', 'Dr', 'Peter', 'Kimaro', [Role::ScientificAdmin->value], 'Muhimbili University of Health and Allied Sciences', 'Rehabilitation physician'),
             'finance' => $make('finance@rehab.test', null, 'Rehema', 'Said', [Role::FinanceOfficer->value], 'Rehab Health', 'Finance officer'),
             'desk' => $make('desk@rehab.test', null, 'Baraka', 'Lyimo', [Role::RegistrationOfficer->value], 'Rehab Health', 'Events coordinator'),
-            'executive' => $make('executive@rehab.test', 'Dr', 'Mwajuma', 'Hassan', [Role::Executive->value], 'Rehab Health', 'Executive director'),
         ];
 
         $this->reviewers = collect([
@@ -215,27 +219,13 @@ class DemoSeeder extends Seeder
     /** @return Collection<int, User> participants, demo accounts first */
     private function participants(): Collection
     {
-        $women = ['Neema', 'Halima', 'Rehema', 'Zawadi', 'Agnes', 'Mwanaidi', 'Upendo', 'Lilian', 'Asha', 'Winfrida', 'Faith', 'Mariam', 'Esther', 'Catherine', 'Joyce', 'Aisha', 'Josephine', 'Grace', 'Sabina', 'Diana', 'Wanjiru', 'Aline', 'Chikondi', 'Thandiwe', 'Sarah', 'Chidinma', 'Nasra', 'Happiness', 'Prisca'];
-        $men = ['Juma', 'Emmanuel', 'Daudi', 'Musa', 'Elia', 'Godfrey', 'Hassan', 'Paulo', 'Isaya', 'Abdallah', 'Kelvin', 'Brian', 'Salim', 'Yusuf', 'Frank', 'Victor', 'Ibrahim', 'Kennedy', 'Omari', 'Kato', 'Abebe', 'Michael', 'Mutale', 'Erasto', 'Saidi'];
-        $last = ['Mushi', 'Mwakalinga', 'Swai', 'Lema', 'Kweka', 'Massawe', 'Ngowi', 'Mbise', 'Shirima', 'Chacha', 'Komba', 'Haule', 'Mtui', 'Urassa', 'Mfinanga', 'Nyerere', 'Salum', 'Mgaya', 'Minja', 'Mrisho', 'Kamau', 'Achieng', 'Mugisha', 'Uwase', 'Banda', 'Phiri', 'Dlamini', 'Tesfaye', 'Okafor', 'Mulenga', 'Juma', 'Kitwana', 'Magesa', 'Temba', 'Moshi', 'Malisa', 'Mbwana', 'Kileo', 'Sanga', 'Pallangyo'];
-        $local = [
-            'Muhimbili National Hospital', 'Kilimanjaro Christian Medical Centre', 'Bugando Medical Centre', 'CCBRT Disability Hospital',
-            'Benjamin Mkapa Hospital', 'Mbeya Zonal Referral Hospital', 'Muhimbili University of Health and Allied Sciences',
-            'Kilimanjaro Christian Medical University College', 'Aga Khan Hospital, Dar es Salaam', 'Mnazi Mmoja Hospital, Zanzibar',
-            'Ministry of Health, Tanzania', 'Arusha Lutheran Medical Centre', 'Dodoma Regional Referral Hospital', 'Tanzania Physiotherapy Association',
-        ];
-        $abroad = [
-            ['Kenyatta National Hospital', 'KE'], ['Moi Teaching and Referral Hospital', 'KE'], ['Makerere University', 'UG'],
-            ['Mulago National Referral Hospital', 'UG'], ['University of Rwanda', 'RW'], ['Kamuzu University of Health Sciences', 'MW'],
-            ['University Teaching Hospital, Lusaka', 'ZM'], ['University of Cape Town', 'ZA'], ['Addis Ababa University', 'ET'],
-            ['Lagos University Teaching Hospital', 'NG'], ['Humanity & Inclusion', 'GB'], ['World Health Organization', 'CH'],
-        ];
         $professions = ['Physiotherapist', 'Physiotherapist', 'Physiotherapist', 'Occupational therapist', 'Occupational therapist', 'Speech and language therapist', 'Prosthetist-orthotist', 'Rehabilitation physician', 'Nurse', 'Public health specialist', 'Researcher', 'Health policy adviser'];
 
         $make = function (string $email, ?string $title, string $first, string $last, string $institution, string $country, string $profession, ?string $verifiedAgo = '-2 months') {
+            [$prefix, $digits] = self::PEOPLE[$country]['phone'];
             $user = User::updateOrCreate(['email' => $email], [
                 'title' => $title, 'first_name' => $first, 'last_name' => $last,
-                'phone' => ($country === 'TZ' ? '+2557' : '+2547').mt_rand(10000000, 99999999),
+                'phone' => $prefix.str_pad((string) mt_rand(0, 10 ** $digits - 1), $digits, '0', STR_PAD_LEFT),
                 'country' => $country, 'institution' => $institution, 'profession' => $profession,
                 'password' => self::PASSWORD,
             ]);
@@ -250,24 +240,77 @@ class DemoSeeder extends Seeder
             $make('newcomer@rehab.test', null, 'Joseph', 'Mrema', 'Dodoma Regional Referral Hospital', 'TZ', 'Physiotherapist', '-2 days'),
         ]);
 
+        // Names, institutions and phone numbers come from the person's own country,
+        // and nobody shares a full name with anyone else.
+        $abroad = array_values(array_diff(array_keys(self::PEOPLE), ['TZ']));
+        $taken = $people->map(fn (User $u) => $u->first_name.' '.$u->last_name)
+            ->merge(collect($this->reviewers)->map(fn (User $u) => $u->first_name.' '.$u->last_name))->flip();
+        $pick = fn (array $list) => $list[mt_rand(0, count($list) - 1)];
+
         for ($i = 0; $i < 198; $i++) {
             // About seven in ten participants are from Tanzania.
-            [$institution, $country] = mt_rand(1, 100) <= 72
-                ? [$local[mt_rand(0, count($local) - 1)], 'TZ']
-                : $abroad[mt_rand(0, count($abroad) - 1)];
+            $country = mt_rand(1, 100) <= 72 ? 'TZ' : $pick($abroad);
+            $pool = self::PEOPLE[$country];
             $woman = $i % 2 === 0;
-            $firstName = $woman ? $women[intdiv($i, 2) % count($women)] : $men[intdiv($i, 2) % count($men)];
+            do {
+                $firstName = $pick($woman ? $pool['women'] : $pool['men']);
+                $lastName = $pick($pool['last']);
+            } while ($taken->has($firstName.' '.$lastName));
+            $taken[$firstName.' '.$lastName] = true;
+
             $titles = $woman ? ['Dr', 'Ms', 'Mrs', null] : ['Dr', 'Mr', null];
-            $lastName = $last[mt_rand(0, count($last) - 1)];
-            $email = Str::lower(Str::ascii($firstName.'.'.$lastName)).($i + 1).'@example.org';
-            $people->push($make($email, $titles[mt_rand(0, count($titles) - 1)], $firstName, $lastName, $institution, $country,
-                $professions[mt_rand(0, count($professions) - 1)], '-'.mt_rand(3, 150).' days'));
+            $email = Str::slug(Str::ascii($firstName.' '.$lastName), '.').'@example.org';
+            $people->push($make($email, $pick($titles), $firstName, $lastName, $pick($pool['institutions']), $country,
+                $pick($professions), '-'.mt_rand(3, 150).' days'));
         }
 
         return $people;
     }
 
     /** Registrations and payments at every stage. */
+    /** Fee waivers from finance: some whole fees, some halves, and one withdrawn. */
+    private function waivers(User $finance): void
+    {
+        // [part of the fee waived, reason, note, withdrawn because]
+        $plan = [
+            [1.0, WaiverReason::Speaker, 'Keynote speaker: assistive technology for all, day 2.', null],
+            [1.0, WaiverReason::Committee, 'Member of the scientific committee.', null],
+            [1.0, WaiverReason::Organiser, 'Rehab Health secretariat, working at the registration desk.', null],
+            [0.5, WaiverReason::Hardship, 'Unpaid volunteer at a community rehabilitation group.', null],
+            [0.5, WaiverReason::Sponsored, 'Half the fee sponsored by Humanity & Inclusion.', null],
+            [0.5, WaiverReason::Sponsored, 'Half the fee sponsored by the Tanzania Physiotherapy Association.', null],
+            [0.5, WaiverReason::Hardship, 'Requested by email; final-year student.', 'Her employer has agreed to pay the full fee.'],
+        ];
+
+        $candidates = Registration::where('edition_id', $this->edition->id)
+            ->where('status', RegistrationStatus::PendingPayment)
+            ->whereDoesntHave('payments')
+            ->whereHas('user', fn ($q) => $q->where('email', 'like', '%@example.org'))
+            ->orderBy('id')->get()
+            ->shuffle(mt_rand())->take(count($plan))->values();
+
+        foreach ($candidates as $i => $registration) {
+            [$part, $reason, $note, $withdrawn] = $plan[$i];
+            $amount = round((float) $registration->amount * $part, 2);
+            $grantedAt = $this->past(CarbonImmutable::parse($registration->created_at)->addDays(mt_rand(1, 6))->setTime(mt_rand(9, 16), mt_rand(0, 59)), CarbonImmutable::parse($registration->created_at));
+
+            $waiver = $registration->waivers()->create([
+                'currency' => $registration->currency, 'amount' => $amount, 'reason' => $reason, 'note' => $note, 'granted_by' => $finance->id,
+            ]);
+            $waiver->forceFill(['created_at' => $grantedAt, 'updated_at' => $grantedAt])->save();
+
+            if ($withdrawn) {
+                $waiver->forceFill(['revoked_at' => $this->past($grantedAt->addDays(3), $grantedAt), 'revoked_by' => $finance->id, 'revoke_reason' => $withdrawn])->save();
+
+                continue;
+            }
+
+            $registration->update(['waived_amount' => $amount] + ($part >= 1.0
+                ? ['status' => RegistrationStatus::Confirmed, 'confirmed_at' => $grantedAt]
+                : []));
+        }
+    }
+
     private function registrations(Collection $participants, User $finance): void
     {
         $categories = $this->edition->categories;
@@ -373,50 +416,115 @@ class DemoSeeder extends Seeder
         return $payment;
     }
 
-    /** Abstracts at every stage, reviewed double-blind, some decided. */
+    /**
+     * Abstracts at every stage. Each has two reviewers: two acceptances accept
+     * it automatically, other combinations wait for or have a committee
+     * decision, and some go through a round of revisions. Every date is worked
+     * out backwards from today, so the story of each abstract is in order.
+     */
     private function abstracts(Collection $participants, User $scientific): void
     {
         AbstractSubmission::where('edition_id', $this->edition->id)->delete();
 
         $authors = $participants->reject(fn (User $u) => $u->email === 'newcomer@rehab.test')->values();
-        $plan = array_merge(
-            array_fill(0, 15, 'accepted'), array_fill(0, 4, 'rejected'),
-            array_fill(0, 9, 'under_review'), array_fill(0, 6, 'submitted'), array_fill(0, 2, 'draft'),
-        );
+        $demoReviewer = $this->reviewers->first();
 
-        foreach (self::ABSTRACTS as $i => [$code, $title, $focus, $setting, $design, $n, $finding]) {
-            // The demo participant owns two: one accepted, one under review, plus a draft.
-            $owner = match ($i) {
-                0, 20 => $authors->first(),
-                default => $authors[1 + ($i % ($authors->count() - 1))],
-            };
-            $state = $i === 20 ? 'under_review' : ($i === 35 ? 'draft' : $plan[$i % count($plan)]);
-            if ($i === 35) {
-                $owner = $authors->first();
+        // The demo participant's three: accepted (0), waiting for her revision (20) and a draft (35).
+        $others = collect(array_merge(
+            array_fill(0, 9, 'auto'), array_fill(0, 2, 'committee_accepted'), array_fill(0, 4, 'rejected'),
+            array_fill(0, 4, 'awaiting'), array_fill(0, 5, 'under_review'), array_fill(0, 2, 'revision_requested'),
+            array_fill(0, 2, 'revised'), array_fill(0, 2, 'revised_accepted'), array_fill(0, 2, 'submitted'), ['draft'],
+        ))->shuffle(2027)->values()->all();
+        $plan = [0 => 'auto', 20 => 'revision_requested', 35 => 'draft'];
+        foreach (array_keys(self::ABSTRACTS) as $i) {
+            $plan[$i] ??= array_shift($others);
+        }
+
+        // Round-1 recommendations for each outcome, cycled for variety. A = accept, V = revise, R = reject.
+        $pairs = [
+            'auto' => [['A', 'A']],
+            'committee_accepted' => [['A', 'V']],
+            'rejected' => [['R', 'R'], ['V', 'R']],
+            'awaiting' => [['A', 'R'], ['A', 'V'], ['V', 'R'], ['V', 'V']],
+            'under_review' => [['A', null], ['V', null], ['R', null], [null, null]],
+            'revision_requested' => [['A', 'V'], ['V', 'V']],
+            'revised' => [['A', 'V'], ['V', 'R']],
+            'revised_accepted' => [['A', 'V'], ['V', 'V']],
+        ];
+        $seen = [];
+
+        $minutes = fn (int $min, int $max) => mt_rand($min * 1440, $max * 1440);
+        $ago = fn (int $min, int $max) => CarbonImmutable::now()->subMinutes($minutes($min, $max));
+        $before = fn (CarbonImmutable $time, int $min, int $max) => $time->subMinutes($minutes($min, $max));
+
+        foreach (self::ABSTRACTS as $i => [$code, $title, $focus, $setting, $design, $n, $unit, $background, $finding, $secondary, $conclusion]) {
+            $state = $plan[$i];
+            $owner = in_array($i, [0, 20, 35], true) ? $authors->first() : $authors[1 + ($i % ($authors->count() - 1))];
+            $turn = $seen[$state] = ($seen[$state] ?? -1) + 1;
+            [$first, $second] = isset($pairs[$state]) ? $pairs[$state][$turn % count($pairs[$state])] : [null, null];
+
+            // The timeline, from the last event back to the submission.
+            $decidedAt = $revisedAt = $requestedAt = null;
+            $round1 = [null, null];
+            switch ($state) {
+                case 'auto':
+                    $round1[1] = $decidedAt = $ago(2, 40);
+                    $round1[0] = $before($decidedAt, 0, 5);
+                    break;
+                case 'committee_accepted':
+                case 'rejected':
+                    $decidedAt = $ago(2, 30);
+                    $round1 = [$before($decidedAt, 2, 8), $before($decidedAt, 1, 4)];
+                    break;
+                case 'awaiting':
+                    $round1[1] = $ago(0, 6);
+                    $round1[0] = $before($round1[1], 0, 5);
+                    break;
+                case 'under_review':
+                    $round1[0] = $first ? $ago(0, 5) : null;
+                    break;
+                case 'revision_requested':
+                    $requestedAt = $i === 20 ? CarbonImmutable::now()->subDays(3)->setTime(10, 15) : $ago(2, 8);
+                    $round1 = [$before($requestedAt, 2, 6), $before($requestedAt, 1, 4)];
+                    break;
+                case 'revised':
+                    $revisedAt = $ago(1, 4);
+                    $requestedAt = $before($revisedAt, 5, 9);
+                    $round1 = [$before($requestedAt, 2, 6), $before($requestedAt, 1, 4)];
+                    break;
+                case 'revised_accepted':
+                    $decidedAt = $ago(2, 12);
+                    $revisedAt = $before($decidedAt, 2, 5);
+                    $requestedAt = $before($revisedAt, 5, 9);
+                    $round1 = [$before($requestedAt, 2, 6), $before($requestedAt, 1, 4)];
+                    break;
             }
-
-            // Decided abstracts were submitted long enough ago to have been reviewed.
-            $minAge = match ($state) {
-                'accepted', 'rejected' => 16, 'under_review' => 4, default => 0
+            $earliest = collect($round1)->filter()->min() ?? CarbonImmutable::now();
+            $submittedAt = match ($state) {
+                'draft' => null,
+                'submitted' => $ago(0, 6),
+                default => $before($earliest, 3, 10),
             };
-            $submittedAt = CarbonImmutable::now()->subDays($minAge + (int) round(40 * (mt_rand() / mt_getrandmax()) ** 1.4))->setTime(mt_rand(7, 21), mt_rand(0, 59));
+
+            $methods = self::methods($design, $n, $unit, $setting);
+            $results = ucfirst($finding).'. '.$secondary;
             $abstract = AbstractSubmission::create([
                 'edition_id' => $this->edition->id,
                 'user_id' => $owner->id,
                 'topic_id' => $this->topics[$code]->id,
-                'preferred_type' => [PresentationType::Oral, PresentationType::Poster, PresentationType::Either][mt_rand(0, 2)],
+                'preferred_type' => PresentationType::preferences()[mt_rand(0, count(PresentationType::preferences()) - 1)],
                 'title' => $title,
-                'background' => "Access to {$focus} remains limited in {$setting}, where most people who need rehabilitation never receive it. Services are concentrated in referral hospitals, and little local evidence exists to guide planning.",
-                'methods' => 'We conducted '.(preg_match('/^[aeiou]/i', $design) ? 'an' : 'a')." {$design} in {$setting}. {$n} participants were included. Data were collected with standardised outcome measures and structured interviews, and analysed descriptively and thematically.",
-                'results' => ucfirst($finding).'. Participants and families valued care delivered closer to home, while staff shortages, transport costs and irregular supplies were the main barriers reported.',
-                'conclusions' => "Our findings support integrating {$focus} into routine primary health care. Training, supervision and sustainable financing are needed to scale up and sustain the approach.",
+                'background' => $background,
+                'methods' => $methods,
+                'results' => $results,
+                'conclusions' => $conclusion,
                 'keywords' => Str::lower($focus).', '.Str::lower(Str::before($setting, ',')).', rehabilitation',
                 'status' => $state === 'draft' ? AbstractStatus::Draft : AbstractStatus::Submitted,
-                'submitted_at' => $state === 'draft' ? null : $submittedAt,
+                'submitted_at' => $submittedAt,
             ]);
-            $abstract->forceFill(['created_at' => $submittedAt->subDays(2)])->save();
+            $abstract->forceFill(['created_at' => ($submittedAt ?? $ago(1, 10))->subDays(2)])->save();
 
-            // Authors: the submitter first, then one or two co-authors from the participant list.
+            // Authors: the submitter first, then one to three co-authors from the participant list.
             $coAuthors = $authors->reject(fn (User $u) => $u->is($owner))->shuffle(mt_rand())->take(mt_rand(1, 3));
             foreach ($coAuthors->prepend($owner)->values() as $position => $person) {
                 $abstract->authors()->create([
@@ -429,68 +537,137 @@ class DemoSeeder extends Seeder
                 continue;
             }
 
-            // Two or three reviewers who are not authors of this abstract.
+            // Two reviewers who are not authors. The demo reviewer asked for the first revision, so reviews it again.
             $authorEmails = $abstract->authors()->pluck('email');
-            $panel = $this->reviewers->reject(fn (User $r) => $authorEmails->contains($r->email))->shuffle(mt_rand())->take(mt_rand(2, 3))->values();
-            $positive = $state === 'accepted' ? true : ($state === 'rejected' ? false : null);
+            $eligible = $this->reviewers->reject(fn (User $r) => $authorEmails->contains($r->email))->shuffle(mt_rand())->values();
+            if ($state === 'revised' && $turn === 0 && $eligible->contains($demoReviewer)) {
+                $eligible = $eligible->reject(fn (User $r) => $r->is($demoReviewer))->prepend($demoReviewer)->values();
+                [$first, $second] = ['V', 'A'];
+            }
+            $panel = $eligible->take(2)->values();
 
-            foreach ($panel as $r => $reviewer) {
-                $complete = $state !== 'under_review' || $r === 0 || ($reviewer->email !== 'reviewer@rehab.test' && mt_rand(0, 1));
-                $good = $positive ?? (mt_rand(1, 100) <= 65);
-                // Rubric points: originality /20, technical /40, significance /30, clarity /10.
-                $checks = collect(array_keys(Rubric::checks()))->shuffle(mt_rand())->take($good ? mt_rand(3, 5) : mt_rand(0, 2))->values()->all();
-                $scores = $good
-                    ? ['score_originality' => mt_rand(13, 19), 'score_technical' => min(40, count($checks) * 8 + mt_rand(-2, 3)), 'score_significance' => mt_rand(20, 28), 'score_clarity' => mt_rand(7, 10)]
-                    : ['score_originality' => mt_rand(5, 12), 'score_technical' => max(6, count($checks) * 8 + mt_rand(4, 10)), 'score_significance' => mt_rand(9, 18), 'score_clarity' => mt_rand(3, 7)];
-
-                $abstract->reviews()->create(collect($scores)->map(fn ($v) => $complete ? $v : null)->all() + [
-                    'reviewer_id' => $reviewer->id,
-                    'assigned_by' => $scientific->id,
-                    'due_on' => $this->edition->review_deadline,
-                    'technical_checks' => $complete ? $checks : null,
-                    'recommendation' => $complete ? ($good ? (array_sum($scores) >= 80 ? Recommendation::AcceptOral : Recommendation::AcceptPoster) : Recommendation::Reject) : null,
-                    'comments_for_author' => $complete ? self::COMMENTS[$good ? 'good' : 'weak'][mt_rand(0, 3)] : null,
-                    'comments_for_committee' => $complete && mt_rand(1, 4) === 1 ? 'Strong local relevance; consider for the plenary-adjacent parallel session.' : null,
-                    'completed_at' => $complete ? $submittedAt->addDays(mt_rand(2, max(2, $minAge - 3)))->min(CarbonImmutable::now()->subHours(mt_rand(1, 30))) : null,
-                ]);
+            $firstDone = collect($round1)->filter()->min();
+            $assignedAt = $submittedAt->addDay()->min($firstDone ? $firstDone->subHours(6) : CarbonImmutable::now()->subHour());
+            $reviews = [];
+            foreach ([$first, $second] as $r => $letter) {
+                $reviews[$r] = $this->seedReview($abstract, $panel[$r], $scientific, 1, $letter, $round1[$r], $assignedAt, $this->edition->review_deadline);
             }
 
-            if ($state === 'under_review') {
+            if ($state === 'under_review' || $state === 'awaiting') {
                 $abstract->update(['status' => AbstractStatus::UnderReview]);
 
                 continue;
             }
 
             if ($state === 'rejected') {
-                $abstract->update(['status' => AbstractStatus::Rejected, 'decided_at' => $submittedAt->addDays($minAge - 1),
-                    'decision_note' => 'The committee encourages you to strengthen the methods section and resubmit next year.']);
+                $abstract->update(['status' => AbstractStatus::Rejected, 'decided_at' => $decidedAt,
+                    'decision_note' => 'The committee encourages you to strengthen the methods section and submit again next year.']);
 
                 continue;
             }
 
-            $type = ($i % 3 === 2) ? PresentationType::Poster : PresentationType::Oral;
-            $prefix = $type->codePrefix().'-'.$code.'-';
-            $number = AbstractSubmission::where('code', 'like', $prefix.'%')->count() + 1;
+            if ($state === 'auto' || $state === 'committee_accepted') {
+                $this->seedAcceptance($abstract, $code, $decidedAt, $state === 'auto');
+
+                continue;
+            }
+
+            // The committee asked for a revision: keep the text the reviewers saw.
             $abstract->update([
-                'status' => AbstractStatus::Accepted,
-                'decision_type' => $type,
-                'code' => $prefix.str_pad((string) $number, 2, '0', STR_PAD_LEFT),
-                'decided_at' => $submittedAt->addDays($minAge - 1),
+                'status' => AbstractStatus::RevisionRequested,
+                'revision_requested_at' => $requestedAt,
+                'revision_due_on' => $requestedAt->addDays(config('review.revision_days'))->toDateString(),
+                'revision_note' => in_array('A', [$first, $second], true) ? 'One reviewer would accept the abstract as it stands. Please answer the other reviewer\'s comments.' : null,
+                'original_version' => $abstract->only(AbstractSubmission::REVISABLE),
             ]);
+            if ($state === 'revision_requested') {
+                continue;
+            }
+
+            $abstract->update([
+                'methods' => $methods.' Participants were recruited consecutively, and those lost to follow-up were compared with those who completed the study.',
+                'results' => $results.' Main estimates are reported with 95% confidence intervals.',
+                'revision_response' => 'We thank the reviewers. We now describe recruitment and loss to follow-up in the methods, report the main estimates with 95% confidence intervals, and have tightened the conclusions to match the results.',
+                'revised_at' => $revisedAt,
+                'status' => AbstractStatus::Revised,
+            ]);
+
+            // The revised version goes only to the reviewers who did not accept.
+            $again = collect($reviews)->reject(fn (ReviewAssignment $review) => $review->recommendation->isAcceptance())->values();
+            foreach ($again as $k => $review) {
+                // Accepted after revision: every second review is in. Still under review: the demo reviewer's is waiting.
+                $done = $state === 'revised_accepted' || ($again->count() > 1 && ! $review->reviewer->is($demoReviewer) && $k === 1);
+                $completedAt = match (true) {
+                    $state === 'revised_accepted' => $decidedAt->subMinutes($k * 180),
+                    $done => $revisedAt->addHours(mt_rand(20, 30))->min(CarbonImmutable::now()->subHour()),
+                    default => null,
+                };
+                $this->seedReview($abstract, $review->reviewer, $scientific, 2, $done ? 'A' : null, $completedAt, $revisedAt, $revisedAt->addDays(config('review.second_round_days')));
+            }
+
+            if ($state === 'revised_accepted') {
+                $this->seedAcceptance($abstract, $code, $decidedAt, true);
+            }
         }
 
-        // The demo reviewer always has work waiting: two fresh submissions.
-        $reviewer = $this->reviewers->first();
+        // The demo reviewer always has fresh work: first of the two reviewers on new submissions.
         AbstractSubmission::where('edition_id', $this->edition->id)->where('status', AbstractStatus::Submitted)
-            ->whereDoesntHave('authors', fn ($q) => $q->where('email', $reviewer->email))
+            ->whereDoesntHave('authors', fn ($q) => $q->where('email', $demoReviewer->email))
             ->limit(2)->get()
-            ->each(function (AbstractSubmission $abstract) use ($reviewer, $scientific) {
-                $abstract->reviews()->create(['reviewer_id' => $reviewer->id, 'assigned_by' => $scientific->id, 'due_on' => $this->edition->review_deadline]);
+            ->each(function (AbstractSubmission $abstract) use ($demoReviewer, $scientific) {
+                $abstract->reviews()->create(['reviewer_id' => $demoReviewer->id, 'round' => 1, 'assigned_by' => $scientific->id, 'due_on' => $this->edition->review_deadline]);
                 $abstract->update(['status' => AbstractStatus::UnderReview]);
             });
     }
 
-    /** Three days: plenaries, parallel oral sessions by topic, posters, panels and breaks. */
+    /**
+     * One review. $letter is A (accept), V (revise) or R (reject); null leaves
+     * it unfinished. The scores sit in the rubric band that fits the recommendation.
+     */
+    private function seedReview(AbstractSubmission $abstract, User $reviewer, User $scientific, int $round, ?string $letter, ?CarbonImmutable $completedAt, CarbonImmutable $assignedAt, $dueOn): ReviewAssignment
+    {
+        $fields = ['reviewer_id' => $reviewer->id, 'round' => $round, 'assigned_by' => $scientific->id, 'due_on' => $dueOn];
+
+        if ($letter && $completedAt) {
+            [$lo, $hi] = ['A' => [74, 90], 'V' => [54, 66], 'R' => [28, 46]][$letter];
+            $f = mt_rand($lo, $hi) / 100;
+            $comments = $round === 2 ? self::COMMENTS['second'] : self::COMMENTS[['A' => 'good', 'V' => 'revise', 'R' => 'weak'][$letter]];
+
+            $fields += [
+                // Rubric points: originality /20, technical /40, significance /30, clarity /10.
+                'score_originality' => (int) round(20 * $f),
+                'score_technical' => max(0, min(40, (int) round(40 * $f) + mt_rand(-2, 2))),
+                'score_significance' => (int) round(30 * $f),
+                'score_clarity' => (int) round(10 * $f),
+                'technical_checks' => collect(array_keys(Rubric::checks()))->shuffle(mt_rand())->take((int) round(count(Rubric::checks()) * $f))->values()->all(),
+                'recommendation' => ['A' => Recommendation::AcceptOral, 'V' => Recommendation::Revise, 'R' => Recommendation::Reject][$letter],
+                'comments_for_author' => $comments[mt_rand(0, count($comments) - 1)],
+                'comments_for_committee' => $round === 1 && mt_rand(1, 4) === 1 ? 'Strong local relevance; consider for the plenary-adjacent parallel session.' : null,
+                'completed_at' => $completedAt,
+            ];
+        }
+
+        $review = $abstract->reviews()->create($fields);
+        $review->forceFill(['created_at' => $assignedAt])->save();
+
+        return $review->setRelation('reviewer', $reviewer);
+    }
+
+    private function seedAcceptance(AbstractSubmission $abstract, string $topic, CarbonImmutable $decidedAt, bool $automatically): void
+    {
+        $prefix = PresentationType::Oral->codePrefix().'-'.$topic.'-';
+        $number = AbstractSubmission::where('code', 'like', $prefix.'%')->count() + 1;
+
+        $abstract->update([
+            'status' => AbstractStatus::Accepted,
+            'decision_type' => PresentationType::Oral,
+            'code' => $prefix.str_pad((string) $number, 2, '0', STR_PAD_LEFT),
+            'decided_at' => $decidedAt,
+            'accepted_automatically' => $automatically,
+        ]);
+    }
+
+    /** Three days: plenaries, parallel oral sessions by topic, panels, breaks, and posters when they are on. */
     private function programme(): void
     {
         $this->edition->sessions()->delete();
@@ -517,6 +694,13 @@ class DemoSeeder extends Seeder
             ['2027-09-16', '11:00', '12:30', 'Hall A'], ['2027-09-16', '11:00', '12:30', 'Hall B'],
             ['2027-09-17', '09:00', '10:30', 'Hall A'], ['2027-09-17', '09:00', '10:30', 'Hall B'],
         ];
+        // Without posters, the afternoon poster slots hold more oral sessions instead.
+        if ($posters->isEmpty()) {
+            array_push($slots,
+                ['2027-09-15', '16:00', '17:30', 'Hall A'], ['2027-09-15', '16:00', '17:30', 'Hall B'],
+                ['2027-09-16', '16:00', '17:30', 'Hall A'], ['2027-09-16', '16:00', '17:30', 'Hall B'],
+            );
+        }
 
         // Day 1
         $add('2027-09-15', '08:00', '09:00', 'break', 'Registration and welcome coffee');
@@ -534,16 +718,20 @@ class DemoSeeder extends Seeder
             $attach($add($day, $from, $to, 'parallel', 'Oral session: '.$this->topics[$code]->name, $hall, $code, $chairs[$s % count($chairs)]), $orals[$code]);
         }
 
-        $attach($add('2027-09-15', '16:00', '17:30', 'posters', 'Poster session I', 'Exhibition Hall', null, 'Dr Esther Mollel',
-            'Presenters stand at their posters for questions.'), $posters->take(3));
+        if ($posters->isNotEmpty()) {
+            $attach($add('2027-09-15', '16:00', '17:30', 'posters', 'Poster session I', 'Exhibition Hall', null, 'Dr Esther Mollel',
+                'Presenters stand at their posters for questions.'), $posters->take(3));
+        }
 
         // Day 2
         $add('2027-09-16', '09:00', '10:30', 'plenary', 'Keynote: Assistive technology for all', 'Main Hall', 'TAI', 'Prof David Kasozi');
         $add('2027-09-16', '10:30', '11:00', 'break', 'Tea break');
         $add('2027-09-16', '12:30', '14:00', 'break', 'Lunch');
         $add('2027-09-16', '14:00', '15:30', 'panel', 'Financing rehabilitation: insurance, budgets and partnerships', 'Main Hall', 'FIN', 'Dr Fatuma Mbwambo');
-        $attach($add('2027-09-16', '16:00', '17:30', 'posters', 'Poster session II', 'Exhibition Hall', null, 'Dr Hellen Otieno',
-            'Presenters stand at their posters for questions.'), $posters->slice(3));
+        if ($posters->isNotEmpty()) {
+            $attach($add('2027-09-16', '16:00', '17:30', 'posters', 'Poster session II', 'Exhibition Hall', null, 'Dr Hellen Otieno',
+                'Presenters stand at their posters for questions.'), $posters->slice(3));
+        }
 
         // Day 3
         $add('2027-09-17', '10:30', '11:00', 'break', 'Tea break');
@@ -551,44 +739,267 @@ class DemoSeeder extends Seeder
         $add('2027-09-17', '12:00', '13:00', 'plenary', 'Closing ceremony and awards', 'Main Hall', null, 'Prof Grace Mwakyusa');
     }
 
-    /** [topic code, title, focus, setting, design, participants, finding] */
+    /** A methods paragraph that fits the study design. */
+    private static function methods(string $design, int $n, string $unit, string $setting): string
+    {
+        $n = number_format($n);
+        $a = preg_match('/^[aeiou]/i', $design) ? 'an' : 'a';
+
+        return match (true) {
+            str_contains($design, 'randomised') => "We conducted {$a} {$design} in {$setting}. {$n} {$unit} were randomly allocated to the intervention or to usual care. Outcomes were measured at baseline and at follow-up by assessors blinded to allocation, and analysed by intention to treat.",
+            str_contains($design, 'retrospective') => "We reviewed the records of {$n} {$unit} at a referral hospital in {$setting} over five years. Outcomes were compared between those who did and did not complete the programme, adjusting for age, sex and severity.",
+            str_contains($design, 'cohort') => "We conducted {$a} {$design} in {$setting}, following {$n} {$unit} with standardised outcome measures at baseline, three, six and twelve months. Changes over time were analysed with mixed-effects models.",
+            str_contains($design, 'cost survey') => "We surveyed {$n} {$unit} in {$setting}, recording direct medical, transport and lost-income costs over the previous three months. Costs were compared with reported household income.",
+            str_contains($design, 'survey'), $design === 'cross-sectional study' => "We conducted {$a} {$design} of {$n} {$unit} in {$setting}, using a structured interviewer-administered questionnaire in Kiswahili or English. Data were analysed with descriptive statistics and logistic regression.",
+            $design === 'qualitative study' => "We held in-depth interviews and focus group discussions with {$n} {$unit} in {$setting}. Interviews were recorded, transcribed, translated from Kiswahili and analysed thematically.",
+            str_contains($design, 'mixed-methods') => "We combined a structured survey of {$n} {$unit} in {$setting} with in-depth interviews with a purposive sub-sample. Quantitative data were analysed descriptively and interviews thematically.",
+            in_array($design, ['quasi-experimental study', 'before-and-after study', 'implementation study', 'programme evaluation'], true) => "We conducted {$a} {$design} in {$setting} involving {$n} {$unit}. Outcomes were measured before the programme started and again after twelve months, and compared using paired tests.",
+            str_contains($design, 'psychometric') => "{$n} {$unit} in {$setting} completed the translated instrument, and a sub-sample repeated it seven days later. We assessed internal consistency, test-retest reliability and construct validity.",
+            str_contains($design, 'diagnostic') => "{$n} {$unit} in {$setting} were assessed with the smartphone application and with laboratory motion capture on the same day. Agreement was measured with intraclass correlation coefficients, and therapists completed an acceptability questionnaire.",
+            str_contains($design, 'key-informant') => "We analysed national policies, training plans and staffing data for {$setting}, and interviewed {$n} {$unit}. Interviews were analysed thematically against a health workforce framework.",
+            str_contains($design, 'policy') => "We conducted {$a} {$design} covering {$n} {$unit} in {$setting}. Policy documents, budgets and benefit packages were analysed against a structured framework.",
+            $design === 'case study' => "We documented the process with {$n} {$unit} in {$setting} through document review, meeting observation and interviews with officials.",
+            $design === 'scoping review' => "We searched PubMed, CINAHL and African Journals Online for rehabilitation studies from {$setting}. Two reviewers screened titles and full texts independently, and {$n} {$unit} were included and charted.",
+            $design === 'economic evaluation' => "We compared the costs and outcomes of community and hospital-based services for {$n} {$unit} in {$setting}, from the provider perspective, over one year.",
+            $design === 'facility audit' => "We audited {$n} {$unit} in {$setting} against national accessibility standards, using a structured checklist and a walk-through with a disabled people's organisation.",
+            str_contains($design, 'Delphi') => "{$n} {$unit} from {$setting} took part in three online Delphi rounds, rating candidate outcomes on a nine-point scale. Consensus was defined as at least 70% rating an outcome 7 to 9.",
+            default => "We conducted {$a} {$design} with {$n} {$unit} in {$setting}, measuring feasibility, acceptability and early outcomes.",
+        };
+    }
+
+    /** Sample participants by country: names, institutions and phone format [prefix, digits]. */
+    private const PEOPLE = [
+        'TZ' => [
+            'women' => ['Neema', 'Halima', 'Rehema', 'Zawadi', 'Agnes', 'Mwanaidi', 'Upendo', 'Lilian', 'Asha', 'Winfrida', 'Mariam', 'Happiness', 'Prisca', 'Nasra', 'Joyce', 'Catherine', 'Josephine', 'Sabina', 'Getrude', 'Anna', 'Rose', 'Veronica', 'Saida', 'Fatma', 'Witness', 'Glory', 'Elizabeth', 'Rukia'],
+            'men' => ['Juma', 'Emmanuel', 'Daudi', 'Musa', 'Elia', 'Godfrey', 'Hassan', 'Paulo', 'Isaya', 'Abdallah', 'Salim', 'Yusuf', 'Frank', 'Ibrahim', 'Omari', 'Erasto', 'Saidi', 'Joseph', 'Gerald', 'Elisha', 'Hamisi', 'Rajabu', 'Selemani', 'Nassoro', 'Godlisten', 'Innocent', 'Deogratias'],
+            'last' => ['Mushi', 'Mwakalinga', 'Swai', 'Lema', 'Kweka', 'Massawe', 'Ngowi', 'Mbise', 'Shirima', 'Chacha', 'Komba', 'Haule', 'Mtui', 'Urassa', 'Mfinanga', 'Salum', 'Mgaya', 'Minja', 'Mrisho', 'Kitwana', 'Magesa', 'Temba', 'Malisa', 'Mbwana', 'Kileo', 'Sanga', 'Pallangyo', 'Mapunda', 'Kapinga', 'Mwita', 'Marwa', 'Nyagawa', 'Mtenga', 'Kisanga', 'Mwakasege'],
+            'institutions' => [
+                'Muhimbili National Hospital', 'Kilimanjaro Christian Medical Centre', 'Bugando Medical Centre', 'CCBRT Disability Hospital',
+                'Benjamin Mkapa Hospital', 'Mbeya Zonal Referral Hospital', 'Muhimbili University of Health and Allied Sciences',
+                'Kilimanjaro Christian Medical University College', 'Aga Khan Hospital, Dar es Salaam', 'Mnazi Mmoja Hospital, Zanzibar',
+                'Ministry of Health, Tanzania', 'Arusha Lutheran Medical Centre', 'Dodoma Regional Referral Hospital', 'Tanzania Physiotherapy Association',
+                'Muhimbili Orthopaedic Institute', 'Catholic University of Health and Allied Sciences',
+            ],
+            'phone' => ['+2557', 8],
+        ],
+        'KE' => [
+            'women' => ['Wanjiru', 'Achieng', 'Njeri', 'Akinyi', 'Wambui', 'Chebet', 'Nafula'],
+            'men' => ['Kevin', 'Brian', 'Kennedy', 'Dennis', 'Collins', 'Samuel', 'Kiprotich'],
+            'last' => ['Kamau', 'Otieno', 'Odhiambo', 'Mwangi', 'Kiprop', 'Wekesa', 'Njoroge', 'Ochieng', 'Mutua'],
+            'institutions' => ['Kenyatta National Hospital', 'Moi Teaching and Referral Hospital', 'University of Nairobi', 'Kenya Medical Training College'],
+            'phone' => ['+2547', 8],
+        ],
+        'UG' => [
+            'women' => ['Patience', 'Brenda', 'Doreen', 'Sylvia', 'Prossy', 'Harriet'],
+            'men' => ['Moses', 'Ronald', 'Isaac', 'Andrew', 'Godfrey', 'Denis'],
+            'last' => ['Mugisha', 'Ssempala', 'Okello', 'Namubiru', 'Tumusiime', 'Kizza', 'Byaruhanga', 'Nalwoga'],
+            'institutions' => ['Makerere University', 'Mulago National Referral Hospital', 'Mbarara University of Science and Technology'],
+            'phone' => ['+2567', 8],
+        ],
+        'RW' => [
+            'women' => ['Aline', 'Claudine', 'Diane', 'Josiane', 'Clarisse'],
+            'men' => ['Eric', 'Patrick', 'Innocent', 'Olivier', 'Emmanuel'],
+            'last' => ['Uwase', 'Niyonzima', 'Habimana', 'Mukamana', 'Uwimana', 'Ndayisaba'],
+            'institutions' => ['University of Rwanda', 'University Teaching Hospital of Kigali'],
+            'phone' => ['+25078', 7],
+        ],
+        'MW' => [
+            'women' => ['Chikondi', 'Tamara', 'Thoko', 'Mercy', 'Tiwonge'],
+            'men' => ['Chisomo', 'Mphatso', 'Kondwani', 'Blessings', 'Limbani'],
+            'last' => ['Banda', 'Phiri', 'Mwale', 'Chirwa', 'Kumwenda', 'Nyirenda'],
+            'institutions' => ['Kamuzu University of Health Sciences', 'Queen Elizabeth Central Hospital'],
+            'phone' => ['+26599', 7],
+        ],
+        'ZM' => [
+            'women' => ['Mutale', 'Chileshe', 'Bwalya', 'Natasha', 'Mwaka'],
+            'men' => ['Mwila', 'Kabwe', 'Chanda', 'Musonda', 'Bupe'],
+            'last' => ['Mulenga', 'Mwansa', 'Zulu', 'Tembo', 'Kapambwe', 'Lungu'],
+            'institutions' => ['University Teaching Hospital, Lusaka', 'University of Zambia'],
+            'phone' => ['+26097', 7],
+        ],
+        'ZA' => [
+            'women' => ['Thandiwe', 'Nomsa', 'Lerato', 'Zanele', 'Naledi'],
+            'men' => ['Sipho', 'Thabo', 'Lwazi', 'Kagiso', 'Pieter'],
+            'last' => ['Dlamini', 'Nkosi', 'Mokoena', 'Ndlovu', 'Khumalo', 'van der Merwe'],
+            'institutions' => ['University of Cape Town', 'University of the Witwatersrand', 'Stellenbosch University'],
+            'phone' => ['+278', 8],
+        ],
+        'ET' => [
+            'women' => ['Hiwot', 'Meron', 'Selam', 'Tigist', 'Bethlehem'],
+            'men' => ['Abebe', 'Dawit', 'Yonas', 'Mekonnen', 'Henok'],
+            'last' => ['Tesfaye', 'Bekele', 'Girma', 'Haile', 'Alemu', 'Getachew'],
+            'institutions' => ['Addis Ababa University', 'University of Gondar'],
+            'phone' => ['+2519', 8],
+        ],
+        'NG' => [
+            'women' => ['Chidinma', 'Ngozi', 'Funmilayo', 'Adaeze', 'Zainab'],
+            'men' => ['Chinedu', 'Oluwaseun', 'Emeka', 'Tunde', 'Abubakar'],
+            'last' => ['Okafor', 'Adeyemi', 'Okonkwo', 'Bello', 'Eze', 'Adebayo'],
+            'institutions' => ['Lagos University Teaching Hospital', 'University of Ibadan', 'Obafemi Awolowo University'],
+            'phone' => ['+23480', 8],
+        ],
+        'GB' => [
+            'women' => ['Rachel', 'Claire', 'Hannah', 'Emma'],
+            'men' => ['James', 'Thomas', 'Daniel', 'Oliver'],
+            'last' => ['Thompson', 'Hughes', 'Clarke', 'Walker', 'Bennett'],
+            'institutions' => ['Humanity & Inclusion', 'London School of Hygiene & Tropical Medicine'],
+            'phone' => ['+447', 9],
+        ],
+        'CH' => [
+            'women' => ['Isabelle', 'Anna', 'Sophie'],
+            'men' => ['Marc', 'Lukas', 'Pierre'],
+            'last' => ['Dubois', 'Keller', 'Meier', 'Rossi'],
+            'institutions' => ['World Health Organization'],
+            'phone' => ['+4179', 7],
+        ],
+    ];
+
+    /** [topic code, title, focus, setting, design, n, unit, background, main finding, second finding, conclusion] */
     private const ABSTRACTS = [
-        ['HBR', 'Community-based stroke rehabilitation delivered by trained family caregivers in Dodoma', 'stroke rehabilitation', 'Dodoma Region, Tanzania', 'prospective cohort study', 84, 'functional independence improved by a mean of 18 points on the Barthel Index at six months'],
-        ['TAI', 'Low-cost 3D-printed prosthetic sockets: a pilot in northern Tanzania', '3D-printed prosthetics', 'Kilimanjaro Region, Tanzania', 'pilot feasibility study', 32, 'socket fitting time fell from five days to two, with comparable comfort scores'],
-        ['FIN', 'Out-of-pocket costs of rehabilitation after lower-limb amputation in Dar es Salaam', 'post-amputation rehabilitation', 'Dar es Salaam, Tanzania', 'cross-sectional cost survey', 146, 'households spent a median of 38% of monthly income on rehabilitation-related costs'],
-        ['OCC', 'Return to work after hand injuries among informal-sector workers in Arusha', 'hand therapy', 'Arusha, Tanzania', 'mixed-methods study', 61, 'two thirds returned to work within twelve weeks of structured hand therapy'],
-        ['LEA', 'Building a national rehabilitation workforce strategy: lessons from Tanzania', 'rehabilitation workforce planning', 'Tanzania', 'policy analysis with key-informant interviews', 27, 'all regions reported fewer than one physiotherapist per 100,000 people'],
-        ['LIF', 'Early intervention for children with cerebral palsy in rural Mwanza', 'early childhood rehabilitation', 'Mwanza Region, Tanzania', 'quasi-experimental study', 112, 'gross motor scores improved significantly more in the intervention group'],
-        ['NCD', 'Pulmonary rehabilitation for post-tuberculosis lung disease in Mbeya', 'pulmonary rehabilitation', 'Mbeya, Tanzania', 'randomised controlled trial', 98, 'six-minute walk distance increased by 64 metres compared with usual care'],
-        ['WDI', 'Barriers to maternal health care for women with disabilities in Zanzibar', 'disability-inclusive maternal care', 'Zanzibar', 'qualitative study', 40, 'inaccessible facilities and negative staff attitudes were the most reported barriers'],
-        ['RIN', 'Validation of the Kiswahili version of the WHO Disability Assessment Schedule', 'disability measurement', 'Tanzania', 'psychometric validation study', 320, 'the Kiswahili version showed excellent internal consistency (alpha 0.91)'],
-        ['HBR', 'Tele-supported home exercise after knee replacement in Nairobi', 'home exercise programmes', 'Nairobi, Kenya', 'randomised controlled trial', 76, 'adherence was 81% with weekly phone support against 52% without'],
-        ['TAI', 'Smartphone gait analysis for community physiotherapists: accuracy and acceptability', 'mobile gait assessment', 'Kampala, Uganda', 'diagnostic accuracy study', 58, 'agreement with laboratory gait analysis was high (ICC 0.88)'],
-        ['FIN', 'Including assistive products in national health insurance benefit packages', 'assistive product financing', 'East Africa', 'comparative policy review', 6, 'only one of six schemes reimbursed wheelchairs and hearing aids'],
-        ['OCC', 'Ergonomic training for hospital porters to prevent low back pain', 'workplace injury prevention', 'Moshi, Tanzania', 'cluster-randomised trial', 124, 'reported back pain episodes fell by 41% over twelve months'],
-        ['LEA', 'Rehabilitation champions in district councils: an advocacy model', 'district rehabilitation advocacy', 'Tanga Region, Tanzania', 'case study', 11, 'eight of eleven councils added rehabilitation lines to their annual budgets'],
-        ['LIF', 'Falls prevention for older adults through community exercise groups', 'falls prevention', 'Moshi Rural, Tanzania', 'before-and-after study', 140, 'falls in the previous six months dropped from 34% to 15%'],
-        ['NCD', 'Cardiac rehabilitation in a resource-limited referral hospital', 'cardiac rehabilitation', 'Dar es Salaam, Tanzania', 'retrospective cohort study', 210, 'completion of the programme was associated with fewer readmissions'],
-        ['WDI', 'Economic empowerment of women with disabilities through savings groups', 'livelihood rehabilitation', 'Morogoro, Tanzania', 'mixed-methods evaluation', 85, 'monthly income rose by a median of 45% after two years'],
-        ['RIN', 'Mapping rehabilitation research in East Africa, 2010–2026', 'rehabilitation research', 'East Africa', 'scoping review', 412, 'most studies focused on stroke and few addressed children or mental health'],
-        ['HBR', 'Home-based rehabilitation after spinal cord injury: a five-year follow-up', 'spinal cord injury rehabilitation', 'Moshi, Tanzania', 'longitudinal cohort study', 47, 'pressure ulcer rates halved among those receiving regular home visits'],
-        ['TAI', 'Virtual reality balance training for children with developmental delay', 'virtual reality therapy', 'Kigali, Rwanda', 'pilot randomised trial', 30, 'balance scores improved more with virtual reality than with standard therapy'],
-        ['NCD', 'Integrating rehabilitation into diabetes clinics: foot care and mobility', 'diabetes-related rehabilitation', 'Mwanza, Tanzania', 'implementation study', 230, 'amputation referrals fell by a third after screening was introduced'],
-        ['FIN', 'Cost-effectiveness of community wheelchair services in Malawi', 'wheelchair provision', 'Southern Malawi', 'economic evaluation', 150, 'community provision cost 40% less per user than hospital-based services'],
-        ['OCC', 'Vocational rehabilitation for road traffic injury survivors', 'vocational rehabilitation', 'Dar es Salaam, Tanzania', 'prospective cohort study', 92, 'employment at one year was twice as likely with job-placement support'],
-        ['LEA', 'Training emergency nurses in early rehabilitation: a national programme', 'early rehabilitation in acute care', 'Tanzania', 'programme evaluation', 360, 'nurses\' knowledge scores rose from 48% to 79% after training'],
-        ['LIF', 'School-based screening and rehabilitation for children with hearing loss', 'paediatric hearing rehabilitation', 'Iringa, Tanzania', 'cross-sectional study', 1200, 'one in twenty-five children screened had previously undetected hearing loss'],
-        ['WDI', 'Gender-based violence services for women with disabilities: an accessibility audit', 'accessible support services', 'Dar es Salaam, Tanzania', 'facility audit', 36, 'only four of thirty-six facilities met basic accessibility standards'],
-        ['RIN', 'A core outcome set for stroke rehabilitation trials in Africa', 'stroke outcome measurement', 'sub-Saharan Africa', 'Delphi consensus study', 64, 'consensus was reached on nine core outcomes'],
-        ['HBR', 'Caregiver burden in home-based rehabilitation of traumatic brain injury', 'brain injury rehabilitation', 'Kilimanjaro Region, Tanzania', 'cross-sectional study', 70, 'high caregiver burden was reported by 57% of caregivers'],
-        ['TAI', 'SMS reminders to improve attendance at outpatient physiotherapy', 'appointment reminders', 'Arusha, Tanzania', 'randomised controlled trial', 300, 'missed appointments fell from 31% to 17%'],
-        ['NCD', 'Group exercise for people living with HIV and chronic pain', 'exercise therapy', 'Mbeya, Tanzania', 'randomised controlled trial', 120, 'pain interference scores improved significantly at twelve weeks'],
-        ['LIF', 'Rehabilitation needs of older adults after hip fracture in Tanzania', 'geriatric rehabilitation', 'Dar es Salaam, Tanzania', 'prospective cohort study', 66, 'only one in five regained their previous walking ability at six months'],
-        ['OCC', 'Musculoskeletal disorders among smallholder farmers in Mbeya', 'occupational musculoskeletal health', 'Mbeya Rural, Tanzania', 'cross-sectional survey', 410, 'low back pain was reported by 68% of farmers in the past year'],
-        ['WDI', 'Inclusive education for girls with disabilities: a community programme', 'inclusive education', 'Dodoma, Tanzania', 'programme evaluation', 150, 'school attendance among enrolled girls rose to 89%'],
-        ['RIN', 'Patient-reported experience of rehabilitation services in referral hospitals', 'patient experience', 'Tanzania', 'multi-site survey', 540, 'waiting time and cost were the most frequent complaints'],
-        ['LEA', 'Engaging parliamentarians on disability and rehabilitation policy', 'policy engagement', 'Tanzania', 'case study', 18, 'a parliamentary caucus on rehabilitation was established within a year'],
-        ['FIN', 'Community health fund coverage of physiotherapy services', 'health insurance coverage', 'Morogoro, Tanzania', 'cross-sectional study', 260, 'only 12% of insured members knew physiotherapy was covered'],
+        ['HBR', 'Community-based stroke rehabilitation delivered by trained family caregivers in Dodoma', 'stroke rehabilitation', 'Dodoma Region, Tanzania', 'prospective cohort study', 84, 'stroke survivors and their main caregivers',
+            'Most stroke survivors in rural Tanzania go home without any rehabilitation, and families provide nearly all of their care. We assessed whether family caregivers trained by physiotherapists could deliver basic rehabilitation at home.',
+            'functional independence improved by a mean of 18 points on the Barthel Index at six months', 'Caregiver confidence scores rose, and two thirds of families were still doing the exercises without supervision at twelve months.',
+            'Training family caregivers is a feasible way to bring stroke rehabilitation to rural households. The approach should be tested at district scale with community health workers providing follow-up.'],
+        ['TAI', 'Low-cost 3D-printed prosthetic sockets: a pilot in northern Tanzania', '3D-printed prosthetics', 'Kilimanjaro Region, Tanzania', 'pilot feasibility study', 32, 'adults with transtibial amputation',
+            'Conventional socket fabrication depends on plaster casting and scarce prosthetic technicians, so people often wait weeks for a limb. We tested whether scanning and 3D printing could shorten the process in a regional orthopaedic workshop.',
+            'socket fitting time fell from five days to two, with comparable comfort scores', 'Material cost per socket fell by about 60%. Two sockets cracked and were reprinted within three months.',
+            '3D-printed sockets are a promising option for regional workshops. A larger study of durability over at least a year is needed before wider use.'],
+        ['FIN', 'Out-of-pocket costs of rehabilitation after lower-limb amputation in Dar es Salaam', 'post-amputation rehabilitation', 'Dar es Salaam, Tanzania', 'cross-sectional cost survey', 146, 'households of people with lower-limb amputation',
+            'Rehabilitation after amputation, including the prosthesis, is rarely covered by insurance in Tanzania. The cost to households has not been measured.',
+            'households spent a median of 38% of monthly income on rehabilitation-related costs', 'Transport accounted for a third of all costs, and 41% of households borrowed money or sold assets to pay.',
+            'Rehabilitation after amputation pushes many households into financial hardship. Prostheses and transport support should be included in health financing reforms.'],
+        ['OCC', 'Return to work after hand injuries among informal-sector workers in Arusha', 'hand therapy', 'Arusha, Tanzania', 'mixed-methods study', 61, 'informal-sector workers with hand injuries',
+            'Hand injuries are common among carpenters, mechanics and market traders, who lose income for every day away from work. Little is known about how they recover.',
+            'two thirds returned to work within twelve weeks of structured hand therapy', 'Workers who started therapy within two weeks of injury returned a median of three weeks sooner. Interviews showed that lost income was the main reason for missing sessions.',
+            'Early referral to hand therapy should be part of trauma care, and sessions should be scheduled around the working day of self-employed patients.'],
+        ['LEA', 'Building a national rehabilitation workforce strategy: lessons from Tanzania', 'rehabilitation workforce planning', 'Tanzania', 'policy analysis with key-informant interviews', 27, 'key informants from ministries, training institutions and professional bodies',
+            'Tanzania has no costed plan for training and deploying rehabilitation professionals, and graduates often cannot find posts.',
+            'all regions reported fewer than one physiotherapist per 100,000 people', 'Informants identified the lack of approved rehabilitation posts in local government as the main bottleneck, ahead of training capacity.',
+            'A national rehabilitation workforce strategy should link the number of graduates to funded posts at district level.'],
+        ['LIF', 'Early intervention for children with cerebral palsy in rural Mwanza', 'early childhood rehabilitation', 'Mwanza Region, Tanzania', 'quasi-experimental study', 112, 'children aged one to five years with cerebral palsy',
+            'Children with cerebral palsy in rural Tanzania are often first seen by a therapist after the age of three, missing the period of greatest benefit. We evaluated a parent-led early intervention programme run through village health workers.',
+            'gross motor scores improved significantly more in the intervention group (mean GMFM-66 gain 7.2 against 3.1)', 'Parents in the programme also reported less stress and a better understanding of their child\'s needs.',
+            'Parent-led early intervention is effective for young children with cerebral palsy and can be delivered through existing community health structures.'],
+        ['NCD', 'Pulmonary rehabilitation for post-tuberculosis lung disease in Mbeya', 'pulmonary rehabilitation', 'Mbeya, Tanzania', 'randomised controlled trial', 98, 'adults with post-tuberculosis lung disease',
+            'Many people who complete tuberculosis treatment are left with breathlessness and reduced exercise capacity. Pulmonary rehabilitation is rarely offered to them.',
+            'six-minute walk distance increased by 64 metres compared with usual care', 'Breathlessness and quality-of-life scores also improved, and there were no serious adverse events.',
+            'A six-week pulmonary rehabilitation programme is safe and effective after tuberculosis. It can be delivered by physiotherapists in regional hospitals.'],
+        ['WDI', 'Barriers to maternal health care for women with disabilities in Zanzibar', 'disability-inclusive maternal care', 'Zanzibar', 'qualitative study', 40, 'women with disabilities who had given birth in the previous two years',
+            'Women with disabilities face higher risks during pregnancy and childbirth, yet little is known about their experience of maternal care in Zanzibar.',
+            'inaccessible facilities and negative staff attitudes were the most reported barriers', 'Deaf women described the greatest difficulty communicating with staff, and several relied on relatives to interpret during labour.',
+            'Maternal health quality standards should include physical accessibility, disability awareness training and access to sign language interpretation.'],
+        ['RIN', 'Validation of the Kiswahili version of the WHO Disability Assessment Schedule', 'disability measurement', 'Tanzania', 'psychometric validation study', 320, 'adults attending rehabilitation and general outpatient clinics',
+            'No validated Kiswahili instrument exists for measuring disability, which limits research and service planning in East Africa. We translated and validated the WHO Disability Assessment Schedule (WHODAS 2.0).',
+            'the Kiswahili version showed excellent internal consistency (Cronbach\'s alpha 0.91)', 'Test-retest reliability was good (ICC 0.86), and scores were higher among rehabilitation patients, as expected.',
+            'The Kiswahili WHODAS 2.0 is reliable and valid, and can be used in clinical practice, surveys and research.'],
+        ['HBR', 'Tele-supported home exercise after knee replacement in Nairobi', 'home exercise programmes', 'Nairobi, Kenya', 'randomised controlled trial', 76, 'patients after total knee replacement',
+            'Outpatient physiotherapy after knee replacement is hard to attend in Nairobi because of traffic and cost, and many patients stop exercising.',
+            'adherence was 81% with weekly phone support against 52% without', 'Knee flexion and function scores at twelve weeks were also better in the phone-supported group.',
+            'Weekly phone calls from a physiotherapist are a low-cost way to keep patients exercising at home after knee replacement.'],
+        ['TAI', 'Smartphone gait analysis for community physiotherapists: accuracy and acceptability', 'mobile gait assessment', 'Kampala, Uganda', 'diagnostic accuracy study', 58, 'adults with gait impairments',
+            'Community physiotherapists have no objective way to measure walking, and laboratory gait analysis is available only in a few capital cities.',
+            'agreement with laboratory gait analysis was high (ICC 0.88)', 'Physiotherapists rated the application easy to use, and an assessment took under five minutes.',
+            'Smartphone gait analysis is accurate and practical enough for routine use in community rehabilitation.'],
+        ['FIN', 'Including assistive products in national health insurance benefit packages', 'assistive product financing', 'East Africa', 'comparative policy review', 6, 'national and social health insurance schemes',
+            'Assistive products such as wheelchairs, hearing aids and spectacles are rarely paid for by health insurance in East Africa, leaving users to pay in full.',
+            'only one of six schemes reimbursed wheelchairs and hearing aids', 'Where products were listed, reimbursement ceilings covered less than half of the market price.',
+            'Health insurance benefit packages should include priority products from the WHO Priority Assistive Products List, with realistic reimbursement rates.'],
+        ['OCC', 'Ergonomic training for hospital porters to prevent low back pain', 'workplace injury prevention', 'Moshi, Tanzania', 'cluster-randomised trial', 124, 'hospital porters in twelve wards',
+            'Hospital porters lift and transfer patients many times a day, often without training or equipment, and back injuries are common.',
+            'reported back pain episodes fell by 41% over twelve months', 'Sick leave for back pain fell by a third in the wards that received training.',
+            'Ergonomic training is a simple and effective measure that hospitals should provide for all porters, alongside basic transfer equipment.'],
+        ['LEA', 'Rehabilitation champions in district councils: an advocacy model', 'district rehabilitation advocacy', 'Tanga Region, Tanzania', 'case study', 11, 'district councils',
+            'District councils plan and fund primary health care in Tanzania, but rehabilitation rarely appears in their budgets. We describe a model in which a trained "rehabilitation champion" sits on each council health management team.',
+            'eight of eleven councils added rehabilitation lines to their annual budgets', 'Councils where the champion was a senior officer were most likely to fund new services.',
+            'Rehabilitation champions are a low-cost advocacy model that fits Tanzania\'s decentralised health system.'],
+        ['LIF', 'Falls prevention for older adults through community exercise groups', 'falls prevention', 'Moshi Rural, Tanzania', 'before-and-after study', 140, 'adults aged 60 and over',
+            'Falls are a leading cause of injury and loss of independence among older adults, but prevention programmes are rare in rural Tanzania.',
+            'the proportion reporting a fall in the previous six months dropped from 34% to 15%', 'Attendance at the weekly groups stayed above 70% throughout the year.',
+            'Weekly community exercise groups are acceptable to older adults and reduce falls. They can be led by trained volunteers with physiotherapy supervision.'],
+        ['NCD', 'Cardiac rehabilitation in a resource-limited referral hospital', 'cardiac rehabilitation', 'Dar es Salaam, Tanzania', 'retrospective cohort study', 210, 'patients referred for cardiac rehabilitation',
+            'Cardiac rehabilitation reduces deaths and readmissions, but few programmes exist in sub-Saharan Africa. We reviewed the first five years of a hospital programme.',
+            'completing the programme was associated with fewer readmissions within a year (adjusted odds ratio 0.52)', 'Only 38% of referred patients completed the programme, mostly because of the cost of travelling to sessions.',
+            'Cardiac rehabilitation is feasible in a referral hospital, but home-based options are needed so that more patients complete it.'],
+        ['WDI', 'Economic empowerment of women with disabilities through savings groups', 'livelihood rehabilitation', 'Morogoro, Tanzania', 'mixed-methods evaluation', 85, 'women with disabilities',
+            'Women with disabilities are often excluded from credit and income-generating activities. We evaluated village savings groups made accessible to them.',
+            'monthly income rose by a median of 45% after two years', 'Members also described greater confidence and a stronger voice in household decisions.',
+            'Inclusive savings groups improve both income and participation, and complement clinical rehabilitation services.'],
+        ['RIN', 'Mapping rehabilitation research in East Africa, 2010–2026', 'rehabilitation research', 'East Africa', 'scoping review', 412, 'studies',
+            'Rehabilitation research in East Africa has grown quickly, but there is no overview of what has been studied and where the gaps are.',
+            'most studies focused on stroke, and few addressed children or mental health', 'Three quarters of studies came from Kenya, Tanzania and Uganda, and fewer than one in five evaluated an intervention.',
+            'Research funders should prioritise intervention studies and the conditions and populations that are under-represented.'],
+        ['HBR', 'Home-based rehabilitation after spinal cord injury: a five-year follow-up', 'spinal cord injury rehabilitation', 'Moshi, Tanzania', 'longitudinal cohort study', 47, 'people with spinal cord injury',
+            'People with spinal cord injury in Tanzania face high rates of pressure ulcers, infections and death after discharge from hospital.',
+            'pressure ulcer rates halved among those receiving regular home visits', 'Five-year survival was 81%, higher than reported in earlier Tanzanian studies.',
+            'Regular home visits reduce complications after spinal cord injury and should be part of discharge planning.'],
+        ['TAI', 'Virtual reality balance training for children with developmental delay', 'virtual reality therapy', 'Kigali, Rwanda', 'pilot randomised trial', 30, 'children aged six to twelve with developmental delay',
+            'Children with developmental delay need many hours of repetitive balance practice, which they often find tedious.',
+            'balance scores improved more with virtual reality than with standard therapy', 'Children in the virtual reality group attended 94% of their sessions.',
+            'Low-cost virtual reality games are an engaging addition to paediatric therapy. A full trial is warranted.'],
+        ['NCD', 'Integrating rehabilitation into diabetes clinics: foot care and mobility', 'diabetes-related rehabilitation', 'Mwanza, Tanzania', 'implementation study', 230, 'people with diabetes',
+            'Diabetic foot complications are a leading cause of lower-limb amputation in Tanzania, yet foot screening is rarely part of routine diabetes care.',
+            'amputation referrals fell by a third after screening was introduced', 'Nurses screened 86% of eligible clinic attendees within the first year.',
+            'Foot screening and mobility advice can be built into routine diabetes clinics with modest training for nurses.'],
+        ['FIN', 'Cost-effectiveness of community wheelchair services in Malawi', 'wheelchair provision', 'Southern Malawi', 'economic evaluation', 150, 'wheelchair users',
+            'Wheelchair services in Malawi are concentrated in a few hospitals, far from most of the people who need them.',
+            'community provision cost 40% less per user than hospital-based services', 'Users fitted in the community also had fewer pressure sores at one year.',
+            'Community wheelchair services are cost-effective and should be expanded through district health systems.'],
+        ['OCC', 'Vocational rehabilitation for road traffic injury survivors', 'vocational rehabilitation', 'Dar es Salaam, Tanzania', 'prospective cohort study', 92, 'adults injured in road traffic crashes',
+            'Road traffic injuries mainly affect young working adults, many of whom never return to work.',
+            'those who received job-placement support were twice as likely to be employed at one year', 'People with lower-limb fractures benefited most from the support.',
+            'Vocational rehabilitation should be linked to trauma care for road traffic injury survivors.'],
+        ['LEA', 'Training emergency nurses in early rehabilitation: a national programme', 'early rehabilitation in acute care', 'Tanzania', 'programme evaluation', 360, 'emergency and ward nurses',
+            'Early positioning and mobilisation prevent complications in hospital, but nurses receive little rehabilitation training.',
+            'nurses\' knowledge scores rose from 48% to 79% after training', 'Ward audits showed more patients were positioned and mobilised within 48 hours of admission.',
+            'Training nurses in early rehabilitation is feasible at national scale and changes practice on the wards.'],
+        ['LIF', 'School-based screening and rehabilitation for children with hearing loss', 'paediatric hearing rehabilitation', 'Iringa, Tanzania', 'cross-sectional study', 1200, 'primary school children',
+            'Undetected hearing loss harms children\'s learning, but hearing screening is not part of routine school health services in Tanzania.',
+            'one in twenty-five children screened had previously undetected hearing loss', 'Two thirds of the children identified were seen by an audiology service within three months.',
+            'School hearing screening is feasible and should be added to the national school health programme.'],
+        ['WDI', 'Gender-based violence services for women with disabilities: an accessibility audit', 'accessible support services', 'Dar es Salaam, Tanzania', 'facility audit', 36, 'facilities offering gender-based violence services',
+            'Women with disabilities face higher rates of violence, but may be unable to reach or use the services meant to support them.',
+            'only four of thirty-six facilities met basic accessibility standards', 'No facility had information in accessible formats or staff able to communicate in sign language.',
+            'Accessibility standards and staff training should be required for every gender-based violence service.'],
+        ['RIN', 'A core outcome set for stroke rehabilitation trials in Africa', 'stroke outcome measurement', 'eleven African countries', 'Delphi consensus study', 64, 'clinicians, researchers and stroke survivors',
+            'Stroke rehabilitation trials in Africa measure different outcomes, which makes their results hard to compare or combine.',
+            'consensus was reached on nine core outcomes', 'Mobility, independence in daily activities and return to community roles were rated most important by stroke survivors.',
+            'This core outcome set should be used in future stroke rehabilitation trials in Africa.'],
+        ['HBR', 'Caregiver burden in home-based rehabilitation of traumatic brain injury', 'brain injury rehabilitation', 'Kilimanjaro Region, Tanzania', 'cross-sectional study', 70, 'family caregivers of people with traumatic brain injury',
+            'Families provide most of the care after traumatic brain injury, usually with little information or support.',
+            'high caregiver burden was reported by 57% of caregivers on the Zarit Burden Interview', 'Burden was highest among those caring for someone with changes in behaviour.',
+            'Home-based rehabilitation after brain injury should include caregiver training and psychosocial support.'],
+        ['TAI', 'SMS reminders to improve attendance at outpatient physiotherapy', 'appointment reminders', 'Arusha, Tanzania', 'randomised controlled trial', 300, 'physiotherapy outpatients',
+            'Missed physiotherapy appointments waste clinic time and slow patients\' recovery.',
+            'missed appointments fell from 31% to 17%', 'Each reminder cost less than 50 shillings to send.',
+            'SMS reminders are a cheap and effective way to improve attendance at outpatient physiotherapy.'],
+        ['NCD', 'Group exercise for people living with HIV and chronic pain', 'exercise therapy', 'Mbeya, Tanzania', 'randomised controlled trial', 120, 'adults living with HIV and chronic pain',
+            'Chronic pain is common among people living with HIV and is rarely treated with exercise.',
+            'pain interference scores improved significantly at twelve weeks', 'The benefit was maintained at six months among those who continued the group sessions.',
+            'Group exercise is an effective, low-cost treatment for chronic pain that can be offered in HIV care and treatment centres.'],
+        ['LIF', 'Rehabilitation needs of older adults after hip fracture in Tanzania', 'geriatric rehabilitation', 'Dar es Salaam, Tanzania', 'prospective cohort study', 66, 'adults aged 60 and over with hip fracture',
+            'Hip fractures in older adults are increasing in Tanzania, but rehabilitation after surgery is limited.',
+            'only one in five regained their previous walking ability at six months', 'Waiting more than a week for surgery was associated with poorer recovery.',
+            'Faster surgery and structured rehabilitation are needed to improve recovery after hip fracture.'],
+        ['OCC', 'Musculoskeletal disorders among smallholder farmers in Mbeya', 'occupational musculoskeletal health', 'Mbeya Rural, Tanzania', 'cross-sectional survey', 410, 'smallholder farmers',
+            'Farming involves heavy lifting and long periods of bending, but the musculoskeletal health of Tanzanian farmers has received little attention.',
+            'low back pain was reported by 68% of farmers in the past year', 'Pain was most often linked to hand-hoeing and carrying loads on the head.',
+            'Rural health services should offer ergonomic advice and rehabilitation for agricultural workers.'],
+        ['WDI', 'Inclusive education for girls with disabilities: a community programme', 'inclusive education', 'Dodoma, Tanzania', 'programme evaluation', 150, 'girls with disabilities',
+            'Girls with disabilities are among the children most likely to be out of school in Tanzania.',
+            'school attendance among enrolled girls rose to 89%', 'Teachers reported more confidence in adapting their lessons after training.',
+            'Community programmes that combine teacher training, assistive devices and family support can keep girls with disabilities in school.'],
+        ['RIN', 'Patient-reported experience of rehabilitation services in referral hospitals', 'patient experience', 'Tanzania', 'multi-site survey', 540, 'patients in six referral hospitals',
+            'Patients\' views of rehabilitation services in Tanzania have rarely been measured.',
+            'waiting time and cost were the most frequent complaints', 'Overall, 78% of patients were satisfied with the care they received from therapists.',
+            'Reducing waiting times and costs should be priorities for improving rehabilitation services.'],
+        ['LEA', 'Engaging parliamentarians on disability and rehabilitation policy', 'policy engagement', 'Tanzania', 'case study', 18, 'members of parliament',
+            'Disability and rehabilitation receive little attention in parliamentary debate and budget scrutiny.',
+            'a parliamentary caucus on rehabilitation was established within a year', 'Parliamentary questions on rehabilitation rose from two to eleven in the following session.',
+            'Structured engagement with parliamentarians can raise the profile of rehabilitation in national policy and budgets.'],
+        ['FIN', 'Community health fund coverage of physiotherapy services', 'health insurance coverage', 'Morogoro, Tanzania', 'cross-sectional study', 260, 'members of insured households',
+            'Membership of the improved Community Health Fund covers physiotherapy at some facilities, but few members use it.',
+            'only 12% of insured members knew physiotherapy was covered', 'Members who had been told about the benefit by a health worker were four times more likely to use it.',
+            'Health workers and the fund should tell members that rehabilitation is covered, so that they use the benefit they have paid for.'],
     ];
 
     private const COMMENTS = [
@@ -598,11 +1009,22 @@ class DemoSeeder extends Seeder
             'An important contribution from an under-researched setting. The methods are appropriate; consider reporting the effect size alongside the main outcome.',
             'Strong local evidence with clear policy messages. A short note on cost or feasibility would make the conclusions even more useful for decision makers.',
         ],
+        'revise' => [
+            'Promising and relevant, but not ready as it stands. Please describe how participants were recruited, report the main result with a confidence interval, and make the conclusion match the data.',
+            'The question matters for district services. Before acceptance, the methods need the study design and outcome measures, and the results need numbers rather than a summary.',
+            'A useful study that I would accept with changes: shorten the background, add the sample size and follow-up period, and state the main limitation.',
+            'Good local relevance. The abstract would be stronger with clearer results: give the effect size and say how missing data were handled.',
+        ],
         'weak' => [
             'The topic is relevant, but the methods are not described in enough detail to judge the findings. Please state the study design, sample size calculation and outcome measures.',
             'The conclusions go beyond what the results show. With such a small sample, the findings should be presented as preliminary.',
             'Interesting question, but the abstract reads as a project description rather than a study. Please add results with numbers.',
             'Several statements need supporting data. The link between the intervention and the reported outcomes is not clear.',
+        ],
+        // Reviews of a revised version.
+        'second' => [
+            'The revision answers my comments: recruitment is now described and the main result has a confidence interval. I am happy to accept.',
+            'Thank you for the careful revision. The methods are now clear, and the conclusions follow from the results.',
         ],
     ];
 }
