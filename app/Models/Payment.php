@@ -28,6 +28,12 @@ class Payment extends Model
         return $this->belongsTo(Registration::class);
     }
 
+    /** The desk officer who sent the M-Pesa request, if it was not the participant. */
+    public function initiator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'initiated_by');
+    }
+
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');

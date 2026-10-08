@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
+use App\Enums\Role;
 use App\Enums\WaiverReason;
 use App\Models\Edition;
 use App\Models\FeeWaiver;
@@ -15,12 +16,15 @@ use App\Models\User;
 use App\Notifications\FeeWaived;
 use App\Notifications\PaymentReceived;
 use App\Notifications\PaymentRejected;
+use App\Notifications\RegisteredAtDesk;
 use App\Notifications\RegistrationConfirmed;
 use App\Notifications\WaiverWithdrawn;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Spatie\Permission\Models\Role as RoleModel;
 
 /**
  * Registration and payment. Payments are high-risk: every state change goes
@@ -61,6 +65,48 @@ class RegistrationService
 
             return $registration;
         });
+    }
+
+    /**
+     * The desk registers someone at the venue. A new account is created for an
+     * unknown email (and emailed a link to set its password); a known email gets
+     * its existing account. Either way the registration awaits payment.
+     *
+     * @param  array{title?: ?string, first_name: string, last_name: string, email: string, phone: string, country: string, institution: string, profession: string, dietary_needs?: ?string, accessibility_needs?: ?string}  $data
+     */
+    public function registerAtDesk(array $data, Edition $edition, RegistrationCategory $category): Registration
+    {
+        $email = Str::lower(trim($data['email']));
+
+        [$registration, $created] = DB::transaction(function () use ($data, $email, $edition, $category) {
+            $user = User::where('email', $email)->lockForUpdate()->first();
+            $created = ! $user;
+
+            if ($user && ($existing = $user->registrationFor($edition))) {
+                throw new InvalidArgumentException($user->name.' is already registered, as '.$existing->reference.'.');
+            }
+
+            $user ??= User::create([
+                'title' => $data['title'] ?? null,
+                'first_name' => trim($data['first_name']),
+                'last_name' => trim($data['last_name']),
+                'email' => $email,
+                'phone' => trim($data['phone']),
+                'country' => $data['country'],
+                // Replaced when they set their own from the welcome email.
+                'password' => Str::random(40),
+            ]);
+            $user->update(['institution' => trim($data['institution']), 'profession' => trim($data['profession'])]);
+            $user->assignRole(RoleModel::findOrCreate(Role::Participant->value, 'web'));
+
+            return [$this->register($user, $edition, $category, $data), $created];
+        });
+
+        if ($created) {
+            $registration->user->notify(new RegisteredAtDesk($registration, Password::broker()->createToken($registration->user)));
+        }
+
+        return $registration;
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
 use App\Models\Payment;
 use App\Models\Registration;
+use App\Models\User;
 use App\Notifications\RegistrationConfirmed;
 use App\Services\Mpesa\MpesaClient;
 use App\Services\Mpesa\MpesaResult;
@@ -52,14 +53,14 @@ class MpesaPaymentService
             || (config('mpesa.environment') === 'sandbox' && preg_match('/^0{11}[1-9]$/', $msisdn));
     }
 
-    /** Send the prompt to the participant's phone and record the outcome. */
-    public function start(Registration $registration, string $msisdn): Payment
+    /** Send the prompt to the participant's phone and record the outcome. $by is the desk officer who sent it, if any. */
+    public function start(Registration $registration, string $msisdn, ?User $by = null): Payment
     {
         if (! self::availableFor($registration)) {
             throw new InvalidArgumentException('M-Pesa payments are not available for this registration.');
         }
 
-        $payment = DB::transaction(function () use ($registration, $msisdn) {
+        $payment = DB::transaction(function () use ($registration, $msisdn, $by) {
             $registration = Registration::lockForUpdate()->findOrFail($registration->id);
 
             if (! $registration->canSubmitPayment()) {
@@ -81,6 +82,7 @@ class MpesaPaymentService
                 'payer_phone' => MpesaClient::normalizeMsisdn($msisdn),
                 'paid_on' => today(),
                 'status' => PaymentStatus::Pending,
+                'initiated_by' => $by?->id,
             ]);
         });
 

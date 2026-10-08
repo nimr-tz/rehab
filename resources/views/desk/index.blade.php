@@ -1,25 +1,29 @@
 @php
+    use App\Enums\PaymentStatus;
+    use App\Enums\RegistrationStatus;
+
     $tiles = [
-        ['Registered', $stats['registered'], '#024f6d'],
-        ['Confirmed', $stats['confirmed'], '#45582e'],
-        ['Badges printed', $stats['printed'], '#1b7fa3'],
-        ['Ready to print', $stats['ready'], '#d69a00'],
-        ['Checked in', $stats['checkedIn'], '#bd520a'],
-        ['Awaiting payment', $stats['awaiting'], '#d9574b'],
+        ['Registered', $stats['registered'], 'border-t-brand-700'],
+        ['Confirmed', $stats['confirmed'], 'border-t-olive-700'],
+        ['Badges printed', $stats['printed'], 'border-t-brand-500'],
+        ['Ready to print', $stats['ready'], 'border-t-sun-500'],
+        ['Checked in', $stats['checkedIn'], 'border-t-ember-600'],
+        ['Awaiting payment', $stats['awaiting'], 'border-t-coral-500'],
     ];
     $catMax = max(1, $byCategory->max() ?? 1);
 @endphp
 
 <x-layouts.portal title="Registration desk">
     <x-slot:header>
-        <x-page-header title="Registration desk" description="Badge printing and check-in readiness">
-            <x-button size="sm" :href="route('desk.queue')" icon="printer">Print queue</x-button>
+        <x-page-header title="Registration desk" description="Everyone registered, their payment and badge, and check-in.">
+            <x-button size="sm" variant="secondary" :href="route('desk.queue')" icon="printer">Print queue</x-button>
+            <x-button size="sm" :href="route('desk.register')" icon="user-plus">Register a walk-in</x-button>
         </x-page-header>
     </x-slot:header>
 
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        @foreach ($tiles as [$label, $value, $colour])
-            <div class="rounded-2xl border border-ink-100 bg-white p-4 shadow-soft" style="border-top: 4px solid {{ $colour }}">
+        @foreach ($tiles as [$label, $value, $border])
+            <div class="rounded-2xl border border-t-4 border-ink-100 bg-white p-4 shadow-soft {{ $border }}">
                 <p class="text-2xl font-extrabold tracking-tight text-ink-900">{{ number_format($value) }}</p>
                 <p class="text-sm font-medium text-ink-500">{{ $label }}</p>
             </div>
@@ -35,7 +39,7 @@
                 <form method="GET" class="relative sm:w-80">
                     <input type="hidden" name="filter" value="{{ $filter }}">
                     <x-icon name="search" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
-                    <input name="q" value="{{ $search }}" autofocus placeholder="Name, institution, reference or QR" class="field h-11 pl-11 text-sm">
+                    <input name="q" value="{{ $search }}" autofocus placeholder="Name, phone, email, badge no. or scan" class="field h-11 pl-11 text-sm">
                 </form>
             </div>
             <div class="flex flex-wrap gap-2 px-6 pb-4">
@@ -46,42 +50,66 @@
             </div>
 
             @if ($registry->isEmpty())
-                <x-empty icon="search" title="No one found" class="!py-8">Check the spelling, or search by email, reference or QR code.</x-empty>
+                <x-empty icon="search" title="No one found" class="!py-8">
+                    Check the spelling, or search by phone, email or badge number. Not registered?
+                    <x-slot:action><x-button size="sm" :href="route('desk.register')" icon="user-plus">Register a walk-in</x-button></x-slot:action>
+                </x-empty>
             @else
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[620px] text-left text-sm">
+                    <table class="w-full min-w-[720px] text-left text-sm">
                         <thead class="border-y border-ink-100 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">
-                            <tr><th class="px-6 py-3">Name</th><th class="px-3 py-3">Reference</th><th class="px-3 py-3">Status</th><th class="px-6 py-3"></th></tr>
+                            <tr><th class="px-6 py-3">Name</th><th class="px-3 py-3">Badge no.</th><th class="px-3 py-3">Payment</th><th class="px-3 py-3">Badge</th><th class="px-3 py-3">Check-in</th><th class="px-6 py-3"></th></tr>
                         </thead>
                         <tbody class="divide-y divide-ink-100">
                             @foreach ($registry as $registration)
-                                <tr>
-                                    <td class="max-w-[16rem] px-6 py-3.5">
-                                        <p class="truncate font-semibold text-ink-900">{{ $registration->user->name }}</p>
+                                @php $latest = $registration->latestPayment; @endphp
+                                <tr class="hover:bg-ink-50/60">
+                                    <td class="max-w-[15rem] px-6 py-3.5">
+                                        <a href="{{ route('desk.show', $registration) }}" class="block truncate font-semibold text-ink-900 hover:text-brand-700 hover:underline">{{ $registration->user->name }}</a>
                                         <p class="truncate text-xs text-ink-500">{{ $registration->category->name }} · {{ $registration->user->institution }}</p>
                                     </td>
                                     <td class="px-3 py-3.5 font-mono text-xs font-bold text-brand-700">{{ $registration->reference }}</td>
                                     <td class="px-3 py-3.5">
-                                        @if ($registration->checked_in_at)
-                                            <x-status tone="success">Checked in {{ $registration->checked_in_at->format('D H:i') }}</x-status>
-                                        @elseif ($registration->badge_printed_at)
-                                            <x-status tone="info">Printed</x-status>
+                                        @if ($registration->isConfirmed())
+                                            <x-status tone="success">{{ $registration->isFullyWaived() ? 'Waived' : 'Paid' }}</x-status>
+                                        @elseif ($latest?->status === PaymentStatus::Pending)
+                                            <x-status tone="warning">Awaiting M-Pesa</x-status>
+                                        @elseif ($registration->status === RegistrationStatus::PaymentSubmitted)
+                                            <x-status tone="warning">With finance</x-status>
                                         @else
-                                            <x-status :tone="$registration->status->tone()">{{ $registration->status->label() }}</x-status>
+                                            <x-status tone="danger">Not paid</x-status>
+                                        @endif
+                                    </td>
+                                    <td class="px-3 py-3.5 text-xs">
+                                        @if ($registration->badge_printed_at)
+                                            <span class="font-semibold text-ink-800">Printed</span>
+                                        @elseif ($registration->isConfirmed())
+                                            <span class="font-semibold text-ember-700">Ready</span>
+                                        @else
+                                            <span class="text-ink-400">No badge yet</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-3 py-3.5 text-xs">
+                                        @if ($registration->checked_in_at)
+                                            <span class="font-semibold text-emerald-700">{{ $registration->checked_in_at->format('D H:i') }}</span>
+                                        @else
+                                            <span class="text-ink-400">—</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-3.5">
-                                        @if ($registration->isConfirmed())
-                                            <div class="flex justify-end gap-1.5">
-                                                <x-button variant="secondary" size="sm" :href="route('desk.badge', $registration)" icon="printer" :title="$registration->badge_printed_at ? 'Reprint badge' : 'Print badge'">{{ $registration->badge_printed_at ? 'Reprint' : 'Print' }}</x-button>
+                                        <div class="flex justify-end gap-1.5">
+                                            @if ($registration->isConfirmed())
+                                                <x-button variant="secondary" size="sm" :href="route('desk.badge', $registration)" icon="printer">{{ $registration->badge_printed_at ? 'Reprint' : 'Print' }}</x-button>
                                                 @unless ($registration->checked_in_at)
                                                     <form method="POST" action="{{ route('desk.check-in', $registration) }}">
                                                         @csrf
                                                         <x-button variant="success" size="sm" icon="check">Check in</x-button>
                                                     </form>
                                                 @endunless
-                                            </div>
-                                        @endif
+                                            @else
+                                                <x-button size="sm" :href="route('desk.show', $registration)" icon="banknotes">Take payment</x-button>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

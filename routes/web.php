@@ -150,6 +150,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/print-queue', [DeskController::class, 'queue'])->name('queue');
         Route::post('/print-queue/batch', [DeskController::class, 'printBatch'])->name('print-batch');
         Route::get('/register', [DeskController::class, 'create'])->name('register');
+        Route::post('/register', [DeskController::class, 'store'])->name('register.store');
+        Route::get('/{registration}', [DeskController::class, 'show'])->name('show');
+        Route::post('/{registration}/mpesa', [DeskController::class, 'mpesa'])->middleware('throttle:20,1')->name('mpesa');
+        Route::get('/{registration}/mpesa/status', [DeskController::class, 'mpesaStatus'])->middleware('throttle:120,1')->name('mpesa.status');
         Route::post('/{registration}/check-in', [DeskController::class, 'checkIn'])->name('check-in');
         Route::get('/{registration}/badge', [DeskController::class, 'badge'])->name('badge');
     });
