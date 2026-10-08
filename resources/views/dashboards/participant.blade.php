@@ -147,26 +147,14 @@
                 <h2 class="text-lg font-bold text-ink-900">Badge &amp; check-in</h2>
                 <span class="text-sm font-semibold {{ $confirmed ? 'text-emerald-700' : 'text-ink-500' }}">{{ $confirmed ? 'Ready' : 'Locked' }}</span>
             </div>
-            <a href="{{ route('registration.badge.show') }}" class="mt-5 flex items-center gap-4 rounded-2xl border border-sun-200 bg-gradient-to-br from-sun-50 to-ember-50 p-5 transition hover:shadow-soft">
-                <div class="min-w-0 flex-1">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-ember-600">{{ $registration?->category->is_student ? 'Student' : 'Participant' }}</p>
-                    <p class="mt-1 truncate text-xl font-extrabold text-ink-900">{{ $registration?->displayName() ?? $user->name }}</p>
-                    <p class="truncate text-sm text-ink-600">{{ $user->institution ?? $user->countryName() }}</p>
-                    <p class="mt-2 font-mono text-xs font-bold text-brand-700">{{ $registration?->reference ?? 'Not registered' }}</p>
-                </div>
-                <div class="grid h-24 w-24 shrink-0 place-items-center rounded-xl bg-white p-1.5 {{ $confirmed ? '' : 'opacity-40 blur-[1.5px]' }}">
-                    @if ($registration)
-                        <img src="{{ \App\Support\Qr::dataUri($registration->qr_token, 4) }}" alt="{{ $confirmed ? 'Your check-in code' : '' }}" class="h-full w-full">
-                    @else
-                        <x-icon name="qr" class="h-12 w-12 text-ink-300" />
-                    @endif
-                </div>
+            <a href="{{ route('registration.badge.show') }}" class="mt-5 block rounded-2xl bg-canvas px-4 py-6 transition hover:bg-ink-50" aria-label="Open your badge">
+                <x-badge-card :registration="$registration" :user="$user" size="sm" />
             </a>
             <p class="mt-4 text-sm text-ink-600">
                 @if ($confirmed)
-                    Show the QR code at the registration desk{{ $edition?->start_date ? ' on '.$edition->start_date->format('j F') : '' }}, or print the badge at home.
+                    Your badge is your summit ID. Bring it to the registration desk{{ $edition?->start_date ? ' on '.$edition->start_date->format('j F') : '' }}, printed or on your phone.
                 @else
-                    Your QR badge activates once payment is verified. Scan it at the registration desk or print it at home.
+                    Your badge unlocks once your payment is confirmed.
                 @endif
             </p>
         </x-card>

@@ -84,6 +84,9 @@
             </form>
         @endif
     @else
+        @if ($registration->isConfirmed())
+            @include('registration._confirmed')
+        @else
         {{-- Progress --}}
         <ol class="grid grid-cols-3 gap-2">
             @foreach ($steps as $i => [$label, $done])
@@ -157,6 +160,7 @@
                 </x-card>
             @endif
         </div>
+        @endif
 
         @if ($registration->payments->isNotEmpty())
             <x-card title="Payment history" :padding="false">

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AbstractStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
 use Illuminate\Database\Eloquent\Model;
@@ -109,5 +110,20 @@ class Registration extends Model
     public function displayName(): string
     {
         return $this->badge_name ?: $this->user->name;
+    }
+
+    /** The ribbon on the badge: presenters of an accepted abstract, students, everyone else. */
+    public function badgeRole(): string
+    {
+        $presenting = $this->user->abstracts()
+            ->where('edition_id', $this->edition_id)
+            ->where('status', AbstractStatus::Accepted)
+            ->exists();
+
+        return match (true) {
+            $presenting => 'Presenter',
+            (bool) $this->category?->is_student => 'Student',
+            default => 'Participant',
+        };
     }
 }
