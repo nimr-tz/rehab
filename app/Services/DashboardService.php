@@ -34,7 +34,7 @@ class DashboardService
         $steps = [
             ['Account created', $user->created_at->format('j M'), true],
             ['Registered', $registration ? $registration->category->name : 'Choose a category', (bool) $registration],
-            ['Payment verified', $confirmed ? $registration->confirmed_at->format('j M') : (in_array($latest?->status, [PaymentStatus::Submitted, PaymentStatus::Pending], true) ? 'In progress' : 'Pay the fee'), $confirmed],
+            ['Payment verified', $confirmed ? ($registration->confirmed_at?->format('j M') ?? 'Confirmed') : (in_array($latest?->status, [PaymentStatus::Submitted, PaymentStatus::Pending], true) ? 'In progress' : 'Pay the fee'), $confirmed],
             ['Badge ready', $confirmed ? 'Print or show on phone' : 'After payment', $confirmed],
             ['Certificate', 'After the Summit', $summitOver && $confirmed],
         ];
