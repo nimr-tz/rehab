@@ -44,6 +44,8 @@ return [
             'airtel_money' => ['label' => 'Airtel Money', 'pay_number' => env('PAYMENT_AIRTEL_PAY_NUMBER'), 'account_name' => env('PAYMENT_AIRTEL_ACCOUNT_NAME')],
             'mixx_by_yas' => ['label' => 'Mixx by Yas', 'pay_number' => env('PAYMENT_MIXX_PAY_NUMBER'), 'account_name' => env('PAYMENT_MIXX_ACCOUNT_NAME')],
             'halopesa' => ['label' => 'HaloPesa', 'pay_number' => env('PAYMENT_HALOPESA_PAY_NUMBER'), 'account_name' => env('PAYMENT_HALOPESA_ACCOUNT_NAME')],
+            // A Selcom Pay (Lipa) number takes payments from any network.
+            'selcom' => ['label' => 'Selcom Pay', 'pay_number' => env('PAYMENT_SELCOM_PAY_NUMBER'), 'account_name' => env('PAYMENT_SELCOM_ACCOUNT_NAME')],
         ], fn (array $provider) => filled($provider['pay_number'])),
     ],
 

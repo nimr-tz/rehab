@@ -18,6 +18,7 @@ use App\Http\Controllers\Media\AlbumController as MediaAlbumController;
 use App\Http\Controllers\Media\PhotoController as MediaPhotoController;
 use App\Http\Controllers\Media\RemovalRequestController;
 use App\Http\Controllers\Media\UploadController;
+use App\Http\Controllers\MpesaPaymentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
@@ -67,6 +68,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/registration/badge', [RegistrationController::class, 'badge'])->name('registration.badge');
         Route::get('/registration/invitation-letter', [RegistrationController::class, 'letter'])->name('registration.letter');
         Route::post('/registration/payments', [PaymentController::class, 'store'])->name('registration.payments.store');
+        Route::post('/registration/mpesa', [MpesaPaymentController::class, 'store'])->middleware('throttle:6,1')->name('registration.mpesa.store');
+        Route::get('/registration/mpesa/status', [MpesaPaymentController::class, 'status'])->middleware('throttle:60,1')->name('registration.mpesa.status');
+        Route::post('/registration/mpesa/check', [MpesaPaymentController::class, 'check'])->middleware('throttle:20,1')->name('registration.mpesa.check');
 
         Route::get('/abstracts', [AbstractController::class, 'index'])->name('abstracts.index');
         Route::get('/abstracts/new', [AbstractController::class, 'create'])->name('abstracts.create');
@@ -145,6 +149,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [DeskController::class, 'index'])->name('index');
         Route::get('/print-queue', [DeskController::class, 'queue'])->name('queue');
         Route::post('/print-queue/batch', [DeskController::class, 'printBatch'])->name('print-batch');
+        Route::get('/register', [DeskController::class, 'create'])->name('register');
         Route::post('/{registration}/check-in', [DeskController::class, 'checkIn'])->name('check-in');
         Route::get('/{registration}/badge', [DeskController::class, 'badge'])->name('badge');
     });

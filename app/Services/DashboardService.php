@@ -34,7 +34,7 @@ class DashboardService
         $steps = [
             ['Account created', $user->created_at->format('j M'), true],
             ['Registered', $registration ? $registration->category->name : 'Choose a category', (bool) $registration],
-            ['Payment verified', $confirmed ? $registration->confirmed_at->format('j M') : ($latest?->status === PaymentStatus::Submitted ? 'In progress' : 'Pay the fee'), $confirmed],
+            ['Payment verified', $confirmed ? $registration->confirmed_at->format('j M') : (in_array($latest?->status, [PaymentStatus::Submitted, PaymentStatus::Pending], true) ? 'In progress' : 'Pay the fee'), $confirmed],
             ['Badge ready', $confirmed ? 'Print or show on phone' : 'After payment', $confirmed],
             ['Certificate', 'After the Summit', $summitOver && $confirmed],
         ];
@@ -44,6 +44,7 @@ class DashboardService
         [$headline, $detail] = match (true) {
             ! $registration => ['Register for the '.$edition?->name.' '.$edition?->year, 'Choose your category and pay by bank transfer or mobile money. Your badge unlocks as soon as payment is verified.'],
             $registration->status === RegistrationStatus::PaymentSubmitted => ['Your payment is being verified', 'Submitted by '.$latest->channel().' on '.$latest->created_at->format('j F').'. Finance usually confirms within 2 working days, then your badge unlocks.'],
+            $registration->status === RegistrationStatus::PendingPayment && $latest?->status === PaymentStatus::Pending => ['Waiting for M-Pesa', 'We sent a payment request to '.$latest->payer_phone.'. Once you enter your PIN, your place is confirmed.'],
             $registration->status === RegistrationStatus::PendingPayment && $latest?->status === PaymentStatus::Rejected => ['Please resubmit your payment', 'We could not verify your last payment: '.$latest->rejection_reason],
             $registration->status === RegistrationStatus::PendingPayment => ['Pay your registration fee', $registration->formattedDue().' with reference '.$registration->reference.'. Pay by bank transfer or mobile money, then upload the proof.'],
             default => ['You are all set for the Summit', 'Your registration is confirmed. Download your badge, plan your sessions and bring your badge to the registration desk.'],

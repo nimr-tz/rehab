@@ -19,6 +19,7 @@ class Payment extends Model
             'amount' => 'decimal:2',
             'paid_on' => 'date',
             'reviewed_at' => 'datetime',
+            'gateway_checked_at' => 'datetime',
         ];
     }
 

@@ -1,0 +1,155 @@
+Testing in Sandbox
+The Sandbox environment is a mirror of the OpenAPI live production system. Any part of the M-Pesa integration can be tested in this environment without real funds being moved.
+
+It is recommended using the Sandbox for ensuring your integration is working before taking the application live to the production system.
+Test Numbers
+Testing in the Sandbox can be done using pre-built testing numbers to trigger specific responses from the test system. Your application can send the API call to the Sandbox system using the below test numbers.
+C2B Test Scenarios
+CustomerMSISDN	Response
+000000000001	Request processed successfully
+000000000002	Request timeout
+000000000003	USSD Push timeout
+000000000004	Transaction Failed [Incorrect PIN]
+000000000005	Internal Error
+000000000006	Transaction Failed [Incorrect PIN]
+000000000007	Invalid Amount Used
+000000000008	Insufficient balance
+000000000009	Service is not available
+B2C Test Scenarios
+CustomerMSISDN	Response
+000000000001	Request processed successfully
+000000000002	Internal Error
+000000000003	Transaction Failed
+000000000004	Request timeout
+000000000005	Invalid Amount Used
+000000000006	Insufficient balance
+000000000007	Service is not available
+B2B Test Scenarios
+ReceiverPartyCode	Response
+000001	Request processed successfully
+000002	Internal Error
+000003	Transaction Failed
+000004	Request timeout
+000005	Invalid Amount Used
+000006	Insufficient balance
+000007	Service is not available
+Query Transaction Status Test Scenarios
+QueryReference	Response
+000000000001	Request processed successfully
+000000000002	Internal Error
+000000000003	Transaction Failed
+000000000007	Service is not available
+000000000000000000001	Request processed successfully
+000000000000000000002	Missing Reference
+000000000000000000003	Internal Error
+000000000000000000004	Transaction Failed
+000000000000000000005	Service is not available
+QueryReference	Reversed
+000000000001	False
+000000000000000000001	True
+Query Transaction Status Version 3.1 Test Scenarios
+QueryReference	Response
+000000000001	Request processed successfully
+000000000002	Internal Error
+000000000003	Transaction Failed
+000000000007	Service is not available
+000000000008	Request timeout
+000000000009	USSD Push timeout
+0000000000010	Parameter Validation Failed
+0000000000011	Insufficient balance
+0000000000012	This transaction do not belong to you
+0000000000013	This transaction type cannot be reversed
+000000000000000000001	Request processed successfully
+000000000000000000002	Missing Reference
+000000000000000000003	Internal Error
+000000000000000000004	Transaction Failed
+000000000000000000005	Service is not available
+QueryReference	Reversed
+000000000001	False
+000000000000000000001	True
+Reversal Test Scenarios
+TransactionID	Response
+0000000000001	Request processed successfully
+0000000000002	Internal Error
+0000000000003	Transaction Failed
+0000000000004	Invalid Amount Used
+0000000000005	Insufficient balance
+0000000000006	This transaction do not belong to you
+0000000000007	Service is not available
+Update Transaction Test Scenarios
+TransactionID	Response
+0000000000001	Request processed successfully
+0000000000002	Internal Error
+0000000000003	Transaction Failed
+0000000000004	Service is not available
+Direct Debit Create Scenarios
+CustomerMSISDN	Response
+000000000001	Request processed successfully
+000000000002	Internal Error
+000000000003	Transaction Failed
+000000000004	Request Timeout
+000000000005	Service is not available
+Direct Debit Payment Scenarios
+CustomerMSISDN	Response
+00000000000000000001	Request processed successfully
+00000000000000000002	Internal Error
+00000000000000000003	Transaction Failed
+00000000000000000004	Request Timeout
+00000000000000000005	Service is not available
+Query Beneficiary Name Scenarios
+CustomerMSISDN	Response
+000000000001	Request processed successfully
+000000000002	Internal Error
+000000000003	Transaction Failed
+000000000008	Invalid Use Case
+000000000009	Request timeout
+Query Beneficiary Name Scenarios
+CustomerMSISDN	Response
+000000000001	Request processed successfully
+000000000002	Internal Error
+000000000003	Transaction Failed
+000000000008	Invalid Use Case
+000000000009	Request timeout
+Query Direct Debit Test Scenarios
+ThirdPartyReference	Response
+00000000000000000001	Request processed successfully
+00000000000000000002	Internal Error
+00000000000000000003	Transaction Failed
+00000000000000000004	Request timeout
+00000000000000000005	Internal Error
+Any other value	Invalid Use Case
+CustomerMSISDN/MsisdnToken	Response
+000000000001	Active
+000000000002	Pending Approval
+000000000003	Locked
+Any other value	Inactive
+MandateID	Response
+000001	Active
+000002	Pending Approval
+000003	Cancelled
+Any other value	Expired
+QueryBalanceAmount	Response
+False	N/A
+True (BalanceAmount larger than 500)	False
+True (BalanceAmount smaller than 500)	True
+Direct Debit Cancel Scenarios
+ThirdPartyReference	Response
+00000000000000000001	Request processed successfully
+00000000000000000002	Internal Error
+00000000000000000003	Mandate does not exist
+00000000000000000004	Request Timeout
+00000000000000000005	Service is not available
+Any other value	Invalid Use Case
+Response Codes
+During Sandbox testing, the response codes below will be returned to confirm the success of the tested transaction. Alternatively, the code should indicate where a possible error occur.
+
+Code	Description
+200	Successful
+500	Internal Server Error
+401	Transaction Failed
+408	Request Timeout
+422	Insufficient Balance
+USSD Push Simulation
+For business initiated C2B calls, it is expected that the customer confirms the payment by entering their M-Pesa PIN code to authorise payment. The USSD Push scenario can also be tested in the Sandbox environment from your application.
+
+Users can save 3 testing numbers in the TEST MSISDN page. When the C2B call is made, the saved number will receive a USSD Push session to confirm and enter the M-PESA PIN. Please note that once saved, the number can only be changed after 30 days.

@@ -1,0 +1,90 @@
+Getting Started
+Introduction
+Welcome to M-Pesa's Developer Portal! The OpenAPI Solution offers RESTful interfaces to help you create a payment solution that meets merchant and business needs. These interfaces enable businesses to incorporate Mobile Money payment functionality into newly developed applications and point of sale devices.
+
+In this web portal, detailed documentation will be provided on how to build and test interfaces against our RESTful API endpoints. The API endpoints that have been exposed allows for:
+•	customer to business (C2B) single payment
+•	customer to business (C2B) two-step payment
+•	business to customer (B2C) 
+•	business to business (B2B)
+•	payment reversals 
+•	query transaction status 
+•	direct debit creation and payments
+•	query beneficiary name (QBN)
+•	query direct debit
+•	cancel direct debit
+Development Process
+The M-Pesa Developer Portal allows developers the following functions:
+•	Application Management - View, edit and create new integration services through applications by selecting products, defining their scope and setting limits
+•	Rapid Integration - Develop interfaces quickly by following detailed API documentation, examples and library codes
+•	Sandbox Testing - Secure and isolated testing environment to test interfaces and confirm responses through pre-determined scenarios
+•	Developer and Organisation Linking – Connect with organisations and build new applications to integrate with Mobile Money
+•	Push for Review Workflow – Initiate a seamless workflow to hand over integration configuration to linked organisations for testing and go-live
+•	Integrated Support Forum - Get help from experts in the field on various topics
+•	Dedicated Business Processes - Understand the flow of interfaces / interactions to build better products and inspire future integration services
+Developing your API
+Overview
+The APIs that have been exposed are clearly documented in their respective sections within the API DOCUMENTATION pages.  Following along with the structure and parameters will allow you to rapidly build the correct API package to seamlessly integrate with Mobile Money services, allowing for convenient payment opportunities for businesses.
+RESTful APIs
+The APIs exposed are RESTful APIs that break down transactions into a series of small modules, each addressing an underlying part of the transaction. The REST APIs provide developers with all the tools to effectively interact with the Mobile Money Payments Gateway by calling specific functions using the API. 
+
+The first functional API call to be initiated will be to generate a Session Key which allows the calling application to be authorised and authenticated in the OpenAPI server. If successful, the developer will receive a valid session key. 
+
+Using the session key, subsequent API calls can be made to initiate the payment transaction needed (business to customer, customer to business, etc.). The session key will only be valid for a finite lifetime and is configured within the Applications page.
+Applications
+Developers can manage applications and their respective business configuration on the APPLICATIONS page. Each application is a containerised record that lists the integration configuration, product scope that could be called and any/all limitations placed on the API calls. The developer can create new applications, duplicate existing configuration into a new application, edit or remove existing applications.
+
+Applications require the following details:
+•	Application Name – human-readable name of the application
+•	Version – version number of the application, allowing changes in API products to be managed in different versions
+•	Description – Free text field to describe the use of the application
+•	API Key – Unique authorisation key used to authenticate the application on the first call. API Keys need to be encrypted in the first “Generate Session API Call” to create a valid session key to be used as an access token for future calls. Encrypting the API Key is documented in the GENERATE SESSION API page
+•	Session Lifetime – The session key has a finite lifetime of availability that can be configured. Once a session key has expired, the session is no longer usable, and the caller will need to authenticate again.
+•	Trusted Sources – the originating caller can be limited to specific IP address(es) as an additional security measure.
+•	Products / Scope / Limits – the required API products for the application can be enabled and limits defined for each call.
+API Products
+Developers will have access to all API products within the OpenAPI. Each API call needed should be enabled using the toggle. Once enabled, the user can make use of the API call. Businesses will be required to have the product enabled on their M-Pesa account. More details of the API product are listed in the API Documentation pages.
+
+The API scope can be limited by enabling and setting the values on a per API basis. Limits for the API is enforced per session 
+•	Usage time – which time of the day the API may be used
+•	Single transaction value – value of a single transaction in a given currency 
+•	Daily transaction value – accumulated value of all transactions for the day in a given currency 
+•	Number of transactions – accumulated number of transactions for the day
+
+Once the session limits are reached for the API, no further transaction can be completed until a new session key is generated.
+
+In addition to session limits, the APIs can be limited on a customer basis by configuring the following limits:
+•	Customer daily transaction value – accumulated value of all transactions for a specific customer during the day in a given currency
+•	Customer number of transactions – accumulated number of transactions initiated by a specific transaction for the day
+Testing within Sandbox
+Overview
+New and existing applications can be safely tested within the dedicated Sandbox environment. The Sandbox server isolate transaction testing away from the production Mobile Money servers for safe-guarding purposes. The developer can trigger pre-built scenarios to test the following use cases:
+•	Successful payments 
+•	Rejected payments
+•	Timeout on payments
+•	Insufficient balance
+•	Failed transactions
+
+In addition to pre-built scenarios being triggered, the developer can register test mobile handset numbers (MSISDNs) to trigger USSD Push transactions for C2B payments. Detailed information on testing can be found in the TESTING DOCUMENTATION page.
+Linking with Businesses / Organisations
+Overview
+A developer account needs to be linked to a business/organisation before an application can be taken live.
+
+Developer accounts can create new applications and set the initial configuration. An Organisation is registered on the Mobile Money platform. After the commercial agreement with the Mobile Network Operator (MNO), the organisation user will be able to promote a new application to production.
+Linking Process
+To link a developer account with an organisation, the organisation user will send an invitation to the developer’s e-mail account from within the Portal. If the developer user already has an account, a notification will be sent to the Developer user to accept the new link. 
+
+If the developer does not yet have an account, an e-mail will be sent to the Developer user’s e-mail account with a link to register onto the Developer Portal. Once the account is created, the developer and the organisation will be linked. The developer will be able to develop on behalf of the organisation.
+Handing over for Review
+Overview
+The developer is responsible for creating and developing integration on behalf of the organisation. Once the development of the integration is completed and testing is concluded, the developer user can hand over the created application to the linked organisation through the Developer Portal.
+Send for Review
+The developer can only hand over an application to an organisation with whom a link has been established (developer has accepted the invitation of the organisation). From the APPLICATION page, the developer can click on the application and click “Send for Review”. The developer can select the organisation to whom he/she wants to hand over the application and its configuration.
+
+The OpenAPI workflow will move the application to the organisation user’s account who is able to review the application configuration, scope and limits. Once reviewed, the application can be accepted or rejected. Once accepted the application and its scope will be locked for the developer. The developer user will not be able to do any changes on the application.
+Support and Documentation
+The OpenAPI offers several sections of support and documentation to get help from experts in the field on various topics.
+Documentation
+Dedicated documentation pages exist to assist in the building of the API interfaces. How to build each API call, including the required parameters for the header and body, and the expected response/result fields are documented in detail. Testing documentation exists to guide the user on how to trigger specific responses to test the application’s interfaces. In addition, each page within the portal consists of a HELP page to provide relevant information, guiding the user what needs to be done at each section.
+Support Forum
+In addition to the documentation pages, a support forum exists to ask questions and seek help from other developers and operational support teams.

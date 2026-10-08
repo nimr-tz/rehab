@@ -1,0 +1,169 @@
+API Description
+Before you can integrate on the M-Pesa OpenAPI solution, you must exchange your Application Key for a Session Key. The API Key is created with the creation of a new application. The Session Key acts as an access token that authorises the rest of your REST API calls to the system. A valid Session Key is needed to transact on M-Pesa using OpenAPI.
+Generating the Session Key
+Encrypting the API Key
+To generate your Session Key for the sandbox and live environments:
+1.	Log into OpenAPI with a developer account
+2.	On the APPLICATION page, click Create New Application. Creating an application will generate your unique API Application Key needed to authorise and authenticate your application on the server
+3.	Type your name and version number for the application and select the products you wish to use. (The application can be configured any time). Save your new application.
+4.	Copy and save the API Key.
+5.	Copy the Public Key from the below section.
+6.	Generate a decoded Base64 string from the Public Key
+7.	Generate an instance of an RSA cipher and use the Base 64 string as the input
+8.	Encode the API Key with the RSA cipher and digest as Base64 string format
+9.	The result is your encrypted API Key.
+Platform Public Key
+Use the Public Key associated to the targeted platform to encrypt your API Key:
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEArv9yxA69XQKBo24BaF/D+fvlqmGdYjqLQ5WtNBb5tquqGvAvG3WMFETVUSow/LizQalxj2ElMVrUmzu5mGGkxK08bWEXF7a1DEvtVJs6nppIlFJc2SnrU14AOrIrB28ogm58JjAl5BOQawOXD5dfSk7MaAA82pVHoIqEu0FxA8BOKU+RGTihRU+ptw1j4bsAJYiPbSX6i71gfPvwHPYamM0bfI4CmlsUUR3KvCG24rB6FNPcRBhM3jDuv8ae2kC33w9hEq8qNB55uw51vK7hyXoAa+U7IqP1y6nBdlN25gkxEA8yrsl1678cspeXr+3ciRyqoRgj9RD/ONbJhhxFvt1cLBh+qwK2eqISfBb06eRnNeC71oBokDm3zyCnkOtMDGl7IvnMfZfEPFCfg5QgJVk1msPpRvQxmEsrX9MQRyFVzgy2CWNIb7c+jPapyrNwoUbANlN8adU1m6yOuoX7F49x+OjiG2se0EJ6nafeKUXw/+hiJZvELUYgzKUtMAZVTNZfT8jjb58j8GVtuS+6TM2AutbejaCV84ZK58E2CRJqhmjQibEUO6KPdD7oTlEkFy52Y1uOOBXgYpqMzufNPmfdqqqSM4dU70PO8ogyKGiLAIxCetMjjm6FCMEA3Kc8K0Ig7/XtFm9By6VxTJK1Mg36TlHaZKP6VzVLXMtesJECAwEAAQ==
+API Header Parameters
+The encrypted API Key needs to be added to the Header block that makes up your initial Generate SessionKey API Call in the Authorization-Bearer value. The rest of the header parameters are as follows:
+
+Header Name	Header Value	Header Description
+Content-Type	application/json	The content-type of the API
+Authorization	Bearer [encrypted-APIKey]	Bearer token authorization is used. The encrypted APIKey needs to be used.
+Origin	*	Used to limit the origin of the API caller to specific systems. Use the domain name or IP address. Should match the value(s) defined in your Application.
+Sample Header Code
+Content-Type: application/json
+Authorization: Bearer K2sf0ne61AocJqWxO3kTHMBmLl0fQyBQWV7GfH3z1kMxV qMCB7sMXn+CKigIPIawHoNr2IrGdjBdFugyHNxRnGkrfSDkC9PFBhR/D9ePdw15jgggnG8FItGpw4TEwECgzk0sEmYmKaB9K6lgvs4rs7TMPpTom7uX72+tZ+qMqRVt7LrGsngBrkXjbOxc19fkImVHjehzjVCOSOsROsx4nRlM9wtl4KSLgKCBzmLePRmwu/IOCF3NrIQLVYYqUDDSgYbHURk1L6d4kxJffFM/wa2BPoeuG59gcgldyEaQ5Sv5VnaGKDh1XTBrvKS+J9Efwg7s1CWLQxhtYdr+Z2eorC1QjbxwW+LbiIChiu/wSVRY6/9p41QbXEsBoIEESPD8JIfxGM/HFRhRmiVN2LGiUX8+5O1piXq4JRrBz+VrQ1HXpDKQj4+MAipVPqL4jsQhbbOQ/OvZa3uA18oA9FXpsC41siVApduLOlK8OxJPvygtB1gMlSisOHLWiZGWjY7uEu9CvW9LPlcz4MzHhIg6/Vemj5KyT/Mcn/874K8LgZG8eTnzBac3nvrsl2k5BnMUa/4JoBUOjqrJUe4cckYPIjw2sw9rUFqfOqh9LiG76dCFvgBOKqZU3ZrEGT7/yE+VlMkHV+rON26+XWIet5nGZobPXZFm9gAgIkAav3b//X4=
+Origin: 127.0.0.1
+Make REST API Call
+API Endpoint
+Use the following URL as the API service endpoint for the chosen environment:
+Site	SSL	HTTP Method	Host	Port	Context
+Sandbox	True	GET	openapi.m-pesa.com	443	/sandbox/ipg/v2/[market]/getSession/
+OpenAPI	True	GET	openapi.m-pesa.com	443	/openapi/ipg/v2/[market]/getSession/
+Replace the [market] and [currency] parameters with the appropriate values from the below table:
+Markets
+Description	URL Context Value	input_Country Value	input_Currency Value
+Vodafone Ghana	vodafoneGHA	GHA	GHS
+Vodacom Tanzania	vodacomTZN	TZN	TZS
+Vodacom Lesotho	vodacomLES	LES	LSL
+Vodacom DR Congo	vodacomDRC	DRC	USD
+Vodacom Mozambique	vodacomMOZ	MOZ	MZN
+API Setup Example
+GET https://openapi.m-pesa.com/sandbox/ipg/v2/vodafoneGHA/getSession/
+API Request
+No request parameters are needed for the body of the Generate SessionKey call.
+API Synchronous Response
+After initiating the API call, the system will respond with the following items:
+
+Parameter Name	Parameter Description	Parameter Possible Values
+output_ResponseCode	The result code for the transaction.	INS-0
+output_ResponseDesc	The result description for the transaction.	Request processed successfully
+output_SessionID	The SessionKey that can be used to call other APIs.	AAA6d1f93910052de0534912jbsj1j2kk
+Response Codes
+HTTP StatusCode	Response Code	Response Description
+200	INS-0	Request processed successfully
+400	INS-989	Session Creation Failed
+Sample Packets
+Sample request and response packets.
+
+This API is only available in an end-to-end synchronous flow.
+Tab: Request
+No Request Parameters
+
+Tab: Sync Flow Response
+{
+  "output_ResponseCode": "INS-0",
+  "output_ResponseDesc": "Request processed successfully",
+  "output_SessionID": "ed0ff3b37d5145f38885e3212aef9774"
+}
+
+Sample Code Snippets
+Libraries Download
+Libraries to assist with integrations.
+
+APIKey Encryption
+This code snippet can be used when you need to only perform APIKey or SessionKey encryption before attempting any API calls 
+and you would like to use your own HTTP and API handlers to perform the API calls.
+
+Please ensure that you have downloaded the latest library for your coding language above before attempting to use the below code section
+<?php
+
+include('PortalSDK/api.php');
+
+// This is to ensure browser does not timeout after 30 seconds
+ini_set('max_execution_time', 300);
+set_time_limit(300);
+
+// Public key on the API listener used to encrypt keys
+$public_key = 'MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEArv9yxA69XQKBo24BaF/D+fvlqmGdYjqLQ5WtNBb5tquqGvAvG3WMFETVUSow/LizQalxj2ElMVrUmzu5mGGkxK08bWEXF7a1DEvtVJs6nppIlFJc2SnrU14AOrIrB28ogm58JjAl5BOQawOXD5dfSk7MaAA82pVHoIqEu0FxA8BOKU+RGTihRU+ptw1j4bsAJYiPbSX6i71gfPvwHPYamM0bfI4CmlsUUR3KvCG24rB6FNPcRBhM3jDuv8ae2kC33w9hEq8qNB55uw51vK7hyXoAa+U7IqP1y6nBdlN25gkxEA8yrsl1678cspeXr+3ciRyqoRgj9RD/ONbJhhxFvt1cLBh+qwK2eqISfBb06eRnNeC71oBokDm3zyCnkOtMDGl7IvnMfZfEPFCfg5QgJVk1msPpRvQxmEsrX9MQRyFVzgy2CWNIb7c+jPapyrNwoUbANlN8adU1m6yOuoX7F49x+OjiG2se0EJ6nafeKUXw/+hiJZvELUYgzKUtMAZVTNZfT8jjb58j8GVtuS+6TM2AutbejaCV84ZK58E2CRJqhmjQibEUO6KPdD7oTlEkFy52Y1uOOBXgYpqMzufNPmfdqqqSM4dU70PO8ogyKGiLAIxCetMjjm6FCMEA3Kc8K0Ig7/XtFm9By6VxTJK1Mg36TlHaZKP6VzVLXMtesJECAwEAAQ==';
+
+// Create Context with API to request a Session ID
+$context = new APIContext();
+// Api key
+$context->set_api_key('6bc4157dbowkdd409118e0978dc6991a');
+// Public key
+$context->set_public_key($public_key);
+
+// Create a request object
+$request = new APIRequest($context);
+
+// Generate BearerToken
+$token = $request->create_bearer_token();
+echo $token ;
+
+?>
+Generate SessionKey
+This API should always be the first call to be used as it will return the SessionKey that needs to be used in conjunction with all of the other API calls from the API documentation.
+
+Please ensure that you have downloaded the latest library for your coding language above before attempting to use the below API section
+<?php
+
+include('PortalSDK/api.php');
+
+// This is to ensure browser does not timeout after 30 seconds
+ini_set('max_execution_time', 300);
+set_time_limit(300);
+
+// Public key on the API listener used to encrypt keys
+$public_key = 'MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEArv9yxA69XQKBo24BaF/D+fvlqmGdYjqLQ5WtNBb5tquqGvAvG3WMFETVUSow/LizQalxj2ElMVrUmzu5mGGkxK08bWEXF7a1DEvtVJs6nppIlFJc2SnrU14AOrIrB28ogm58JjAl5BOQawOXD5dfSk7MaAA82pVHoIqEu0FxA8BOKU+RGTihRU+ptw1j4bsAJYiPbSX6i71gfPvwHPYamM0bfI4CmlsUUR3KvCG24rB6FNPcRBhM3jDuv8ae2kC33w9hEq8qNB55uw51vK7hyXoAa+U7IqP1y6nBdlN25gkxEA8yrsl1678cspeXr+3ciRyqoRgj9RD/ONbJhhxFvt1cLBh+qwK2eqISfBb06eRnNeC71oBokDm3zyCnkOtMDGl7IvnMfZfEPFCfg5QgJVk1msPpRvQxmEsrX9MQRyFVzgy2CWNIb7c+jPapyrNwoUbANlN8adU1m6yOuoX7F49x+OjiG2se0EJ6nafeKUXw/+hiJZvELUYgzKUtMAZVTNZfT8jjb58j8GVtuS+6TM2AutbejaCV84ZK58E2CRJqhmjQibEUO6KPdD7oTlEkFy52Y1uOOBXgYpqMzufNPmfdqqqSM4dU70PO8ogyKGiLAIxCetMjjm6FCMEA3Kc8K0Ig7/XtFm9By6VxTJK1Mg36TlHaZKP6VzVLXMtesJECAwEAAQ==';
+
+// Create Context with API to request a Session ID
+$context = new APIContext();
+// Api key
+$context->set_api_key('6bc4157dbowkdd409118e0978dc6991a');
+// Public key
+$context->set_public_key($public_key);
+// Use ssl/https
+$context->set_ssl(true);
+// Method type (can be GET/POST)
+$context->set_method_type(APIMethodType::GET);
+// API address
+$context->set_address('openapi.m-pesa.com');
+// API Port
+$context->set_port(443);
+// API Path
+$context->set_path('/sandbox/ipg/v2/vodafoneGHA/getSession/');
+
+// Add/update headers
+$context->add_header('Origin', '*');
+
+// Parameters can be added to the call as well that on POST will be in JSON format and on GET will be URL parameters
+// context->add_parameter('key', 'value');
+
+// Create a request object
+$request = new APIRequest($context);
+
+// Do the API call and put result in a response packet
+$response = null;
+
+try {
+	$response = $request->execute();
+} catch(exception $e) {
+	echo 'Call failed: ' . $e->getMessage() . '<br>';
+}
+
+if ($response->get_body() == null) {
+	throw new Exception('SessionKey call failed to get result. Please check.');
+}
+
+// Display results
+echo $response->get_status_code() . '<br>';
+echo $response->get_headers() . '<br>';
+echo $response->get_body() . '<br>';
+
+// Decode JSON packet
+$decoded = json_decode($response->get_body());
+
+?>

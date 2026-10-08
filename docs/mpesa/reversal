@@ -1,0 +1,320 @@
+API Description
+The Reversal API is used to reverse a successful transaction.
+Using the Transaction ID of a previously successful transaction,  the OpenAPI will withdraw the funds from the recipient party’s mobile money wallet and revert the funds to the mobile money wallet of the initiating party of the original transaction.
+Make REST API Call
+API Endpoint
+Use the following URL as the API service endpoint for the chosen environment:
+
+Site	SSL	HTTP Method	Host	Port	Context
+Sandbox	True	PUT	openapi.m-pesa.com	443	/sandbox/ipg/v2/[market]/reversal/
+OpenAPI	True	PUT	openapi.m-pesa.com	443	/openapi/ipg/v2/[market]/reversal/
+Replace the [market] and [currency] parameters with the appropriate values from the below table:
+API Markets
+Description	URL Context Value	input_Country Value	input_Currency Value
+Vodafone Ghana	vodafoneGHA	GHA	GHS
+Vodacom Tanzania	vodacomTZN	TZN	TZS
+Vodacom Lesotho	vodacomLES	LES	LSL
+Vodacom DR Congo	vodacomDRC	DRC	USD
+Vodacom Mozambique	vodacomMOZ	MOZ	MZN
+API Setup Example
+PUT https://openapi.m-pesa.com/sandbox/ipg/v2/vodafoneGHA/reversal/
+API Header
+The header of the API call makes  use of the Session Key received from the Generate SessionKey API call when authorising and authenticating the calling party.
+
+Header Name	Header Value	Header Description
+Content-Type	application/json	The content-type of the API
+Authorization	Bearer [encrypted-SessionKey]	Bearer token authorization is used. The encrypted SessionKey needs to be used.
+Origin	*	Used to limit the origin of the API caller  to specific systems. Use the domain name or IP address. Should match the value(s) defined in your Application.
+Content-Type:  application/json
+Authorization: Bearer K2sf0ne61AocJqWxO3kTHMBmLl0fQyBQWV7GfH3z1kMxV qMCB7sMXn+CKigIPIawHoNr2IrGdjBdFugyHNxRnGkrfSDkC9PFBhR/D9ePdw15jgggnG8FItGpw4TEwECgzk0sEmYmKaB9K6lgvs4rs7TMPpTom7uX72+tZ+qMqRVt7LrGsngBrkXjbOxc19fkImVHjehzjVCOSOsROsx4nRlM9wtl4KSLgKCBzmLePRmwu/IOCF3NrIQLVYYqUDDSgYbHURk1L6d4kxJffFM/wa2BPoeuG59gcgldyEaQ5Sv5VnaGKDh1XTBrvKS+J9Efwg7s1CWLQxhtYdr+Z2eorC1QjbxwW+LbiIChiu/wSVRY6/9p41QbXEsBoIEESPD8JIfxGM/HFRhRmiVN2LGiUX8+5O1piXq4JRrBz+VrQ1HXpDKQj4+MAipVPqL4jsQhbbOQ/OvZa3uA18oA9FXpsC41siVApduLOlK8OxJPvygtB1gMlSisOHLWiZGWjY7uEu9CvW9LPlcz4MzHhIg6/Vemj5KyT/Mcn/874K8LgZG8eTnzBac3nvrsl2k5BnMUa/4JoBUOjqrJUe4cckYPIjw2sw9rUFqfOqh9LiG76dCFvgBOKqZU3ZrEGT7/yE+VlMkHV+rON26+XWIet5nGZobPXZFm9gAgIkAav3b//X4=
+Origin:  127.0.0.1
+API Requests
+The body of the API call is made up of the following parameters and values:
+Parameter Name	Parameter Description	Parameter Mandatory	Parameter Regex Validation	Parameter Possible Values
+input_ReversalAmount	The transaction amount that needs to be reversed. If the full amount for the transaction needs to be reversed, this field can be omitted.	False	^\d*\.?\d+$	10.00
+input_Country	The country of the mobile money platform where the transaction needs happen on.	True	N/A	GHA
+input_TransactionID	The transaction identifier that needs to be reversed.	True	^[0-9a-zA-Z]{1,20}$	49XCD123F6
+input_ServiceProviderCode	The shortcode of the organization where funds will be creditted to.	True	^([0-9A-Za-z]{4,12})$	ORG001
+input_ThirdPartyConversationID	The third party's transaction reference on their system.	True	^[0-9a-zA-Z \w+]{1,40}$	1e9b774d1da34af78412a498cbc28f5e
+API Responses
+The response back to the application can either be synchronous or asynchronous,  depending the business use case. Synchronous responses will make use of the same session to return the results. For asynchronous responses, the user will need to build a listener to receive the asynchronous response once the transaction has finalised on the  payment system.
+Synchronous Responses
+Parameter Name	Parameter  Description	Parameter Possible Values
+output_ResponseCode	The result code for the transaction.	INS-0
+output_ResponseDesc	The result description for the transaction.	Request processed successfully
+output_TransactionID	The transaction identifier that gets generated on the Mobile Money platform. This is used to query transactions on the Mobile Money  Platform.	hv9ahxcg4ccv
+output_ConversationID	The  OpenAPI platform generates this as a reference to the transaction.	fd1e9143d22544459f7c66e1860ef276
+output_ThirdPartyConversationID	The incoming reference from the third party system. When there are queries about transactions, this will usually be used to track a transaction.	1e9b774d1da34af78412a498cbc28f5e
+Asynchronous Responses
+Once the transaction is initiated, the OpenAPI will respond  synchronously with the following information before the session is closed.
+
+Parameter Name	Parameter Description	Parameter Possible Values
+output_ResponseCode	The  response code for the transaction.	INS-0
+output_ResponseDesc	The result description for the transaction.	Request processed successfully
+output_ConversationID	The OpenAPI platform generates this as a reference to the transaction.	fd1e9143d22544459f7c66e1860ef276
+output_ThirdPartyConversationID	The incoming reference from the third party system. When there are queries about transactions,  this will usually be used to track a transaction.	1e9b774d1da34af78412a498cbc28f5e
+
+
+The Conversation ID can be used in a Query Transaction  Status call to determine the status of the process flow. Once the transaction has been completed, the OpenAPI will provide the result of the transaction in an asynchronous message to the value listed in the Response URL of the request parameter in the body.  Please note that the developed application will need to have a separate listener to receive the result.
+
+Parameter Name	Parameter Description	Parameter Possible Values
+input_OriginalConversationID	The  OpenAPI platform generates this as a reference to the transaction.	fd1e9143d22544459f7c66e1860ef276
+input_TransactionID	The transaction identifier that gets generated on the Mobile Money platform. This is used to query transactions on the Mobile Money Platform.	hv9ahxcg4ccv
+input_ResultCode	The result code for the transaction.	INS-0
+input_ResultDesc	The result description for the transaction.	Request  processed successfully
+input_ThirdPartyConversationID	The incoming reference from the  third party system. When there are queries about transactions, this will usually be used to track a transaction.	1e9b774d1da34af78412a498cbc28f5e
+
+
+It  is expected that the listener confirms receipt of the result by responding the below content which closes out the session:
+Parameter Name	Parameter Description	Parameter Possible Values
+output_OriginalConversationID	The OpenAPI platform generates this as a reference to the transaction.	fd1e9143d22544459f7c66e1860ef276
+output_ResponseCode	The result code for the transaction.	0
+output_ResponseDesc	The result description for the transaction.	  Successfully Accepted Result
+output_ThirdPartyConversationID	The incoming reference  from the third party system. When there are queries about transactions, this will usually be used to track a transaction.	1e9b774d1da34af78412a498cbc28f5e
+Response Codes
+HTTP StatusCode	Response Code	Response Description
+201	INS-0	Request processed successfully
+400	INS-1	Internal Error
+401	INS-6	Transaction Failed
+408	INS-9	Request timeout
+409	INS-10	Duplicate Transaction
+400	INS-13	Invalid Shortcode Used
+400	INS-15	Invalid Amount Used
+400	INS-18	Invalid TransactionID Used
+400	INS-20	Not All Parameters Provided. Please try again.
+400	INS-21	Parameter validations failed. Please try again.
+400	INS-28	Invalid ThirdPartyConversationID Used
+400	INS-35	This transaction do not belong to you
+400	INS-996	API Being Used Outside Of Usage Time
+400	INS-997	API Not Enabled
+400	INS-998	Invalid Market
+422	INS-2006	Insufficient balance
+Sample Packets
+Sample  request and response packets.
+
+If you want to make use of a end to end synchronous flow, use the following tabs:
+Request (Thirdparty -> OpenAPI)
+Sync Flow Response (OpenAPI -> Thirdparty)
+
+If you want to make use of a end to end asynchronous  flow, use the following tabs:
+Request (Thirdparty -> OpenAPI)
+Async Flow Response (OpenAPI -> Thirdparty)
+OpenAPI Async Flow Request (OpenAPI -> Thirdparty)
+ThirdParty Async Flow Response (Thirdparty -> OpenAPI)
+
+Tab: Request
+{
+  "input_Country": "GHA",
+  "input_ReversalAmount": "25",
+  "input_ServiceProviderCode": "000000",
+  "input_ThirdPartyConversationID": "asv02e5958774f7ba228d83d0d689761",
+  "input_TransactionID":  "0000000000001"
+}
+
+Tab: Sync Flow Response
+{
+  "output_ResponseCode": "INS-0",
+  "output_ResponseDesc": "Request processed successfully",
+  "output_TransactionID": "49XCD123F6",
+  "output_ConversationID": "d3502e5958774f7ba228d83d0d689761",
+  "output_ThirdPartyConversationID": "asv02e5958774f7ba228d83d0d689761"
+}
+
+Tab: Async Flow Response
+{
+  "output_ResponseCode":  "INS-0",
+  "output_ResponseDesc": "Successfully Accepted Request",
+  "output_ConversationID": "d3502e5958774f7ba228d83d0d689761",
+  "output_ThirdPartyConversationID": "asv02e5958774f7ba228d83d0d689761"
+}
+
+Tab: OpenAPI Async Flow Request
+{
+  "input_OriginalConversationID": "d3502e5958774f7ba228d83d0d689761",
+  "input_ResultCode": "INS-0",
+  "input_ResultDesc": "Request processed successfully",
+  "input_ThirdPartyConversationID": "asv02e5958774f7ba228d83d0d689761",
+  "input_TransactionID": "49XCD123F6"
+}
+
+Tab: ThirdParty Async Flow Response
+{
+  "output_OriginalConversationID": "d3502e5958774f7ba228d83d0d689761",
+  "output_ResponseCode": "0",
+  "output_ResponseDesc": "Successfully Accepted Result",
+  "output_ThirdPartyConversationID": "asv02e5958774f7ba228d83d0d689762"
+}
+
+Sample Code Snippets
+Libraries Download
+Libraries to assist with integrations.
+Reversal
+This API should always be used in conjunction with a valid SessionKey.
+Please refer to the Generate SessionKey API documentation page to see how to generate a SessionKey or see the below combined API code snippet where the Generate SessionKey API is combined with the Reversal API.
+
+
+Please ensure that you have downloaded the latest library for your coding language above before attempting to use the below API section
+<?php
+
+include('PortalSDK/api.php');
+
+// This is to ensure browser does not timeout after 30 seconds
+ini_set('max_execution_time', 300);
+set_time_limit(300);
+
+// Public key on the API listener used to encrypt keys
+$public_key = 'MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEArv9yxA69XQKBo24BaF/D+fvlqmGdYjqLQ5WtNBb5tquqGvAvG3WMFETVUSow/LizQalxj2ElMVrUmzu5mGGkxK08bWEXF7a1DEvtVJs6nppIlFJc2SnrU14AOrIrB28ogm58JjAl5BOQawOXD5dfSk7MaAA82pVHoIqEu0FxA8BOKU+RGTihRU+ptw1j4bsAJYiPbSX6i71gfPvwHPYamM0bfI4CmlsUUR3KvCG24rB6FNPcRBhM3jDuv8ae2kC33w9hEq8qNB55uw51vK7hyXoAa+U7IqP1y6nBdlN25gkxEA8yrsl1678cspeXr+3ciRyqoRgj9RD/ONbJhhxFvt1cLBh+qwK2eqISfBb06eRnNeC71oBokDm3zyCnkOtMDGl7IvnMfZfEPFCfg5QgJVk1msPpRvQxmEsrX9MQRyFVzgy2CWNIb7c+jPapyrNwoUbANlN8adU1m6yOuoX7F49x+OjiG2se0EJ6nafeKUXw/+hiJZvELUYgzKUtMAZVTNZfT8jjb58j8GVtuS+6TM2AutbejaCV84ZK58E2CRJqhmjQibEUO6KPdD7oTlEkFy52Y1uOOBXgYpqMzufNPmfdqqqSM4dU70PO8ogyKGiLAIxCetMjjm6FCMEA3Kc8K0Ig7/XtFm9By6VxTJK1Mg36TlHaZKP6VzVLXMtesJECAwEAAQ==';
+
+// Create Context with API to request a Session ID
+$context = new APIContext();
+// Session key
+$context->set_api_key('6bc4157dbowkdd409118e0978dc6991a');
+// Public key
+$context->set_public_key($public_key);
+// Use ssl/https
+$context->set_ssl(true);
+// Method type (can be GET/POST/PUT)
+$context->set_method_type(APIMethodType::POST);
+// API address
+$context->set_address('openapi.m-pesa.com');
+// API Port
+$context->set_port(443);
+// API Path
+$context->set_path('/sandbox/ipg/v2/vodafoneGHA/reversal/');
+
+// Add/update headers
+$context->add_header('Origin', '*');
+
+// Parameters can be added to the call as well that on POST will be in JSON format and on GET will be URL parameters
+// $context->add_parameter('key', 'value');
+$context->add_parameter('input_ReversalAmount', '25');
+$context->add_parameter('input_Country', 'GHA');
+$context->add_parameter('input_ServiceProviderCode', '000000');
+$context->add_parameter('input_ThirdPartyConversationID', 'asv02e5958774f7ba228d83d0d689761');
+$context->add_parameter('input_TransactionID', '0000000000001');
+
+// Create a request object
+$request = new APIRequest($context);
+
+// Do the API call and put result in a response packet
+$response = null;
+
+try {
+	$response = $request->execute();
+} catch(exception $e) {
+	echo 'Call failed: ' . $e->getMessage() . '<br>';
+}
+
+if ($response->get_body() == null) {
+	throw new Exception('API call failed to get result. Please check.');
+}
+
+// Display results
+echo $response->get_status_code() . '<br>';
+echo $response->get_headers() . '<br>';
+echo $response->get_body() . '<br>';
+
+// Decode JSON packet
+$decoded = json_decode($response->get_body());
+
+?>
+Reversal Combined
+Please ensure that you have downloaded the latest library for your coding language above before attempting to use the below API section
+<?php
+
+include('PortalSDK/api.php');
+
+// This is to ensure browser does not timeout after 30 seconds
+ini_set('max_execution_time', 300);
+set_time_limit(300);
+
+// Public key on the API listener used to encrypt keys
+$public_key = 'MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEArv9yxA69XQKBo24BaF/D+fvlqmGdYjqLQ5WtNBb5tquqGvAvG3WMFETVUSow/LizQalxj2ElMVrUmzu5mGGkxK08bWEXF7a1DEvtVJs6nppIlFJc2SnrU14AOrIrB28ogm58JjAl5BOQawOXD5dfSk7MaAA82pVHoIqEu0FxA8BOKU+RGTihRU+ptw1j4bsAJYiPbSX6i71gfPvwHPYamM0bfI4CmlsUUR3KvCG24rB6FNPcRBhM3jDuv8ae2kC33w9hEq8qNB55uw51vK7hyXoAa+U7IqP1y6nBdlN25gkxEA8yrsl1678cspeXr+3ciRyqoRgj9RD/ONbJhhxFvt1cLBh+qwK2eqISfBb06eRnNeC71oBokDm3zyCnkOtMDGl7IvnMfZfEPFCfg5QgJVk1msPpRvQxmEsrX9MQRyFVzgy2CWNIb7c+jPapyrNwoUbANlN8adU1m6yOuoX7F49x+OjiG2se0EJ6nafeKUXw/+hiJZvELUYgzKUtMAZVTNZfT8jjb58j8GVtuS+6TM2AutbejaCV84ZK58E2CRJqhmjQibEUO6KPdD7oTlEkFy52Y1uOOBXgYpqMzufNPmfdqqqSM4dU70PO8ogyKGiLAIxCetMjjm6FCMEA3Kc8K0Ig7/XtFm9By6VxTJK1Mg36TlHaZKP6VzVLXMtesJECAwEAAQ==';
+
+// Create Context with API to request a SessionKey
+$context = new APIContext();
+// Api key
+$context->set_api_key('6bc4157dbee34d409118e0978dc6dd17');
+// Public key
+$context->set_public_key($public_key);
+// Use ssl/https
+$context->set_ssl(true);
+// Method type (can be GET/POST/PUT)
+$context->set_method_type(APIMethodType::GET);
+// API address
+$context->set_address('openapi.m-pesa.com');
+// API Port
+$context->set_port(443);
+// API Path
+$context->set_path('/sandbox/ipg/v2/vodafoneGHA/getSession/');
+
+// Add/update headers
+$context->add_header('Origin', '*');
+
+// Parameters can be added to the call as well that on POST will be in JSON format and on GET will be URL parameters
+// context->add_parameter('key', 'value');
+
+// Create a request object
+$request = new APIRequest($context);
+
+// Do the API call and put result in a response packet
+$response = null;
+
+try {
+	$response = $request->execute();
+} catch(exception $e) {
+	echo 'Call failed: ' . $e->getMessage() . '<br>';
+}
+
+if ($response->get_body() == null) {
+	throw new Exception('SessionKey call failed to get result. Please check.');
+}
+
+// Display results
+echo $response->get_status_code() . '<br>';
+echo $response->get_headers() . '<br>';
+echo $response->get_body() . '<br>';
+
+// Decode JSON packet
+$decoded = json_decode($response->get_body());
+
+// The above call issued a sessionID which can be used as the API key in calls that needs the sessionID
+$context = new APIContext();
+$context->set_api_key($decoded->output_SessionID);
+$context->set_public_key($public_key);
+$context->set_ssl(true);
+$context->set_method_type(APIMethodType::POST);
+$context->set_address('openapi.m-pesa.com');
+$context->set_port(443);
+$context->set_path('/sandbox/ipg/v2/vodafoneGHA/reversal/');
+
+$context->add_header('Origin', '*');
+
+$context->add_parameter('input_ReversalAmount', '25');
+$context->add_parameter('input_Country', 'GHA');
+$context->add_parameter('input_ServiceProviderCode', '000000');
+$context->add_parameter('input_ThirdPartyConversationID', 'asv02e5958774f7ba228d83d0d689761');
+$context->add_parameter('input_TransactionID', '0000000000001');
+
+$request = new APIRequest($context);
+
+// SessionID can take up to 30 seconds to become 'live' in the system and will be invalid until it is
+sleep(30);
+
+$response = null;
+
+try {
+	$response = $request->execute();
+} catch(exception $e) {
+	echo 'Call failed: ' . $e->getMessage() . '<br>';
+}
+
+if ($response->get_body() == null) {
+	throw new Exception('API call failed to get result. Please check.');
+}
+
+echo $response->get_status_code() . '<br>';
+echo $response->get_headers() . '<br>';
+echo $response->get_body() . '<br>';
+
+?>

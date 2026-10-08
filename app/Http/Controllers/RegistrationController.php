@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\PaymentMethod;
 use App\Services\DocumentService;
+use App\Services\Mpesa\MpesaClient;
+use App\Services\MpesaPaymentService;
 use App\Services\RegistrationService;
 use App\Support\Summit;
 use Illuminate\Http\RedirectResponse;
@@ -11,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class RegistrationController extends Controller
 {
@@ -20,6 +23,18 @@ class RegistrationController extends Controller
     {
         $edition = $this->summit->edition();
         $registration = $request->user()->registrationFor($edition)?->load('category', 'payments.reviewer');
+
+        // A new M-Pesa session needs 30 seconds to become active: open it now,
+        // after the page is sent, so a payment does not have to wait for it.
+        if (MpesaPaymentService::availableFor($registration)) {
+            dispatch(function () {
+                try {
+                    app(MpesaClient::class)->warmUp();
+                } catch (Throwable $e) {
+                    report($e);
+                }
+            })->afterResponse();
+        }
 
         return view('registration.show', [
             'edition' => $edition,

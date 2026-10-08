@@ -156,6 +156,9 @@ class RegistrationService
                     ? 'A payment is waiting for verification. Verify or reject it first.'
                     : 'Only a registration that is still awaiting payment can have its fee waived.');
             }
+            if ($registration->pendingGatewayPayment()) {
+                throw new InvalidArgumentException('An M-Pesa payment for this registration is in progress. Wait for it to finish first.');
+            }
             if ($registration->isWaived()) {
                 throw new InvalidArgumentException('This registration already has a waiver. Withdraw it first to change it.');
             }

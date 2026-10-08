@@ -60,7 +60,13 @@ class Registration extends Model
     public function canSubmitPayment(): bool
     {
         return $this->status === RegistrationStatus::PendingPayment
-            && ! $this->payments()->where('status', PaymentStatus::Submitted)->exists();
+            && ! $this->payments()->whereIn('status', [PaymentStatus::Submitted, PaymentStatus::Pending])->exists();
+    }
+
+    /** An M-Pesa payment still waiting for the participant's PIN or M-Pesa's answer. */
+    public function pendingGatewayPayment(): ?Payment
+    {
+        return $this->payments()->where('status', PaymentStatus::Pending)->latest('id')->first();
     }
 
     public function waivers(): HasMany

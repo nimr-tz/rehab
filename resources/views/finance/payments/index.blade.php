@@ -1,6 +1,6 @@
 @php
     use App\Enums\PaymentStatus;
-    $tabs = ['submitted' => 'To verify', 'verified' => 'Verified', 'rejected' => 'Rejected', 'all' => 'All'];
+    $tabs = ['submitted' => 'To verify', 'verified' => 'Verified', 'rejected' => 'Rejected', 'pending' => 'Awaiting M-Pesa', 'failed' => 'M-Pesa failed', 'all' => 'All'];
 @endphp
 
 <x-layouts.portal title="Payments">
@@ -19,6 +19,7 @@
         <div class="flex flex-col gap-3 border-b border-ink-100 p-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex flex-wrap gap-2">
                 @foreach ($tabs as $value => $label)
+                    @continue(in_array($value, ['pending', 'failed'], true) && empty($counts[$value]) && $status !== $value)
                     <a href="{{ route('finance.payments.index', array_filter(['status' => $value, 'q' => $search])) }}"
                        @class(['rounded-full px-4 py-2 text-sm font-semibold transition', 'bg-brand-700 text-white' => $status === $value, 'bg-white text-ink-600 ring-1 ring-ink-200 hover:bg-ink-50' => $status !== $value])>
                         {{ $label }}

@@ -1,8 +1,10 @@
 import Alpine from 'alpinejs';
 import photoUploader from './photo-uploader';
 import scorecard from './scorecard';
+import mpesaPay from './mpesa-pay';
 
 Alpine.data('scorecard', scorecard);
+Alpine.data('mpesaPay', mpesaPay);
 
 // Animated 2027 logo. It builds up from an empty first frame, so it replaces the
 // still image instead of layering over it. On small screens, with reduced motion,

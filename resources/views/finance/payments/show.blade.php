@@ -19,7 +19,11 @@
                     <x-button variant="ghost" size="sm" :href="route('finance.payments.proof', $payment)" icon="download" target="_blank">Open in new tab</x-button>
                 @endif
             </x-slot:actions>
-            @if (! $payment->proof_path)
+            @if ($payment->gateway)
+                <x-empty icon="phone" title="Paid with an M-Pesa prompt">
+                    M-Pesa confirms these payments directly, so there is no proof to check. Transaction {{ $payment->transaction_reference }}.
+                </x-empty>
+            @elseif (! $payment->proof_path)
                 <x-empty icon="document" title="No proof uploaded" />
             @elseif ($proofIsImage)
                 <div class="bg-ink-50 p-4"><img src="{{ route('finance.payments.proof', $payment) }}" alt="Proof of payment" class="mx-auto max-h-[640px] rounded-xl shadow-soft"></div>
@@ -69,10 +73,18 @@
                 </x-card>
             @else
                 <x-card title="Decision">
-                    <p class="text-sm text-ink-700">
-                        {{ $payment->status->label() }} by <span class="font-semibold">{{ $payment->reviewer?->name ?? '—' }}</span>
-                        on {{ $payment->reviewed_at?->format('j M Y, H:i') }}.
-                    </p>
+                    @if ($payment->gateway)
+                        <p class="text-sm text-ink-700">
+                            {{ $payment->status->label() }} · M-Pesa answered <span class="font-mono font-semibold">{{ $payment->gateway_code ?? '—' }}</span>
+                            {{ $payment->gateway_message }}
+                            @if ($payment->gateway_checked_at) <span class="text-ink-500">({{ $payment->gateway_checked_at->format('j M Y, H:i') }})</span> @endif
+                        </p>
+                    @else
+                        <p class="text-sm text-ink-700">
+                            {{ $payment->status->label() }} by <span class="font-semibold">{{ $payment->reviewer?->name ?? '—' }}</span>
+                            on {{ $payment->reviewed_at?->format('j M Y, H:i') }}.
+                        </p>
+                    @endif
                     @if ($payment->rejection_reason)
                         <p class="mt-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800">{{ $payment->rejection_reason }}</p>
                     @endif
