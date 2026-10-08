@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\User;
 use App\Notifications\RegistrationConfirmed;
+use App\Services\MpesaPaymentService;
 use App\Support\Summit;
 use Database\Seeders\RoleSeeder;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -367,6 +368,38 @@ class MpesaPaymentTest extends TestCase
             ->assertJson(['state' => 'confirmed', 'transaction' => 'LATE123456']);
 
         $this->assertSame(RegistrationStatus::Confirmed, $registration->fresh()->status);
+    }
+
+    public function test_m_pesa_can_be_limited_to_named_testers(): void
+    {
+        $this->fakeMpesa();
+        $tester = $this->registered();
+        $other = $this->registered();
+        config(['mpesa.only_for' => [strtolower($tester->user->email)]]);
+
+        $this->actingAs($other->user)->get(route('registration.show'))->assertDontSee('Send payment request');
+        $this->payWithMpesa($other)->assertNotFound();
+
+        $this->actingAs($tester->user)->get(route('registration.show'))->assertSee('Send payment request');
+        $this->payWithMpesa($tester)->assertRedirect(route('registration.show'));
+        $this->assertSame(RegistrationStatus::Confirmed, $tester->fresh()->status);
+        $this->assertSame(RegistrationStatus::PendingPayment, $other->fresh()->status);
+    }
+
+    public function test_production_never_offers_the_sandbox_to_everyone(): void
+    {
+        $registration = $this->registered();
+        $this->app['env'] = 'production';
+
+        $this->assertFalse(MpesaPaymentService::availableFor($registration));
+
+        // Named testers can still try it.
+        config(['mpesa.only_for' => [strtolower($registration->user->email)]]);
+        $this->assertTrue(MpesaPaymentService::availableFor($registration));
+
+        // The live platform needs no list.
+        config(['mpesa.only_for' => [], 'mpesa.environment' => 'openapi']);
+        $this->assertTrue(MpesaPaymentService::availableFor($registration));
     }
 
     public function test_a_confirmed_registration_cannot_pay_again(): void

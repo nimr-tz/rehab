@@ -41,7 +41,24 @@ class MpesaPaymentService
             && filled(config('mpesa.api_key'))
             && $registration?->currency === config('mpesa.currency')
             && $registration->status === RegistrationStatus::PendingPayment
-            && $registration->amountDue() > 0;
+            && $registration->amountDue() > 0
+            && self::offeredTo($registration);
+    }
+
+    /**
+     * Whether this participant may pay by M-Pesa at all. MPESA_ONLY_FOR limits it
+     * to named accounts. The sandbox moves no real money, so in production it is
+     * only ever offered to those named testers.
+     */
+    private static function offeredTo(Registration $registration): bool
+    {
+        $only = config('mpesa.only_for');
+
+        if (app()->isProduction() && config('mpesa.environment') === 'sandbox' && empty($only)) {
+            return false;
+        }
+
+        return empty($only) || in_array(strtolower($registration->user->email), $only, true);
     }
 
     /** Valid M-Pesa numbers: Tanzanian mobiles, plus the sandbox's test numbers. */

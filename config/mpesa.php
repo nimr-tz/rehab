@@ -16,6 +16,14 @@ return [
     // Offer "Pay with M-Pesa" to participants. Off until the organisation has a shortcode.
     'enabled' => (bool) env('MPESA_ENABLED', false),
 
+    // Comma-separated emails: only these accounts are offered M-Pesa, e.g. for a
+    // test in production. Against the sandbox, production requires this list,
+    // because sandbox payments confirm registrations without real money.
+    'only_for' => array_values(array_filter(array_map(
+        fn ($email) => strtolower(trim($email)),
+        explode(',', (string) env('MPESA_ONLY_FOR', '')),
+    ))),
+
     // "sandbox" or "openapi" (live).
     'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
 
