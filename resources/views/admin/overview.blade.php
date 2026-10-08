@@ -10,23 +10,29 @@
         'watch' => ['bg-sun-50 border-sun-200', 'text-sun-800', 'Watch'],
         'act' => ['bg-coral-50 border-coral-200', 'text-red-700', 'Act'],
     ];
+
+    // Executives read the summary only: the screens behind it are for admins.
+    $admin = auth()->user()->hasRole(\App\Enums\Role::Admin->value);
+    $link = fn (string $route, mixed $parameters = []) => $admin ? route($route, $parameters) : null;
 @endphp
 
 <x-layouts.portal title="Executive summary">
     <x-slot:header>
         <x-page-header title="Executive summary" description="Registration, revenue and science at a glance">
-            <x-button variant="secondary" size="sm" :href="route('admin.settings.edit')" icon="cog">Settings</x-button>
+            @if ($admin)
+                <x-button variant="secondary" size="sm" :href="route('admin.settings.edit')" icon="cog">Settings</x-button>
+            @endif
         </x-page-header>
     </x-slot:header>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-kpi label="Registrations" :value="number_format($total)"
             :hint="$target ? round($total / $target * 100).'% of '.number_format($target).' target' : $confirmed.' confirmed'"
-            :progress="$target ? $total / $target * 100 : ($total ? $confirmed / $total * 100 : 0)" :href="route('admin.participants.index')" />
+            :progress="$target ? $total / $target * 100 : ($total ? $confirmed / $total * 100 : 0)" :href="$link('admin.participants.index')" />
         <x-kpi label="Revenue verified" :value="'TZS '.$millions($tzs['verified'])"
             :hint="($tzs['expected'] ? round($tzs['verified'] / $tzs['expected'] * 100) : 0).'% of '.$millions($tzs['expected']).' expected · USD '.number_format($usd['verified'])"
-            :progress="$tzs['expected'] ? $tzs['verified'] / $tzs['expected'] * 100 : 0" bar="#45582e" :href="route('finance.payments.index', ['status' => 'verified'])" />
-        <x-kpi label="Abstracts" :value="number_format($abstracts)" :hint="'+'.$abstractsThisWeek.' this week'" hint-tone="warning" :progress="100" bar="#d69a00" :href="route('scientific.abstracts.index')" />
+            :progress="$tzs['expected'] ? $tzs['verified'] / $tzs['expected'] * 100 : 0" bar="#45582e" :href="$link('finance.payments.index', ['status' => 'verified'])" />
+        <x-kpi label="Abstracts" :value="number_format($abstracts)" :hint="'+'.$abstractsThisWeek.' this week'" hint-tone="warning" :progress="100" bar="#d69a00" :href="$link('scientific.abstracts.index')" />
         <x-kpi label="Countries" :value="$countries->count()" :hint="$international.'% international'" hint-tone="warning" :progress="$international" bar="#bd520a" />
     </div>
 
@@ -116,18 +122,20 @@
     </div>
 
     <x-card title="Latest registrations" :padding="false">
-        <x-slot:actions><x-button variant="ghost" size="sm" :href="route('admin.participants.index')">All participants</x-button></x-slot:actions>
+        @if ($admin)
+            <x-slot:actions><x-button variant="ghost" size="sm" :href="route('admin.participants.index')">All participants</x-button></x-slot:actions>
+        @endif
         <ul class="divide-y divide-ink-100">
             @forelse ($recent as $registration)
                 <li>
-                    <a href="{{ route('admin.participants.show', $registration) }}" class="flex items-center gap-3 px-6 py-3 hover:bg-ink-50">
+                    <{{ $admin ? 'a' : 'div' }} @if ($admin) href="{{ route('admin.participants.show', $registration) }}" @endif @class(['flex items-center gap-3 px-6 py-3', 'hover:bg-ink-50' => $admin])>
                         <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-800">{{ $registration->user->initials() }}</span>
                         <span class="min-w-0 flex-1">
                             <span class="block truncate text-sm font-semibold text-ink-900">{{ $registration->user->name }}</span>
                             <span class="block text-xs text-ink-500">{{ $registration->category->name }} · {{ $registration->created_at->diffForHumans() }}</span>
                         </span>
                         <x-status :tone="$registration->status->tone()">{{ $registration->status->label() }}</x-status>
-                    </a>
+                    </{{ $admin ? 'a' : 'div' }}>
                 </li>
             @empty
                 <li class="px-6 py-5 text-sm text-ink-500">No registrations yet.</li>

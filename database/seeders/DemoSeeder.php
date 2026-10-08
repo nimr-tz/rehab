@@ -197,6 +197,7 @@ class DemoSeeder extends Seeder
             'scientific' => $make('scientific@rehab.test', 'Dr', 'Peter', 'Kimaro', [Role::ScientificAdmin->value], 'Muhimbili University of Health and Allied Sciences', 'Rehabilitation physician'),
             'finance' => $make('finance@rehab.test', null, 'Rehema', 'Said', [Role::FinanceOfficer->value], 'Rehab Health', 'Finance officer'),
             'desk' => $make('desk@rehab.test', null, 'Baraka', 'Lyimo', [Role::RegistrationOfficer->value], 'Rehab Health', 'Events coordinator'),
+            'executive' => $make('executive@rehab.test', 'Dr', 'Mwajuma', 'Hassan', [Role::Executive->value], 'Rehab Health', 'Executive director'),
         ];
 
         $this->reviewers = collect([

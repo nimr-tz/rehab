@@ -5,14 +5,16 @@ namespace App\Http\Controllers;
 use App\Enums\Role;
 use App\Services\DashboardService;
 use App\Support\Summit;
+use App\Support\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * Each person lands on the dashboard of their main role. Admins land on the
- * executive summary, registration officers on the registry, photographers
- * on their albums and judges on their scoring, which are their dashboards.
+ * Each person lands on the dashboard of the workspace they are in. Admins
+ * land on the executive summary, registration officers on the registry,
+ * photographers on their albums and judges on their scoring, which are their
+ * dashboards.
  */
 class DashboardController extends Controller
 {
@@ -20,16 +22,15 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $edition = $summit->edition();
-        $is = fn (Role $role) => $user->hasRole($role->value);
 
-        return match (true) {
-            $is(Role::Admin) => redirect()->route('admin.overview'),
-            $is(Role::ScientificAdmin) => view('dashboards.scientific', $dashboards->scientific($edition) + ['user' => $user]),
-            $is(Role::FinanceOfficer) => view('dashboards.finance', $dashboards->finance() + ['user' => $user]),
-            $is(Role::RegistrationOfficer) => redirect()->route('desk.index'),
-            $is(Role::Reviewer) => view('dashboards.reviewer', $dashboards->reviewer($user, $edition) + ['user' => $user, 'edition' => $edition]),
-            $is(Role::Photographer) && ! $is(Role::Participant) => redirect()->route('media.albums.index'),
-            $is(Role::Judge) && ! $is(Role::Participant) => redirect()->route('judging.index'),
+        return match (Workspace::current($user)) {
+            Role::Admin, Role::Executive => redirect()->route('admin.overview'),
+            Role::ScientificAdmin => view('dashboards.scientific', $dashboards->scientific($edition) + ['user' => $user]),
+            Role::FinanceOfficer => view('dashboards.finance', $dashboards->finance() + ['user' => $user]),
+            Role::RegistrationOfficer => redirect()->route('desk.index'),
+            Role::Reviewer => view('dashboards.reviewer', $dashboards->reviewer($user, $edition) + ['user' => $user, 'edition' => $edition]),
+            Role::Photographer => redirect()->route('media.albums.index'),
+            Role::Judge => redirect()->route('judging.index'),
             default => view('dashboards.participant', $dashboards->participant($user, $edition) + ['user' => $user, 'edition' => $edition]),
         };
     }

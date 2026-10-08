@@ -26,6 +26,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Scientific\AbstractController as ScientificAbstractController;
 use App\Http\Controllers\Scientific\ReviewerController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'home')->name('home');
@@ -44,6 +45,7 @@ Route::get('/awards', [AwardController::class, 'index'])->name('awards.index');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/search', SearchController::class)->name('search');
+    Route::post('/workspace', WorkspaceController::class)->name('workspace.switch');
     Route::get('/notifications/{id}', [NotificationController::class, 'open'])->name('notifications.open');
     Route::post('/notifications/read', [NotificationController::class, 'readAll'])->name('notifications.read');
 
@@ -154,9 +156,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
     });
 
+    // The executive summary: admins, and executives who see only this.
+    Route::get('/admin', OverviewController::class)->middleware('role:admin|executive')->name('admin.overview');
+
     // Administration
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/', OverviewController::class)->name('overview');
         Route::get('/participants', [ParticipantController::class, 'index'])->name('participants.index');
         Route::get('/participants/{registration}', [ParticipantController::class, 'show'])->name('participants.show');
         Route::get('/users', [UserController::class, 'index'])->name('users.index');

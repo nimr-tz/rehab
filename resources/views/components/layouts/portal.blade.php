@@ -2,7 +2,8 @@
 
 @php
     $user = auth()->user();
-    $roles = $user->getRoleNames()->map(fn ($role) => \App\Enums\Role::tryFrom($role)?->label() ?? $role);
+    $workspace = \App\Support\Workspace::current($user);
+    $workspaces = \App\Support\Workspace::available($user);
     $sections = \App\Support\Navigation::for($user);
     $notifications = $user->notifications()->latest()->limit(8)->get();
     $unread = $user->unreadNotifications()->count();
@@ -10,7 +11,7 @@
 @endphp
 
 <x-layouts.public class="bg-canvas" :title="$title.' · '.$summit->get('organiser').' Events Portal'">
-    <div x-data="{ menu: false }" class="min-h-screen lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
+    <div x-data="{ menu: false, switcher: false }" class="min-h-screen lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
 
         {{-- Sidebar: a drawer on small screens. The inline style slides it in when the menu opens. --}}
         <div x-show="menu" x-cloak @click="menu = false" class="fixed inset-0 z-40 bg-ink-950/40 lg:hidden"></div>
@@ -56,9 +57,15 @@
                     <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sun-400 text-sm font-bold text-ink-900">{{ $user->initials() }}</span>
                     <span class="min-w-0 leading-tight">
                         <span class="block truncate text-sm font-semibold">{{ $user->name }}</span>
-                        <span class="block truncate text-xs text-brand-200">{{ $roles->implode(' · ') }}</span>
+                        <span class="block truncate text-xs text-brand-200">{{ \App\Support\Workspace::label($workspace) }}</span>
                     </span>
                 </a>
+                @if (count($workspaces) > 1)
+                    <button type="button" @click="switcher = true; menu = false"
+                            class="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/8 hover:text-white">
+                        <x-icon name="users" class="h-4 w-4" /> Switch role
+                    </button>
+                @endif
                 <form method="POST" action="{{ route('logout') }}" class="mt-1">
                     @csrf
                     <button type="submit" class="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/8 hover:text-white">
@@ -142,5 +149,50 @@
                 {{ $slot }}
             </main>
         </div>
+
+        {{-- Switch role: one role at a time, so each sidebar only holds that role's work. --}}
+        @if (count($workspaces) > 1)
+            <div x-show="switcher" x-cloak @keydown.escape.window="switcher = false"
+                 x-effect="switcher && $nextTick(() => $refs.current?.focus())"
+                 class="fixed inset-0 z-[60] grid place-items-center p-4">
+                <div @click="switcher = false" class="absolute inset-0 bg-ink-950/40"></div>
+                <div role="dialog" aria-modal="true" aria-labelledby="switch-role-title"
+                     class="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-lift">
+                    <div class="flex items-start justify-between gap-4 border-b border-ink-100 px-5 py-4">
+                        <div>
+                            <h2 id="switch-role-title" class="text-lg font-bold text-ink-900">Switch role</h2>
+                            <p class="text-sm text-ink-500">Choose the role you want to work in. The menu shows only its screens.</p>
+                        </div>
+                        <button type="button" @click="switcher = false" aria-label="Close"
+                                class="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-ink-500 hover:bg-ink-50 hover:text-ink-900">
+                            <x-icon name="x" class="h-5 w-5" />
+                        </button>
+                    </div>
+                    <form method="POST" action="{{ route('workspace.switch') }}" class="max-h-[70vh] space-y-2 overflow-y-auto p-3">
+                        @csrf
+                        @foreach ($workspaces as $option)
+                            @php $isCurrent = $option === $workspace; @endphp
+                            <button type="submit" name="role" value="{{ $option->value }}" @if ($isCurrent) x-ref="current" aria-current="true" @endif
+                                    @class([
+                                        'flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition focus:outline-none focus:ring-4 focus:ring-brand-500/15',
+                                        'border-brand-500 bg-brand-50' => $isCurrent,
+                                        'border-ink-100 hover:border-brand-300 hover:bg-ink-50' => ! $isCurrent,
+                                    ])>
+                                <span @class(['grid h-10 w-10 shrink-0 place-items-center rounded-xl', 'bg-brand-700 text-white' => $isCurrent, 'bg-brand-50 text-brand-700' => ! $isCurrent])>
+                                    <x-icon :name="\App\Support\Workspace::icon($option)" class="h-5 w-5" />
+                                </span>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block font-semibold text-ink-900">{{ \App\Support\Workspace::label($option) }}</span>
+                                    <span class="block text-xs text-ink-500">{{ \App\Support\Workspace::description($option) }}</span>
+                                </span>
+                                @if ($isCurrent)
+                                    <x-icon name="check" class="h-5 w-5 shrink-0 text-brand-700" />
+                                @endif
+                            </button>
+                        @endforeach
+                    </form>
+                </div>
+            </div>
+        @endif
     </div>
 </x-layouts.public>

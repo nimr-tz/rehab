@@ -9,12 +9,14 @@ use App\Models\Payment;
 use App\Models\ProgrammeSession;
 use App\Models\Registration;
 use App\Support\Summit;
+use App\Support\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * The search box in the top bar. Each person only finds what their roles can
- * see: reviewers never see authors, participants only their own abstracts.
+ * The search box in the top bar. Each person only finds what the role they
+ * are working in can see: reviewers never see authors, participants only
+ * their own abstracts.
  */
 class SearchController extends Controller
 {
@@ -27,8 +29,8 @@ class SearchController extends Controller
         $results = [];
 
         if (mb_strlen($q) >= 2 && $edition) {
-            $staff = $user->hasAnyRole([Role::Admin->value, Role::RegistrationOfficer->value, Role::FinanceOfficer->value]);
-            $committee = $user->hasAnyRole([Role::Admin->value, Role::ScientificAdmin->value]);
+            $staff = Workspace::is($user, Role::Admin, Role::RegistrationOfficer, Role::FinanceOfficer);
+            $committee = Workspace::is($user, Role::Admin, Role::ScientificAdmin);
 
             if ($staff) {
                 $results['People'] = Registration::where('edition_id', $edition->id)->with('user', 'category')
@@ -39,11 +41,11 @@ class SearchController extends Controller
                     ->map(fn ($r) => [
                         'title' => $r->user->name,
                         'meta' => $r->reference.' · '.$r->category->name.' · '.$r->status->label(),
-                        'url' => $user->hasRole(Role::Admin->value) ? route('admin.participants.show', $r) : route('desk.index', ['q' => $r->reference]),
+                        'url' => Workspace::is($user, Role::Admin) ? route('admin.participants.show', $r) : route('desk.index', ['q' => $r->reference]),
                     ]);
             }
 
-            if ($user->hasAnyRole([Role::Admin->value, Role::FinanceOfficer->value])) {
+            if (Workspace::is($user, Role::Admin, Role::FinanceOfficer)) {
                 $results['Payments'] = Payment::with('registration.user')
                     ->where(fn ($w) => $w->where('transaction_reference', 'like', $like)->orWhere('payer_name', 'like', $like)
                         ->orWhereHas('registration', fn ($r) => $r->where('reference', 'like', $like)))
@@ -65,7 +67,7 @@ class SearchController extends Controller
                         'meta' => ($a->code ?? $a->blindId()).' · '.$a->topic->name.' · '.$a->submitter->name.' · '.$a->status->label(),
                         'url' => route('scientific.abstracts.show', $a),
                     ]);
-            } elseif ($user->hasRole(Role::Reviewer->value)) {
+            } elseif (Workspace::is($user, Role::Reviewer)) {
                 // Blind: only their own assignments, and never the authors.
                 $results['Your assigned abstracts'] = $user->reviewAssignments()->with('abstract.topic', 'abstract.edition')
                     ->whereHas('abstract', fn ($a) => $a->where('title', 'like', $like)->orWhere('keywords', 'like', $like))
@@ -77,7 +79,7 @@ class SearchController extends Controller
                     ]);
             }
 
-            if ($user->hasRole(Role::Participant->value)) {
+            if (Workspace::is($user, Role::Participant) && $user->hasRole(Role::Participant->value)) {
                 $results['Your abstracts'] = $user->abstracts()->where('edition_id', $edition->id)->with('topic')
                     ->where(fn ($w) => $w->where('title', 'like', $like)->orWhere('code', 'like', $like))
                     ->limit(8)->get()

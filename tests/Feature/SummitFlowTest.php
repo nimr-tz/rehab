@@ -292,6 +292,26 @@ class SummitFlowTest extends TestCase
         $this->actingAs($finance)->get(route('finance.payments.index'))->assertOk();
     }
 
+    public function test_an_executive_sees_only_the_executive_summary(): void
+    {
+        $executive = $this->user(Role::Executive);
+        $this->register($this->user());
+
+        $this->actingAs($executive)->get(route('dashboard'))->assertRedirect(route('admin.overview'));
+        $this->actingAs($executive)->get(route('admin.overview'))->assertOk()
+            ->assertSee('Executive summary')
+            // The figures, without links to screens an executive cannot open.
+            ->assertDontSee(route('admin.participants.index'))->assertDontSee(route('admin.settings.edit'))
+            ->assertDontSee(route('finance.payments.index'))->assertDontSee(route('scientific.abstracts.index'));
+
+        foreach (['admin.participants.index', 'admin.users.index', 'admin.settings.edit', 'finance.payments.index', 'scientific.abstracts.index', 'desk.index', 'registration.show'] as $route) {
+            $this->actingAs($executive)->get(route($route))->assertForbidden();
+        }
+
+        // Admins still see it, with the links.
+        $this->actingAs($this->user(Role::Admin))->get(route('admin.overview'))->assertOk()->assertSee(route('admin.participants.index'));
+    }
+
     public function test_an_admin_can_change_the_summit_settings(): void
     {
         $admin = $this->user(Role::Admin);
