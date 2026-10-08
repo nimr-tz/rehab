@@ -14,7 +14,7 @@ The new portal for the annual Rehabilitation Summit run by Rehab Health, startin
 | Dates and venue | Pending. They are edited in the admin settings, not hard-coded. |
 | Payments | Bank transfer and mobile money, confirmed inside the system by finance officers. No GePG. Automated mobile money gateways plug in later. |
 | Mobile app | Staff-only scanner for badge check-in and session attendance. |
-| CPD point rules | Deferred until the organisers define them. |
+| CPD point rules | Fixed points per programme session, set by the committee. A badge scanned while a session runs earns its points, once. |
 | Presentations | Oral only for now: no posters anywhere in the portal. `ABSTRACT_POSTERS=true` brings posters back (October 2026). |
 
 ## Stack
@@ -73,7 +73,7 @@ Awards: the scientific committee sets up each summit's awards (a suggested set c
 
 Deployment: pushing to `main` deploys through John Mduda's GitOps pipeline (see CLAUDE.md).
 
-Still to build for the live 2027 summit: group registration, sponsors, session chair and rapporteur applications, presentation uploads, programme editing in the portal (the demo programme is seeded), certificates, the abstract book, the staff scanning app API, and email campaigns.
+Still to build for the live 2027 summit: group registration, sponsors, session chair and rapporteur applications, presentation uploads, scheduling abstracts into sessions in the portal (the demo schedule is seeded), certificates, the abstract book, the staff scanning app itself (its API is in `docs/STAFF_APP_API.md`), and email campaigns.
 
 ### Phase 0: Foundation and design system
 

@@ -45,6 +45,7 @@ class Navigation
                     'count' => AbstractSubmission::awaitingDecision()->count(),
                 ]),
                 $item('Reviewers', 'scientific.reviewers', 'scientific.reviewers'),
+                $item('Programme & CPD', 'scientific.programme.index', 'scientific.programme.*'),
                 $item('Awards', 'committee.awards.index', 'committee.awards.*'),
             ],
             Role::Judge => [

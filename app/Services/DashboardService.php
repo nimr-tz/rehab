@@ -76,7 +76,8 @@ class DashboardService
             'countdowns' => $this->countdowns($edition),
             'agenda' => $sessions->groupBy(fn ($s) => $s->starts_at->toDateString()),
             'mySessions' => $mine,
-            'cpdSessions' => $sessions->count(),
+            'cpd' => $registration ? app(AttendanceService::class)->summary($registration) : null,
+            'cpdSessions' => $sessions->filter->isScannable()->count(),
             'awards' => $awards,
         ];
     }

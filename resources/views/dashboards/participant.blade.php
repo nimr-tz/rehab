@@ -263,12 +263,27 @@
             </x-card>
 
             <section class="self-start rounded-card border border-sun-200 bg-sun-50 p-6">
-                <h2 class="text-lg font-bold text-ink-900">CPD certificate</h2>
-                <p class="mt-4"><span class="text-[2.6rem] font-extrabold leading-none text-ember-600">0</span> <span class="font-semibold text-ink-700">of {{ $cpdSessions }} sessions attended</span></p>
-                <p class="mt-3 text-sm leading-relaxed text-ink-600">Each session you attend is scanned at the door and counts toward your certificate. It is issued in the portal after the Summit.</p>
-                <div class="mt-5 grid grid-cols-9 gap-1">
-                    @for ($i = 0; $i < min(9, $cpdSessions); $i++)<span class="h-1.5 rounded-full bg-sun-200"></span>@endfor
+                @php
+                    $points = fn ($n) => rtrim(rtrim(number_format($n, 2), '0'), '.');
+                    $attended = $cpd['attended'] ?? 0;
+                @endphp
+                <h2 class="text-lg font-bold text-ink-900">CPD</h2>
+                <p class="mt-4"><span class="text-[2.6rem] font-extrabold leading-none text-ember-600">{{ $points($cpd['points'] ?? 0) }}</span> <span class="font-semibold text-ink-700">of {{ $points($cpd['available'] ?? 0) }} points</span></p>
+                <p class="mt-1 text-sm font-semibold text-ink-700">{{ $attended }} of {{ $cpdSessions }} {{ \Illuminate\Support\Str::plural('session', $cpdSessions) }} attended</p>
+                <div class="mt-4 h-2 overflow-hidden rounded-full bg-sun-200">
+                    <div class="h-full rounded-full bg-ember-500" style="width: {{ ($cpd['available'] ?? 0) > 0 ? min(100, $cpd['points'] / $cpd['available'] * 100) : 0 }}%"></div>
                 </div>
+                @if ($attended > 0)
+                    <ul class="mt-4 space-y-1.5 text-sm">
+                        @foreach ($cpd['days'] as $date => $attendances)
+                            <li class="flex justify-between gap-3 text-ink-700">
+                                <span>{{ \Illuminate\Support\Carbon::parse($date)->format('l j M') }}: {{ $attendances->count() }} {{ \Illuminate\Support\Str::plural('session', $attendances->count()) }}</span>
+                                <span class="font-semibold text-ink-900">{{ $points($attendances->sum(fn ($a) => $a->session->points())) }} pts</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                <p class="mt-4 text-sm leading-relaxed text-ink-600">Have your badge scanned at each session: every session earns its own CPD points. Your certificate is issued in the portal after the Summit.</p>
             </section>
         </div>
     @endif

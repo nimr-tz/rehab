@@ -26,6 +26,7 @@ use App\Http\Controllers\ProgrammeController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Scientific\AbstractController as ScientificAbstractController;
+use App\Http\Controllers\Scientific\ProgrammeController as ScientificProgrammeController;
 use App\Http\Controllers\Scientific\ReviewerController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\WorkspaceController;
@@ -99,6 +100,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/abstracts/{abstract}/decision', [ScientificAbstractController::class, 'decide'])->name('abstracts.decide');
         Route::put('/abstracts/{abstract}/revision-due', [ScientificAbstractController::class, 'extendRevision'])->name('abstracts.revision-due');
         Route::get('/reviewers', ReviewerController::class)->name('reviewers');
+        Route::get('/programme', [ScientificProgrammeController::class, 'index'])->name('programme.index');
+        Route::get('/programme/new', [ScientificProgrammeController::class, 'create'])->name('programme.create');
+        Route::post('/programme', [ScientificProgrammeController::class, 'store'])->name('programme.store');
+        Route::get('/programme/{session}', [ScientificProgrammeController::class, 'edit'])->name('programme.edit');
+        Route::put('/programme/{session}', [ScientificProgrammeController::class, 'update'])->name('programme.update');
+        Route::delete('/programme/{session}', [ScientificProgrammeController::class, 'destroy'])->name('programme.destroy');
     });
 
     // Awards judges score the finalists of the awards they are assigned to.

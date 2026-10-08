@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class ProgrammeSession extends Model
 {
@@ -24,7 +26,40 @@ class ProgrammeSession extends Model
         return [
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
+            'cpd_points' => 'decimal:2',
         ];
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(SessionAttendance::class);
+    }
+
+    /** Breaks are not scanned and earn nothing. */
+    public function isScannable(): bool
+    {
+        return $this->kind !== 'break';
+    }
+
+    /** Scans count while the session runs. */
+    public function isOpenForScanning(?DateTimeInterface $at = null): bool
+    {
+        $at = $at ? Carbon::instance($at) : now();
+
+        return $this->isScannable() && $at->betweenIncluded($this->starts_at, $this->ends_at);
+    }
+
+    public function points(): float
+    {
+        return $this->isScannable() ? (float) ($this->cpd_points ?? 0) : 0.0;
+    }
+
+    /** "1.5 CPD points", or null when the session earns none. */
+    public function pointsLabel(): ?string
+    {
+        $points = $this->points();
+
+        return $points > 0 ? rtrim(rtrim(number_format($points, 2), '0'), '.').' CPD '.($points == 1 ? 'point' : 'points') : null;
     }
 
     public function edition(): BelongsTo

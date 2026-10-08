@@ -47,6 +47,11 @@ class Registration extends Model
         return $this->hasMany(Payment::class)->latest('id');
     }
 
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(SessionAttendance::class);
+    }
+
     public function latestPayment(): HasOne
     {
         return $this->hasOne(Payment::class)->latestOfMany();

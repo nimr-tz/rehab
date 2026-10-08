@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Enums\RegistrationStatus;
 use App\Models\Registration;
+use App\Services\AttendanceService;
 use App\Services\DocumentService;
 use App\Services\MpesaPaymentService;
 use App\Services\RegistrationService;
@@ -94,6 +95,7 @@ class DeskController extends Controller
             'registration' => $registration,
             'mpesa' => MpesaPaymentService::availableFor($registration),
             'pending' => $registration->pendingGatewayPayment(),
+            'cpd' => app(AttendanceService::class)->summary($registration),
         ]);
     }
 

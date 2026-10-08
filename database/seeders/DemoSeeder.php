@@ -682,6 +682,13 @@ class DemoSeeder extends Seeder
                 'edition_id' => $this->edition->id, 'title' => $title, 'kind' => $kind,
                 'topic_id' => $topic ? $this->topics[$topic]->id : null, 'hall' => $hall,
                 'starts_at' => "{$day} {$from}", 'ends_at' => "{$day} {$to}", 'chair' => $chair, 'description' => $description,
+                // Sample CPD points: the real ones are set by the organisers per session.
+                'cpd_points' => match ($kind) {
+                    'break' => null,
+                    'parallel' => 1.5,
+                    'posters' => 0.5,
+                    default => 1,
+                },
             ]);
         };
         $attach = fn (ProgrammeSession $session, Collection $abstracts) => $abstracts->values()->each(

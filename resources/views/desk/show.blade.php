@@ -122,6 +122,26 @@
                 </dl>
             </x-card>
 
+            <x-card title="Attendance & CPD" :padding="false">
+                @php $pts = fn ($n) => rtrim(rtrim(number_format($n, 2), '0'), '.'); @endphp
+                <p class="px-6 pb-4 pt-1 text-sm text-ink-600">{{ $cpd['attended'] }} of {{ $cpd['sessions'] }} sessions · <span class="font-bold text-ink-900">{{ $pts($cpd['points']) }} of {{ $pts($cpd['available']) }} CPD points</span></p>
+                @if ($cpd['attended'] > 0)
+                    <ul class="divide-y divide-ink-100 border-t border-ink-100">
+                        @foreach ($cpd['days'] as $date => $attendances)
+                            @foreach ($attendances as $attendance)
+                                <li class="flex items-center justify-between gap-3 px-6 py-2.5 text-sm">
+                                    <span class="min-w-0">
+                                        <span class="block truncate font-medium text-ink-900">{{ $attendance->session->title }}</span>
+                                        <span class="block text-xs text-ink-500">{{ $attendance->session->starts_at->format('D j M') }} · scanned {{ $attendance->scanned_at->format('H:i') }}</span>
+                                    </span>
+                                    <span class="shrink-0 font-semibold text-ink-900">{{ $pts($attendance->session->points()) }} pts</span>
+                                </li>
+                            @endforeach
+                        @endforeach
+                    </ul>
+                @endif
+            </x-card>
+
             @if ($registration->payments->isNotEmpty())
                 <x-card title="Payments" :padding="false">
                     <ul class="divide-y divide-ink-100">

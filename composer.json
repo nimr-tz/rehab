@@ -11,6 +11,7 @@
         "chillerlan/php-qrcode": "^6.0",
         "laravel/fortify": "^1.40",
         "laravel/framework": "^13.17",
+        "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
         "league/iso3166": "^4.5",
         "spatie/laravel-permission": "^8.3"
