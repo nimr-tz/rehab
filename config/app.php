@@ -78,7 +78,8 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // The summit is in Tanzania: programme times, deadlines and scans are East Africa Time.
+    'timezone' => env('APP_TIMEZONE', 'Africa/Dar_es_Salaam'),
 
     /*
     |--------------------------------------------------------------------------
