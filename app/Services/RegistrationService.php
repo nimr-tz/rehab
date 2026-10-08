@@ -5,14 +5,18 @@ namespace App\Services;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
+use App\Enums\WaiverReason;
 use App\Models\Edition;
+use App\Models\FeeWaiver;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\RegistrationCategory;
 use App\Models\User;
+use App\Notifications\FeeWaived;
 use App\Notifications\PaymentReceived;
 use App\Notifications\PaymentRejected;
 use App\Notifications\RegistrationConfirmed;
+use App\Notifications\WaiverWithdrawn;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -75,7 +79,8 @@ class RegistrationService
                 'method' => PaymentMethod::from($data['method']),
                 'provider' => $data['method'] === PaymentMethod::MobileMoney->value ? $data['provider'] : null,
                 'currency' => $registration->currency,
-                'amount' => $registration->amount,
+                // What is due: the fee, less any waiver.
+                'amount' => $registration->amountDue(),
                 'transaction_reference' => trim($data['transaction_reference']),
                 'payer_name' => trim($data['payer_name']),
                 'payer_phone' => $data['payer_phone'] ?? null,
@@ -133,6 +138,90 @@ class RegistrationService
         });
 
         $payment->registration->user->notify(new PaymentRejected($payment->fresh()));
+    }
+
+    /**
+     * Waive the whole fee, which confirms the registration at once, or part of
+     * it, which leaves the rest to pay. Only while the fee is unpaid and no
+     * payment is waiting for verification, and one waiver at a time.
+     */
+    public function waive(Registration $registration, User $officer, float $amount, WaiverReason $reason, ?string $note = null): FeeWaiver
+    {
+        $waiver = DB::transaction(function () use ($registration, $officer, $amount, $reason, $note) {
+            $registration = Registration::lockForUpdate()->findOrFail($registration->id);
+            $amount = round($amount, 2);
+
+            if ($registration->status !== RegistrationStatus::PendingPayment) {
+                throw new InvalidArgumentException($registration->status === RegistrationStatus::PaymentSubmitted
+                    ? 'A payment is waiting for verification. Verify or reject it first.'
+                    : 'Only a registration that is still awaiting payment can have its fee waived.');
+            }
+            if ($registration->isWaived()) {
+                throw new InvalidArgumentException('This registration already has a waiver. Withdraw it first to change it.');
+            }
+            if ($amount <= 0 || $amount > (float) $registration->amount) {
+                throw new InvalidArgumentException('The waiver must be more than nothing and no more than the fee of '.$registration->formattedAmount().'.');
+            }
+            if ($reason === WaiverReason::Other && blank($note)) {
+                throw new InvalidArgumentException('Explain the waiver in the note.');
+            }
+
+            $waiver = $registration->waivers()->create([
+                'currency' => $registration->currency,
+                'amount' => $amount,
+                'reason' => $reason,
+                'note' => filled($note) ? trim($note) : null,
+                'granted_by' => $officer->id,
+            ]);
+
+            $registration->update(['waived_amount' => $amount]);
+
+            // Nothing left to pay: the registration is confirmed.
+            if ($registration->amountDue() <= 0) {
+                $registration->update(['status' => RegistrationStatus::Confirmed, 'confirmed_at' => now()]);
+            }
+
+            return $waiver->setRelation('registration', $registration);
+        });
+
+        $waiver->registration->user->notify(new FeeWaived($waiver));
+
+        return $waiver;
+    }
+
+    /**
+     * Withdraw a waiver: the full fee is due again. Not once the participant
+     * has checked in or paid the rest, and not while a payment is being verified.
+     */
+    public function withdrawWaiver(FeeWaiver $waiver, User $officer, string $reason): void
+    {
+        DB::transaction(function () use ($waiver, $officer, $reason) {
+            $registration = Registration::lockForUpdate()->findOrFail($waiver->registration_id);
+            $waiver = FeeWaiver::lockForUpdate()->findOrFail($waiver->id);
+
+            if (! $waiver->isActive()) {
+                throw new InvalidArgumentException('This waiver has already been withdrawn.');
+            }
+            if ($registration->checked_in_at) {
+                throw new InvalidArgumentException('The participant has checked in, so the waiver can no longer be withdrawn.');
+            }
+            if ($registration->status === RegistrationStatus::PaymentSubmitted) {
+                throw new InvalidArgumentException('A payment is waiting for verification. Verify or reject it first.');
+            }
+            if ($registration->payments()->where('status', PaymentStatus::Verified)->exists()) {
+                throw new InvalidArgumentException('The participant has paid the rest of the fee, so the waiver can no longer be withdrawn.');
+            }
+
+            $waiver->update(['revoked_at' => now(), 'revoked_by' => $officer->id, 'revoke_reason' => trim($reason)]);
+            $registration->update([
+                'waived_amount' => 0,
+                'status' => RegistrationStatus::PendingPayment,
+                'confirmed_at' => null,
+            ]);
+        });
+
+        $waiver->refresh()->load('registration.user');
+        $waiver->registration->user->notify(new WaiverWithdrawn($waiver));
     }
 
     private function assertPending(Payment $payment): void

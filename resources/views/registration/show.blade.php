@@ -102,7 +102,13 @@
                     <div class="flex justify-between gap-4"><dt class="text-ink-500">Status</dt><dd><x-status :tone="$registration->status->tone()">{{ $registration->status->label() }}</x-status></dd></div>
                     <div class="flex justify-between gap-4"><dt class="text-ink-500">Reference</dt><dd class="font-mono font-semibold text-ink-900">{{ $registration->reference }}</dd></div>
                     <div class="flex justify-between gap-4"><dt class="text-ink-500">Category</dt><dd class="text-right font-medium text-ink-900">{{ $registration->category->name }}</dd></div>
-                    <div class="flex justify-between gap-4"><dt class="text-ink-500">Fee</dt><dd class="font-bold text-ink-900">{{ $registration->formattedAmount() }}</dd></div>
+                    <div class="flex justify-between gap-4"><dt class="text-ink-500">Fee</dt><dd @class(['font-bold text-ink-900', 'line-through decoration-ink-400' => $registration->isFullyWaived()])>{{ $registration->formattedAmount() }}</dd></div>
+                    @if ($registration->isWaived())
+                        <div class="flex justify-between gap-4"><dt class="text-ink-500">Waived by the organisers</dt><dd class="font-semibold text-emerald-700">{{ $registration->isFullyWaived() ? 'Full fee' : '− '.$registration->currency.' '.number_format((float) $registration->waived_amount) }}</dd></div>
+                        @unless ($registration->isFullyWaived())
+                            <div class="flex justify-between gap-4"><dt class="text-ink-500">To pay</dt><dd class="font-bold text-ink-900">{{ $registration->formattedDue() }}</dd></div>
+                        @endunless
+                    @endif
                     <div class="flex justify-between gap-4"><dt class="text-ink-500">Name on badge</dt><dd class="text-right font-medium text-ink-900">{{ $registration->displayName() }}</dd></div>
                     @if ($registration->confirmed_at)
                         <div class="flex justify-between gap-4"><dt class="text-ink-500">Confirmed</dt><dd class="font-medium text-ink-900">{{ $registration->confirmed_at->format('j M Y') }}</dd></div>
@@ -120,7 +126,7 @@
             </x-card>
 
             @if ($registration->canSubmitPayment())
-                <x-card title="Pay {{ $registration->formattedAmount() }}" description="Quote your reference {{ $registration->reference }} with the payment.">
+                <x-card title="Pay {{ $registration->formattedDue() }}" description="Quote your reference {{ $registration->reference }} with the payment.">
                     @if ($registration->payments->first()?->status === PaymentStatus::Rejected)
                         <x-alert tone="danger" class="mb-5">
                             <span class="font-semibold">Your last payment could not be verified.</span>

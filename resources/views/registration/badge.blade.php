@@ -48,7 +48,7 @@
                         @if ($registration->status === RegistrationStatus::PaymentSubmitted)
                             Your payment is being verified. The badge unlocks as soon as finance confirms it.
                         @else
-                            Pay {{ $registration->formattedAmount() }} with reference {{ $registration->reference }} to unlock your badge.
+                            Pay {{ $registration->formattedDue() }} with reference {{ $registration->reference }} to unlock your badge.
                         @endif
                     </p>
                     <x-button class="mt-5" :href="route('registration.show')">Go to payment</x-button>

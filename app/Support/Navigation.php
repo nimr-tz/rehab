@@ -51,7 +51,8 @@ class Navigation
                 $item('Finalists to score', 'judging.index', 'judging.*', ['count' => self::unscoredFinalists($user)]),
             ],
             Role::FinanceOfficer => [
-                $item('Verification queue', 'finance.payments.index', 'finance.*', ['count' => Payment::where('status', PaymentStatus::Submitted)->count()]),
+                $item('Verification queue', 'finance.payments.index', 'finance.payments.*', ['count' => Payment::where('status', PaymentStatus::Submitted)->count()]),
+                $item('Fee waivers', 'finance.waivers.index', 'finance.waivers.*'),
             ],
             Role::RegistrationOfficer => [
                 $item('Registry & check-in', 'desk.index', 'desk.index'),

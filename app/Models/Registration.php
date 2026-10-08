@@ -18,6 +18,7 @@ class Registration extends Model
         return [
             'status' => RegistrationStatus::class,
             'amount' => 'decimal:2',
+            'waived_amount' => 'decimal:2',
             'needs_invitation_letter' => 'boolean',
             'confirmed_at' => 'datetime',
             'badge_printed_at' => 'datetime',
@@ -62,9 +63,41 @@ class Registration extends Model
             && ! $this->payments()->where('status', PaymentStatus::Submitted)->exists();
     }
 
+    public function waivers(): HasMany
+    {
+        return $this->hasMany(FeeWaiver::class)->latest('id');
+    }
+
+    public function activeWaiver(): HasOne
+    {
+        return $this->hasOne(FeeWaiver::class)->whereNull('revoked_at')->latestOfMany();
+    }
+
+    /** The fee of the category, before any waiver. */
     public function formattedAmount(): string
     {
         return $this->currency.' '.number_format((float) $this->amount);
+    }
+
+    /** What the participant still has to pay: the fee less any waiver. */
+    public function amountDue(): float
+    {
+        return max(0, round((float) $this->amount - (float) $this->waived_amount, 2));
+    }
+
+    public function formattedDue(): string
+    {
+        return $this->currency.' '.number_format($this->amountDue());
+    }
+
+    public function isWaived(): bool
+    {
+        return (float) $this->waived_amount > 0;
+    }
+
+    public function isFullyWaived(): bool
+    {
+        return $this->isWaived() && $this->amountDue() <= 0;
     }
 
     public function displayName(): string

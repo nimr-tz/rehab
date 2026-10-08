@@ -12,6 +12,7 @@ use App\Http\Controllers\Awards\JudgingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeskController;
 use App\Http\Controllers\Finance\PaymentController as FinancePaymentController;
+use App\Http\Controllers\Finance\WaiverController;
 use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\Media\AlbumController as MediaAlbumController;
 use App\Http\Controllers\Media\PhotoController as MediaPhotoController;
@@ -74,9 +75,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/abstracts/{abstract}/edit', [AbstractController::class, 'edit'])->name('abstracts.edit');
         Route::put('/abstracts/{abstract}', [AbstractController::class, 'update'])->name('abstracts.update');
         Route::post('/abstracts/{abstract}/withdraw', [AbstractController::class, 'withdraw'])->name('abstracts.withdraw');
-    });
         Route::get('/abstracts/{abstract}/revision', [AbstractController::class, 'revision'])->name('abstracts.revision.edit');
         Route::put('/abstracts/{abstract}/revision', [AbstractController::class, 'submitRevision'])->name('abstracts.revision.update');
+    });
 
     // Reviewers: double-blind, they never see who wrote an abstract.
     Route::middleware('role:reviewer')->group(function () {
@@ -92,8 +93,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/abstracts/{abstract}/reviewers', [ScientificAbstractController::class, 'assign'])->name('abstracts.assign');
         Route::delete('/abstracts/{abstract}/reviewers/{assignment}', [ScientificAbstractController::class, 'unassign'])->name('abstracts.unassign');
         Route::post('/abstracts/{abstract}/decision', [ScientificAbstractController::class, 'decide'])->name('abstracts.decide');
-        Route::get('/reviewers', ReviewerController::class)->name('reviewers');
         Route::put('/abstracts/{abstract}/revision-due', [ScientificAbstractController::class, 'extendRevision'])->name('abstracts.revision-due');
+        Route::get('/reviewers', ReviewerController::class)->name('reviewers');
     });
 
     // Awards judges score the finalists of the awards they are assigned to.
@@ -130,6 +131,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/payments/{payment}/proof', [FinancePaymentController::class, 'proof'])->name('payments.proof');
         Route::post('/payments/{payment}/verify', [FinancePaymentController::class, 'verify'])->name('payments.verify');
         Route::post('/payments/{payment}/reject', [FinancePaymentController::class, 'reject'])->name('payments.reject');
+
+        // Fee waivers, in whole or in part
+        Route::get('/waivers', [WaiverController::class, 'index'])->name('waivers.index');
+        Route::get('/waivers/export', [WaiverController::class, 'export'])->name('waivers.export');
+        Route::get('/waivers/new/{registration}', [WaiverController::class, 'create'])->name('waivers.create');
+        Route::post('/waivers/new/{registration}', [WaiverController::class, 'store'])->name('waivers.store');
+        Route::post('/waivers/{waiver}/withdraw', [WaiverController::class, 'withdraw'])->name('waivers.withdraw');
     });
 
     // Registration desk

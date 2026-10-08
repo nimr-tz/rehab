@@ -25,6 +25,9 @@
             <dl class="space-y-3 text-sm">
                 <div><dt class="text-ink-500">Reference</dt><dd class="mt-0.5 font-mono font-semibold text-ink-900">{{ $registration->reference }}</dd></div>
                 <div><dt class="text-ink-500">Category · fee</dt><dd class="mt-0.5 text-ink-900">{{ $registration->category->name }} · {{ $registration->formattedAmount() }}</dd></div>
+                @if ($registration->activeWaiver)
+                    <div><dt class="text-ink-500">Fee waiver</dt><dd class="mt-0.5 text-ink-900">{{ $registration->isFullyWaived() ? 'Full fee' : $registration->activeWaiver->formattedAmount().' waived · pays '.$registration->formattedDue() }}<span class="block text-xs text-ink-500">{{ $registration->activeWaiver->reason->label() }}@if ($registration->activeWaiver->note) · {{ $registration->activeWaiver->note }}@endif</span></dd></div>
+                @endif
                 <div><dt class="text-ink-500">Registered</dt><dd class="mt-0.5 text-ink-900">{{ $registration->created_at->format('j M Y') }}</dd></div>
                 <div><dt class="text-ink-500">Confirmed</dt><dd class="mt-0.5 text-ink-900">{{ $registration->confirmed_at?->format('j M Y') ?? '—' }}</dd></div>
                 <div><dt class="text-ink-500">Checked in</dt><dd class="mt-0.5 text-ink-900">{{ $registration->checked_in_at?->format('j M Y, H:i') ?? 'Not yet' }}</dd></div>

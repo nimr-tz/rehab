@@ -45,7 +45,7 @@ class DashboardService
             ! $registration => ['Register for the '.$edition?->name.' '.$edition?->year, 'Choose your category and pay by bank transfer or mobile money. Your badge unlocks as soon as payment is verified.'],
             $registration->status === RegistrationStatus::PaymentSubmitted => ['Your payment is being verified', 'Submitted by '.$latest->channel().' on '.$latest->created_at->format('j F').'. Finance usually confirms within 2 working days, then your badge unlocks.'],
             $registration->status === RegistrationStatus::PendingPayment && $latest?->status === PaymentStatus::Rejected => ['Please resubmit your payment', 'We could not verify your last payment: '.$latest->rejection_reason],
-            $registration->status === RegistrationStatus::PendingPayment => ['Pay your registration fee', $registration->formattedAmount().' with reference '.$registration->reference.'. Pay by bank transfer or mobile money, then upload the proof.'],
+            $registration->status === RegistrationStatus::PendingPayment => ['Pay your registration fee', $registration->formattedDue().' with reference '.$registration->reference.'. Pay by bank transfer or mobile money, then upload the proof.'],
             default => ['You are all set for the Summit', 'Your registration is confirmed. Download your badge, plan your sessions and bring your badge to the registration desk.'],
         };
 
@@ -193,11 +193,13 @@ class DashboardService
 
         $byCurrency = fn (string $currency, $status = null) => $payments->where('currency', $currency)
             ->when($status, fn ($c) => $c->where('status', $status))->sum('amount');
-        $expected = fn (string $currency) => $registrations->where('currency', $currency)->sum('amount');
+        // Expected is what participants owe: their fees less any waivers.
+        $expected = fn (string $currency) => $registrations->where('currency', $currency)->sum(fn ($r) => $r->amountDue());
         $money = collect(['TZS', 'USD'])->mapWithKeys(fn ($c) => [$c => [
             'verified' => $byCurrency($c, PaymentStatus::Verified),
             'submitted' => $byCurrency($c, PaymentStatus::Submitted),
             'expected' => $expected($c),
+            'waived' => $registrations->where('currency', $c)->sum(fn ($r) => (float) $r->waived_amount),
         ]]);
 
         $countries = $registrations->groupBy(fn ($r) => $r->user->country)->map->count()->sortDesc();
@@ -302,7 +304,7 @@ class DashboardService
             'bankCount' => $submitted->where('method', PaymentMethod::BankTransfer)->count(),
             'collection' => collect(['TZS', 'USD'])->mapWithKeys(fn ($c) => [$c => [
                 'collected' => $verified->where('currency', $c)->sum('amount'),
-                'expected' => $registrations->where('currency', $c)->sum('amount'),
+                'expected' => $registrations->where('currency', $c)->sum(fn ($r) => $r->amountDue()),
             ]]),
             'pulse' => $pulse,
             'pulseMax' => max(1, $pulse->max('count')),

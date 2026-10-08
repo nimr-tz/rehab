@@ -76,10 +76,11 @@
                             <div class="bg-sun-400" style="width: {{ $m['submitted'] / $expected * 100 }}%" title="Awaiting check: {{ $currency }} {{ number_format($m['submitted']) }}"></div>
                             <div class="flex-1 bg-ink-100" title="Not yet paid: {{ $currency }} {{ number_format($unpaid) }}"></div>
                         </div>
-                        <div class="mt-3 grid grid-cols-3 gap-3 text-sm">
+                        <div class="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                             <div class="border-l-[3px] border-olive-700 pl-3"><p class="text-xs font-semibold text-ink-500">Verified</p><p class="text-lg font-extrabold text-ink-900">{{ $millions($m['verified']) }}</p></div>
                             <div class="border-l-[3px] border-sun-400 pl-3"><p class="text-xs font-semibold text-ink-500">Submitted, awaiting check</p><p class="text-lg font-extrabold text-ink-900">{{ $millions($m['submitted']) }}</p></div>
                             <div class="border-l-[3px] border-ink-300 pl-3"><p class="text-xs font-semibold text-ink-500">Expected, not yet paid</p><p class="text-lg font-extrabold text-ink-900">{{ $millions($unpaid) }}</p></div>
+                            <div class="border-l-[3px] border-brand-300 pl-3"><p class="text-xs font-semibold text-ink-500">Waived</p><p class="text-lg font-extrabold text-ink-900">{{ $millions($m['waived']) }}</p></div>
                         </div>
                     </div>
                 @endforeach

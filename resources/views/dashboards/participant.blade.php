@@ -52,7 +52,7 @@
                 @if (! $registration)
                     <x-button :href="route('registration.show')" class="!bg-sun-400 !text-ink-900 hover:!bg-sun-300">Register now</x-button>
                 @elseif ($registration->status === RegistrationStatus::PendingPayment)
-                    <x-button :href="route('registration.show')" class="!bg-sun-400 !text-ink-900 hover:!bg-sun-300" icon="banknotes">Pay {{ $registration->formattedAmount() }}</x-button>
+                    <x-button :href="route('registration.show')" class="!bg-sun-400 !text-ink-900 hover:!bg-sun-300" icon="banknotes">Pay {{ $registration->formattedDue() }}</x-button>
                 @elseif ($confirmed)
                     <x-button :href="route('registration.badge')" class="!bg-sun-400 !text-ink-900 hover:!bg-sun-300" icon="download">Download badge</x-button>
                     <x-button :href="route('programme')" variant="ghost" class="!text-white hover:!bg-white/10" icon="calendar">Plan your sessions</x-button>
@@ -114,7 +114,7 @@
 
             @if ($registration)
                 <dl class="mt-5 grid gap-x-6 gap-y-5 sm:grid-cols-3">
-                    <div><dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-500">Amount</dt><dd class="mt-1.5 text-2xl font-extrabold tracking-tight text-ink-900">{{ $registration->formattedAmount() }}</dd></div>
+                    <div><dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-500">Amount</dt><dd class="mt-1.5 text-2xl font-extrabold tracking-tight text-ink-900">{{ $registration->isFullyWaived() ? 'Waived' : $registration->formattedDue() }}</dd></div>
                     <div><dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-500">Category</dt><dd class="mt-1.5 font-semibold text-ink-900">{{ $registration->category->name }}</dd></div>
                     <div><dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-500">Payment reference</dt><dd class="mt-1.5 font-mono font-bold text-brand-700">{{ $registration->reference }}</dd></div>
                     @if ($latestPayment)

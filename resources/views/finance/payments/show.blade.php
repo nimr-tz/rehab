@@ -2,7 +2,7 @@
     use App\Enums\PaymentStatus;
     $registration = $payment->registration;
     $pending = $payment->status === PaymentStatus::Submitted;
-    $amountMatches = (float) $payment->amount === (float) $registration->amount && $payment->currency === $registration->currency;
+    $amountMatches = (float) $payment->amount === $registration->amountDue() && $payment->currency === $registration->currency;
 @endphp
 
 <x-layouts.portal :title="'Payment '.$registration->reference">
@@ -36,7 +36,7 @@
                     <div class="flex justify-between gap-4"><dt class="text-ink-500">Paid on</dt><dd class="font-medium text-ink-900">{{ $payment->paid_on->format('j M Y') }}</dd></div>
                     <div class="flex justify-between gap-4"><dt class="text-ink-500">Paid by</dt><dd class="text-right font-medium text-ink-900">{{ $payment->payer_name }}@if ($payment->payer_phone)<br><span class="text-xs text-ink-500">{{ $payment->payer_phone }}</span>@endif</dd></div>
                     <div class="flex justify-between gap-4"><dt class="text-ink-500">Amount</dt><dd class="font-bold text-ink-900">{{ $payment->formattedAmount() }}</dd></div>
-                    <div class="flex justify-between gap-4"><dt class="text-ink-500">Fee due</dt><dd class="font-medium text-ink-900">{{ $registration->formattedAmount() }}</dd></div>
+                    <div class="flex justify-between gap-4"><dt class="text-ink-500">Fee due</dt><dd class="text-right font-medium text-ink-900">{{ $registration->formattedDue() }}@if ($registration->isWaived())<span class="block text-xs font-normal text-ink-500">{{ $registration->formattedAmount() }} less a waiver</span>@endif</dd></div>
                 </dl>
                 @unless ($amountMatches)
                     <x-alert tone="warning" class="mt-4">The amount differs from the fee due.</x-alert>
