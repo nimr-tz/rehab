@@ -19,7 +19,7 @@
                class="fixed inset-y-0 left-0 z-50 flex w-[264px] -translate-x-full flex-col bg-brand-700 text-white transition-[translate] lg:sticky lg:top-0 lg:h-screen lg:translate-x-0">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-5 pb-6 pt-6">
                 <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white shadow-soft">
-                    <img src="{{ asset('images/brand/logo-mark-sm.png') }}" alt="" class="h-9 w-auto">
+                    <x-brand.mark class="h-9 w-auto" />
                 </span>
                 <span class="leading-tight">
                     <span class="block text-[17px] font-bold">{{ $summit->shortTitle() }}</span>

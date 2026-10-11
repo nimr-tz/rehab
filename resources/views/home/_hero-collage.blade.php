@@ -15,7 +15,7 @@
                  alt="The summit's entrance arch at the convention centre"
                  class="absolute -right-4 bottom-0 hidden aspect-[3/2] w-[44%] rounded-[20px] border-[6px] border-white object-cover shadow-lift sm:block">
             <div class="absolute bottom-0 left-0 w-[34%] rounded-full bg-white p-2.5 shadow-lift">
-                @include('home._hero-logo-mark')
+                <x-brand.logo />
             </div>
         </div>
     </div>

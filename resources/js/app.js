@@ -7,39 +7,55 @@ import mpesaPay from './mpesa-pay';
 Alpine.data('scorecard', scorecard);
 Alpine.data('mpesaPay', mpesaPay);
 
-// Animated 2027 logo. It builds up from an empty first frame, so it replaces the
-// still image instead of layering over it. On small screens, with reduced motion,
-// or if it has not loaded within 1.2s, the still image stays.
+// Animated 2027 logo, in two parts: an intro that builds the logo up from an
+// empty first frame (played once), then a loop of the dots orbiting the
+// finished logo, which repeats without a visible restart. The intro's last
+// frame leads straight into the loop's first.
 //
-// The WebP loops forever, holding the finished logo for a moment between runs.
+// With reduced motion the still image stays. If the intro has not loaded
+// within 1.2s, the still stays until the loop is ready, then the loop takes
+// over: it shows the finished logo, so the change is not noticeable.
+const LOGO_INTRO_MS = 20 * 80;
 
-Alpine.data('brandLogo', (animatedSrc) => ({
+Alpine.data('brandLogo', (introSrc, loopSrc) => ({
     animated: false,
     stillHidden: false,
 
     init() {
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        if (!window.matchMedia('(min-width: 1024px)').matches) return;
+
+        const loop = new Image();
+        const loopReady = new Promise((resolve) => {
+            loop.onload = resolve;
+            loop.onerror = () => {};
+        });
+        loop.src = loopSrc;
+
+        const play = (src) => {
+            this.$refs.anim.src = src;
+            this.animated = true;
+            this.stillHidden = true;
+        };
 
         this.stillHidden = true;
-        let settled = false;
-        const showStill = () => {
-            if (settled) return;
-            settled = true;
+        let introStarted = false;
+        const fallback = setTimeout(() => {
+            if (introStarted) return;
+            introStarted = true;
             this.stillHidden = false;
-        };
-        const fallback = setTimeout(showStill, 1200);
+            loopReady.then(() => play(loopSrc));
+        }, 1200);
 
-        const img = new Image();
-        img.onload = () => {
-            if (settled) return;
-            settled = true;
+        const intro = new Image();
+        intro.onload = () => {
+            if (introStarted) return;
+            introStarted = true;
             clearTimeout(fallback);
-            this.$refs.anim.src = img.src;
-            this.animated = true;
+            play(introSrc);
+            setTimeout(() => loopReady.then(() => play(loopSrc)), LOGO_INTRO_MS);
         };
-        img.onerror = showStill;
-        img.src = animatedSrc;
+        intro.onerror = () => {};
+        intro.src = introSrc;
     },
 }));
 

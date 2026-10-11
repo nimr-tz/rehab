@@ -3,7 +3,7 @@
         <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div class="flex flex-col gap-4">
                 <div class="flex items-center gap-3">
-                    <span class="flex rounded-[14px] bg-white p-1.5"><img src="{{ asset('images/brand/logo-mark-sm.png') }}" alt="{{ $summit->get('organiser') }}" class="h-11 w-auto"></span>
+                    <span class="flex rounded-[14px] bg-white p-1.5"><x-brand.mark :alt="$summit->get('organiser')" class="h-11 w-auto" /></span>
                     <span class="text-lg font-bold text-white">{{ $summit->shortTitle() }}</span>
                 </div>
                 <p class="text-[13px] font-bold uppercase tracking-[0.24em] text-sun-400">Transforming lives</p>

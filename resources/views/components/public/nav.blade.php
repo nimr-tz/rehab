@@ -17,7 +17,7 @@
 <nav x-data="{ open: false }" class="sticky top-0 z-50 border-b border-ink-100 bg-white/95 backdrop-blur-md">
     <div class="wrap flex min-h-[76px] items-center justify-between gap-3 sm:gap-6">
         <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-3">
-            <img src="{{ asset('images/brand/logo-mark-sm.png') }}" alt="" class="h-10 w-auto sm:h-11">
+            <x-brand.mark class="h-10 w-auto sm:h-11" />
             <span class="flex flex-col leading-tight">
                 <span class="whitespace-nowrap text-[15px] font-bold text-brand-700 sm:text-[17px]">{{ $summit->shortTitle() }}</span>
                 <span class="whitespace-nowrap text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">{{ $summit->get('organiser') }}</span>

@@ -61,7 +61,7 @@ Button (primary, secondary, ghost, danger; sm, md, lg) · Field (label, leading 
 ## Logo usage
 
 - `logo-mark.png` (trimmed, transparent) goes in the portal header next to the live-text wordmark "Rehab Health" and "Events Portal".
-- `logo-2027-animated.webp` appears on the sign-in and public hero only, sized at 400px or smaller. It loops over the still image `logo-2027-still.webp`, holding the finished logo for 2.5 seconds between runs (the copy in `design/assets` plays once). With reduced motion or on small screens, only the still shows.
+- The animated logo appears in the public hero and on the sign-in pages (`x-brand.logo`): `logo-2027-intro.webp` builds it up once, then `logo-2027-loop.webp` repeats the dots orbiting the finished logo, joined so the loop never visibly restarts (both cut from `design/assets/logo-2027-animated.webp`). The small mark in headers, the sidebar and the footer (`x-brand.mark`) is the same loop cropped to the mark, `logo-mark-loop.webp`. With reduced motion, the still images show.
 - The client's files are raster images. A vector logo is still needed for printed badges and certificates.
 
 ## Portal and dashboards

@@ -370,7 +370,7 @@
         <p class="eyebrow">Organisers</p>
         <div class="mt-6 grid gap-4 md:grid-cols-3">
             <div class="flex items-center gap-5 rounded-card border border-ink-100 p-7">
-                <img src="{{ asset('images/brand/logo-mark-sm.png') }}" alt="{{ $summit->get('organiser') }}" class="h-[72px] w-auto">
+                <x-brand.mark :alt="$summit->get('organiser')" class="h-[72px] w-auto" />
                 <div>
                     <p class="text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Organised by</p>
                     <p class="mt-1 text-[22px] font-bold text-brand-700">{{ $summit->get('organiser') }}</p>
