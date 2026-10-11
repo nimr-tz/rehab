@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\FollowWorkspace;
+use App\Http\Middleware\RunBackgroundWork;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
-        $middleware->web(append: [FollowWorkspace::class]);
+        $middleware->web(append: [FollowWorkspace::class, RunBackgroundWork::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
