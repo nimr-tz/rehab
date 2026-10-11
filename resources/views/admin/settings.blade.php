@@ -23,7 +23,11 @@
 
         <x-card title="The summit">
             <div class="grid gap-5 sm:grid-cols-4">
-                <x-form.input name="year" type="number" label="Year" :value="$edition->year" required />
+                @if ($yearLocked)
+                    <x-form.input name="year" type="number" label="Year" :value="$edition->year" readonly hint="Fixed: people have registered." required />
+                @else
+                    <x-form.input name="year" type="number" label="Year" :value="$edition->year" required />
+                @endif
                 <x-form.input name="ordinal" label="Edition" :value="$edition->ordinal" placeholder="5th" required />
                 <div class="sm:col-span-2"><x-form.input name="name" label="Name" :value="$edition->name" required /></div>
                 <div class="sm:col-span-2"><x-form.input name="short_name" label="Short name" :value="$edition->short_name" required /></div>
@@ -97,4 +101,48 @@
             <x-button size="lg" icon="check" class="shadow-lift">Save settings</x-button>
         </div>
     </form>
+
+    @if ($edition->exists)
+        <div class="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+            <x-card title="Summits" description="One a year. The portal works on the current one; earlier years and their records are kept." :padding="false">
+                <ul class="divide-y divide-ink-100">
+                    @foreach ($editions as $row)
+                        <li class="flex items-center justify-between gap-3 px-6 py-3">
+                            <span class="min-w-0">
+                                <span class="block font-semibold text-ink-900">{{ $row->year }} · {{ $row->ordinal }} {{ $row->short_name }}</span>
+                                <span class="block text-xs text-ink-500">{{ $row->registrations_count }} {{ \Illuminate\Support\Str::plural('registration', $row->registrations_count) }} · {{ $row->abstracts_count }} {{ \Illuminate\Support\Str::plural('abstract', $row->abstracts_count) }}</span>
+                            </span>
+                            @if ($row->is_current)
+                                <x-status tone="success">Current</x-status>
+                            @else
+                                <form method="POST" action="{{ route('admin.settings.current', $row) }}" onsubmit="return confirm('Make {{ $row->year }} the summit the portal works on?')">
+                                    @csrf
+                                    @method('PUT')
+                                    <x-button variant="ghost" size="sm">Make current</x-button>
+                                </form>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            </x-card>
+
+            <x-card title="Start the next summit" description="When this year's summit is over. Registration and abstracts stay closed until you open them.">
+                <form method="POST" action="{{ route('admin.settings.next') }}" class="space-y-5">
+                    @csrf
+                    <div class="grid gap-5 sm:grid-cols-4">
+                        <x-form.input name="next_year" type="number" label="Year" :value="old('next_year', $next['year'])" required />
+                        <x-form.input name="next_ordinal" label="Edition" :value="old('next_ordinal', $next['ordinal'])" placeholder="6th" required />
+                        <div class="sm:col-span-2"><x-form.input name="next_name" label="Name" :value="old('next_name', $next['name'])" required /></div>
+                        <div class="sm:col-span-2"><x-form.input name="next_short_name" label="Short name" :value="old('next_short_name', $next['short_name'])" required /></div>
+                    </div>
+                    <div class="space-y-3">
+                        <x-form.checkbox name="copy_categories" label="Copy the registration categories and fees" :checked="old('copy_categories', true)" hint="Edit the fees afterwards if they change." />
+                        <x-form.checkbox name="copy_topics" label="Copy the abstract topics" :checked="old('copy_topics', true)" />
+                        <x-form.checkbox name="confirm_next" label="Move the portal to the new summit now" hint="Participants will see the new year. Their accounts carry over; they register again." />
+                    </div>
+                    <x-button icon="calendar">Start the {{ old('next_year', $next['year']) }} summit</x-button>
+                </form>
+            </x-card>
+        </div>
+    @endif
 </x-layouts.portal>

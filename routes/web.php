@@ -200,5 +200,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/users/{user}/roles', [UserController::class, 'roles'])->name('users.roles');
         Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
+        Route::post('/settings/next', [SettingsController::class, 'startNext'])->name('settings.next');
+        Route::put('/settings/editions/{edition}/current', [SettingsController::class, 'makeCurrent'])->name('settings.current');
     });
 });
