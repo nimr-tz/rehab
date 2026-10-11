@@ -136,7 +136,7 @@
                 </ul>
             @else
                 <x-empty icon="ticket" title="You have not registered yet" class="!py-8">
-                    Registration covers all sessions, materials, meals and your CPD certificate.
+                    Registration covers all sessions, materials and meals, and your attendance certificate.
                     <x-slot:action><x-button :href="route('registration.show')">Register</x-button></x-slot:action>
                 </x-empty>
             @endif
@@ -283,7 +283,7 @@
                         @endforeach
                     </ul>
                 @endif
-                <p class="mt-4 text-sm leading-relaxed text-ink-600">Have your badge scanned at each session: every session earns its own CPD points. Your certificate is issued in the portal after the Summit.</p>
+                <p class="mt-4 text-sm leading-relaxed text-ink-600">Have your badge scanned at each session: every session earns its own CPD points, recorded here. Your attendance certificate is in the portal after the Summit.</p>
             </section>
         </div>
     @endif

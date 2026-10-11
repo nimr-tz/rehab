@@ -67,6 +67,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/registration', [RegistrationController::class, 'store'])->name('registration.store');
         Route::get('/registration/badge-and-check-in', [RegistrationController::class, 'badgePage'])->name('registration.badge.show');
         Route::get('/registration/badge', [RegistrationController::class, 'badge'])->name('registration.badge');
+        Route::put('/registration/badge-name', [RegistrationController::class, 'badgeName'])->name('registration.badge-name');
         Route::get('/registration/invitation-letter', [RegistrationController::class, 'letter'])->name('registration.letter');
         Route::post('/registration/payments', [PaymentController::class, 'store'])->name('registration.payments.store');
         Route::post('/registration/mpesa', [MpesaPaymentController::class, 'store'])->middleware('throttle:6,1')->name('registration.mpesa.store');
@@ -159,6 +160,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [DeskController::class, 'index'])->name('index');
         Route::get('/print-queue', [DeskController::class, 'queue'])->name('queue');
         Route::post('/print-queue/batch', [DeskController::class, 'printBatch'])->name('print-batch');
+        Route::get('/print-queue/batches/{batch}', [DeskController::class, 'reprintBatch'])->where('batch', '[0-9-]+')->name('reprint-batch');
         Route::get('/register', [DeskController::class, 'create'])->name('register');
         Route::post('/register', [DeskController::class, 'store'])->name('register.store');
         Route::get('/{registration}', [DeskController::class, 'show'])->name('show');
@@ -166,6 +168,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{registration}/mpesa/status', [DeskController::class, 'mpesaStatus'])->middleware('throttle:120,1')->name('mpesa.status');
         Route::post('/{registration}/check-in', [DeskController::class, 'checkIn'])->name('check-in');
         Route::get('/{registration}/badge', [DeskController::class, 'badge'])->name('badge');
+        Route::put('/{registration}/badge-name', [DeskController::class, 'badgeName'])->name('badge-name');
     });
 
     // Photographers: albums, uploads and publishing

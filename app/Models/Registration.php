@@ -117,6 +117,21 @@ class Registration extends Model
         return $this->badge_name ?: $this->user->name;
     }
 
+    /**
+     * Change the name printed on the badge. A badge already printed goes back
+     * into the desk's print queue, unless its owner has collected it.
+     */
+    public function renameBadge(?string $name): void
+    {
+        $name = filled($name) ? trim($name) : null;
+
+        if ($name === $this->badge_name) {
+            return;
+        }
+
+        $this->update(['badge_name' => $name] + ($this->checked_in_at ? [] : ['badge_printed_at' => null, 'badge_batch' => null]));
+    }
+
     /** The ribbon on the badge: presenters of an accepted abstract, students, everyone else. */
     public function badgeRole(): string
     {

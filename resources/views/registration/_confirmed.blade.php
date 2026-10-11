@@ -9,7 +9,7 @@
     <div class="lg:sticky lg:top-6">
         <x-badge-card :registration="$registration" />
         <p class="mx-auto mt-4 max-w-[360px] text-center text-xs text-ink-500">
-            Your summit ID. Wear it throughout: staff scan the code at the entrance and at each session for your CPD certificate.
+            Your summit ID. Wear it throughout: staff scan the code at the entrance and at each session to record your attendance and CPD points.
         </p>
     </div>
 
@@ -47,7 +47,7 @@
         <x-card title="At the summit">
             <ul class="space-y-4 text-sm text-ink-700">
                 <li class="flex gap-3"><x-icon name="printer" class="h-5 w-5 shrink-0 text-brand-600" /><span>Print your badge on A6 or A4 paper, or keep the PDF on your phone.</span></li>
-                <li class="flex gap-3"><x-icon name="qr" class="h-5 w-5 shrink-0 text-brand-600" /><span>Have the code on your badge scanned at the entrance and at each session. Your CPD certificate counts these scans.</span></li>
+                <li class="flex gap-3"><x-icon name="qr" class="h-5 w-5 shrink-0 text-brand-600" /><span>Have the code on your badge scanned at the entrance and at each session. Each session scanned earns its CPD points.</span></li>
                 <li class="flex gap-3"><x-icon name="map-pin" class="h-5 w-5 shrink-0 text-brand-600" /><span>{{ $summit->venueLine() ?? 'The venue will be announced soon.' }}{{ $summit->dateRange() ? ', '.$summit->dateRange() : '' }}.</span></li>
                 <li class="flex gap-3"><x-icon name="info" class="h-5 w-5 shrink-0 text-brand-600" /><span>Lost your badge? The registration desk reprints it from your badge number.</span></li>
             </ul>

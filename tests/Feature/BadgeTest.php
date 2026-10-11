@@ -94,4 +94,85 @@ class BadgeTest extends TestCase
             ->assertDontSee('alt="Check-in code"', false);
         $this->actingAs($registration->user)->get(route('registration.badge'))->assertForbidden();
     }
+
+    private function desk(): User
+    {
+        return User::factory()->create()->assignRole(Role::RegistrationOfficer->value);
+    }
+
+    public function test_a_participant_corrects_their_badge_name_and_a_printed_badge_is_printed_again(): void
+    {
+        $registration = $this->registered();
+        $registration->update(['badge_printed_at' => now(), 'badge_batch' => '270901-0900000']);
+
+        $this->actingAs($registration->user)->get(route('registration.badge.show'))->assertSee('Your badge has already been printed');
+        $this->actingAs($registration->user)->put(route('registration.badge-name'), ['badge_name' => '  Dr Neema A. Mushi '])->assertRedirect();
+
+        $registration->refresh();
+        $this->assertSame('Dr Neema A. Mushi', $registration->displayName());
+        $this->assertNull($registration->badge_printed_at);
+        $this->assertNull($registration->badge_batch);
+
+        // Empty: back to the account name.
+        $this->actingAs($registration->user)->put(route('registration.badge-name'), ['badge_name' => ''])->assertRedirect();
+        $this->assertSame('Neema Mushi', $registration->fresh()->displayName());
+    }
+
+    public function test_a_collected_badge_stays_marked_as_printed(): void
+    {
+        $registration = $this->registered();
+        $registration->update(['badge_printed_at' => now(), 'checked_in_at' => now()]);
+
+        $this->actingAs($this->desk())->put(route('desk.badge-name', $registration), ['badge_name' => 'Neema A. Mushi'])
+            ->assertSessionHas('status', 'Badge name saved.');
+
+        $this->assertSame('Neema A. Mushi', $registration->fresh()->badge_name);
+        $this->assertNotNull($registration->fresh()->badge_printed_at);
+    }
+
+    public function test_the_desk_corrects_a_name_and_reprints(): void
+    {
+        $registration = $this->registered();
+        $registration->update(['badge_printed_at' => now()]);
+
+        $this->actingAs($this->desk())->put(route('desk.badge-name', $registration), ['badge_name' => 'Neema Mushi-Kweka'])
+            ->assertSessionHas('status', 'Badge name changed. Print the badge again.');
+
+        $this->assertNull($registration->fresh()->badge_printed_at);
+        $this->actingAs($this->desk())->get(route('desk.show', $registration))->assertSee('Neema Mushi-Kweka')->assertSee('Print badge');
+    }
+
+    public function test_a_printed_batch_can_be_printed_again(): void
+    {
+        $first = $this->registered();
+        $second = $this->registered();
+        $unpaid = $this->registered(confirmed: false);
+        $desk = $this->desk();
+
+        $this->actingAs($desk)->post(route('desk.print-batch'))->assertOk()->assertHeader('content-type', 'application/pdf');
+
+        $batch = $first->fresh()->badge_batch;
+        $this->assertNotNull($batch);
+        $this->assertSame($batch, $second->fresh()->badge_batch);
+        $this->assertNull($unpaid->fresh()->badge_printed_at);
+
+        $this->actingAs($desk)->get(route('desk.queue'))->assertSee('Printed batches')->assertSee('2 badges');
+        $this->actingAs($desk)->get(route('desk.reprint-batch', $batch))->assertOk()->assertHeader('content-type', 'application/pdf');
+        $this->actingAs($desk)->post(route('desk.print-batch'))->assertNotFound();
+    }
+
+    public function test_the_desk_works_on_the_current_summit_only(): void
+    {
+        $registration = $this->registered();
+        $this->edition->update(['is_current' => false]);
+        Edition::create(['year' => 2028, 'name' => 'Rehabilitation Summit', 'short_name' => 'Rehab Summit', 'ordinal' => '6th', 'is_current' => true]);
+        app(Summit::class)->refresh();
+        $desk = $this->desk();
+
+        $this->actingAs($desk)->get(route('desk.show', $registration))->assertNotFound();
+        $this->actingAs($desk)->post(route('desk.check-in', $registration))->assertNotFound();
+        $this->actingAs($desk)->get(route('desk.badge', $registration))->assertNotFound();
+        $this->actingAs($desk)->put(route('desk.badge-name', $registration), ['badge_name' => 'X'])->assertNotFound();
+        $this->assertNull($registration->fresh()->checked_in_at);
+    }
 }

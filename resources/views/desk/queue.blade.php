@@ -40,20 +40,38 @@
             @endif
         </x-card>
 
-        <x-card title="Recently printed" :padding="false">
-            <ul class="divide-y divide-ink-100">
-                @forelse ($printed as $registration)
-                    <li class="flex items-center justify-between gap-3 px-6 py-3">
-                        <span class="min-w-0">
-                            <span class="block truncate text-sm font-semibold text-ink-900">{{ $registration->displayName() }}</span>
-                            <span class="block text-xs text-ink-500">{{ $registration->badge_printed_at->diffForHumans() }}</span>
-                        </span>
-                        <x-button variant="ghost" size="sm" :href="route('desk.badge', $registration)">Reprint</x-button>
-                    </li>
-                @empty
-                    <li class="px-6 py-6 text-sm text-ink-500">No badges printed yet.</li>
-                @endforelse
-            </ul>
-        </x-card>
+        <div class="space-y-5">
+            @if ($batches->isNotEmpty())
+                <x-card title="Printed batches" description="If the printer jammed, print a whole batch again." :padding="false">
+                    <ul class="divide-y divide-ink-100">
+                        @foreach ($batches as $batch)
+                            <li class="flex items-center justify-between gap-3 px-6 py-3">
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-semibold text-ink-900">{{ $batch->badges }} {{ \Illuminate\Support\Str::plural('badge', $batch->badges) }}</span>
+                                    <span class="block text-xs text-ink-500">{{ \Illuminate\Support\Carbon::parse($batch->printed_at)->format('D j M, H:i') }}</span>
+                                </span>
+                                <x-button variant="ghost" size="sm" :href="route('desk.reprint-batch', $batch->badge_batch)" icon="printer">Print again</x-button>
+                            </li>
+                        @endforeach
+                    </ul>
+                </x-card>
+            @endif
+    
+            <x-card title="Recently printed" :padding="false">
+                <ul class="divide-y divide-ink-100">
+                    @forelse ($printed as $registration)
+                        <li class="flex items-center justify-between gap-3 px-6 py-3">
+                            <span class="min-w-0">
+                                <span class="block truncate text-sm font-semibold text-ink-900">{{ $registration->displayName() }}</span>
+                                <span class="block text-xs text-ink-500">{{ $registration->badge_printed_at->diffForHumans() }}</span>
+                            </span>
+                            <x-button variant="ghost" size="sm" :href="route('desk.badge', $registration)">Reprint</x-button>
+                        </li>
+                    @empty
+                        <li class="px-6 py-6 text-sm text-ink-500">No badges printed yet.</li>
+                    @endforelse
+                </ul>
+            </x-card>
+        </div>
     </div>
 </x-layouts.portal>

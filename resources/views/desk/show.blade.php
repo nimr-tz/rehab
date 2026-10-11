@@ -112,6 +112,14 @@
             @endif
 
             <x-card title="Details">
+                <form method="POST" action="{{ route('desk.badge-name', $registration) }}" class="mb-5 flex flex-col gap-3 border-b border-ink-100 pb-5 sm:flex-row sm:items-end">
+                    @csrf
+                    @method('PUT')
+                    <div class="flex-1">
+                        <x-form.input name="badge_name" label="Name on the badge" :value="old('badge_name', $registration->badge_name)" :placeholder="$user->name" maxlength="60" hint="Leave it empty to use the account name." />
+                    </div>
+                    <x-button variant="secondary" class="sm:mb-6">Save name</x-button>
+                </form>
                 <dl class="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
                     <div><dt class="text-ink-500">Badge no.</dt><dd class="mt-0.5 font-mono font-semibold text-ink-900">{{ $registration->reference }}</dd></div>
                     <div><dt class="text-ink-500">Category</dt><dd class="mt-0.5 text-ink-900">{{ $registration->category->name }} · {{ $registration->formattedAmount() }}</dd></div>

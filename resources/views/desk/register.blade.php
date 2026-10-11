@@ -14,7 +14,7 @@
                 <x-form.input name="last_name" label="Last name" required />
             </div>
             <div class="mt-5 grid gap-5 sm:grid-cols-2">
-                <x-form.input name="email" type="email" label="Email address" icon="mail" required hint="They get an email to set a password, for their badge and CPD certificate." />
+                <x-form.input name="email" type="email" label="Email address" icon="mail" required hint="They get an email to set a password, for their badge, CPD points and attendance certificate." />
                 <x-form.input name="phone" type="tel" label="Phone number" icon="phone" placeholder="+255 712 345 678" required />
                 <x-form.input name="institution" label="Institution" required />
                 <x-form.input name="profession" label="Profession" placeholder="e.g. Physiotherapist" required />

@@ -87,6 +87,18 @@ class RegistrationController extends Controller
         ]);
     }
 
+    /** The participant corrects the name printed on their badge. */
+    public function badgeName(Request $request): RedirectResponse
+    {
+        $registration = $request->user()->registrationFor($this->summit->edition());
+        abort_unless($registration, 404);
+
+        $data = $request->validate(['badge_name' => ['nullable', 'string', 'max:60']]);
+        $registration->renameBadge($data['badge_name'] ?? null);
+
+        return back()->with('status', 'The name on your badge is now '.$registration->displayName().'.');
+    }
+
     public function badge(Request $request, DocumentService $documents): Response
     {
         $registration = $request->user()->registrationFor($this->summit->edition());

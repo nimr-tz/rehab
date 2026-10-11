@@ -15,7 +15,7 @@
         <div class="space-y-5">
             <x-card title="Your badge">
                 @if ($confirmed)
-                    <p class="text-sm text-ink-600">Print it on A6 or A4 paper, or keep the PDF on your phone. Staff scan the QR code at the entrance and at each session door to record your CPD attendance.</p>
+                    <p class="text-sm text-ink-600">Print it on A6 or A4 paper, or keep the PDF on your phone. Staff scan the QR code at the entrance and at each session door to record your attendance and CPD points.</p>
                     <div class="mt-5 flex flex-wrap gap-2">
                         <x-button :href="route('registration.badge')" icon="download">Download badge (PDF)</x-button>
                         @if ($registration->needs_invitation_letter)
@@ -36,6 +36,22 @@
                     <x-button class="mt-5" :href="route('registration.show')">Register</x-button>
                 @endif
             </x-card>
+
+            @if ($registration)
+                <x-card title="Name on your badge" description="Leave it empty to use the name on your account.">
+                    <form method="POST" action="{{ route('registration.badge-name') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        @csrf
+                        @method('PUT')
+                        <div class="flex-1">
+                            <x-form.input name="badge_name" label="Badge name" :value="old('badge_name', $registration->badge_name)" :placeholder="$registration->user->name" maxlength="60" />
+                        </div>
+                        <x-button variant="secondary">Save</x-button>
+                    </form>
+                    @if ($registration->badge_printed_at && ! $registration->checked_in_at)
+                        <p class="mt-3 text-xs text-ink-500">Your badge has already been printed. If you change the name, the desk prints it again.</p>
+                    @endif
+                </x-card>
+            @endif
 
             <x-card title="At the venue">
                 <ul class="space-y-3 text-sm text-ink-700">

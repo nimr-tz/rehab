@@ -14,6 +14,7 @@ use App\Support\Summit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use InvalidArgumentException;
@@ -30,6 +31,8 @@ class DeskController extends Controller
         'payment_submitted' => 'Under verification',
         'pending_payment' => 'Awaiting payment',
     ];
+
+    private const BATCH_SIZE = 40;
 
     public function __construct(private Summit $summit) {}
 
@@ -87,7 +90,7 @@ class DeskController extends Controller
     /** One person at the desk: their badge, where they stand, and what the desk can do for them. */
     public function show(Registration $registration): View
     {
-        abort_unless($registration->edition_id === $this->summit->edition()?->id, 404);
+        $this->ensureCurrent($registration);
 
         $registration->load('user', 'category', 'payments.initiator', 'activeWaiver');
 
@@ -146,6 +149,7 @@ class DeskController extends Controller
     /** Send an M-Pesa request to the participant's phone from the desk. */
     public function mpesa(Request $request, Registration $registration, MpesaPaymentService $service): JsonResponse
     {
+        $this->ensureCurrent($registration);
         abort_unless(MpesaPaymentService::availableFor($registration), 404);
 
         $data = $request->validate([
@@ -169,13 +173,14 @@ class DeskController extends Controller
 
     public function mpesaStatus(Registration $registration, MpesaPaymentService $service): JsonResponse
     {
+        $this->ensureCurrent($registration);
         $payment = $registration->payments()->where('gateway', 'mpesa')->first();
         abort_unless($payment, 404);
 
         return response()->json(MpesaPaymentService::state($service->refresh($payment)));
     }
 
-    /** Badges waiting to be printed, in batches. */
+    /** Badges waiting to be printed, in batches, and the batches printed so far. */
     public function queue(): View
     {
         $edition = $this->summit->edition();
@@ -184,26 +189,52 @@ class DeskController extends Controller
         return view('desk.queue', [
             'unprinted' => (clone $confirmed)->whereNull('badge_printed_at')->orderBy('reference')->get(),
             'printed' => (clone $confirmed)->whereNotNull('badge_printed_at')->latest('badge_printed_at')->limit(12)->get(),
-            'batchSize' => 40,
+            'batches' => Registration::where('edition_id', $edition?->id)->whereNotNull('badge_batch')
+                ->selectRaw('badge_batch, count(*) as badges, min(badge_printed_at) as printed_at')
+                ->groupBy('badge_batch')->orderByDesc('badge_batch')->limit(10)->get(),
+            'batchSize' => self::BATCH_SIZE,
         ]);
     }
 
-    /** The next batch of unprinted badges as one PDF; they are marked as printed. */
+    /**
+     * The next batch of unprinted badges as one PDF. The PDF is made first, and
+     * only then are its badges marked as printed, with a batch number so the
+     * whole batch can be printed again if the printer fails.
+     */
     public function printBatch(DocumentService $documents): Response
     {
-        $batch = Registration::where('edition_id', $this->summit->edition()?->id)
-            ->where('status', RegistrationStatus::Confirmed)->whereNull('badge_printed_at')
-            ->orderBy('reference')->limit(40)->get();
+        return Cache::lock('desk:print-batch', 120)->block(30, function () use ($documents) {
+            $batch = Registration::where('edition_id', $this->summit->edition()?->id)
+                ->where('status', RegistrationStatus::Confirmed)->whereNull('badge_printed_at')
+                ->orderBy('reference')->limit(self::BATCH_SIZE)->get();
 
-        abort_if($batch->isEmpty(), 404, 'Every confirmed badge has been printed.');
+            abort_if($batch->isEmpty(), 404, 'Every confirmed badge has been printed.');
 
-        Registration::whereIn('id', $batch->pluck('id'))->update(['badge_printed_at' => now()]);
+            $number = now()->format('ymd-Hisv');
+            $pdf = $documents->badges($batch, 'badges-'.$number.'.pdf');
 
-        return $documents->badges($batch, 'badges-'.now()->format('Y-m-d-His').'.pdf');
+            Registration::whereIn('id', $batch->pluck('id'))->update(['badge_printed_at' => now(), 'badge_batch' => $number]);
+
+            return $pdf;
+        });
+    }
+
+    /** Print a batch again, as it went out. */
+    public function reprintBatch(string $batch, DocumentService $documents): Response
+    {
+        $badges = Registration::where('edition_id', $this->summit->edition()?->id)
+            ->where('badge_batch', $batch)->where('status', RegistrationStatus::Confirmed)
+            ->orderBy('reference')->get();
+
+        abort_if($badges->isEmpty(), 404);
+
+        return $documents->badges($badges, 'badges-'.$batch.'.pdf');
     }
 
     public function checkIn(Request $request, Registration $registration): RedirectResponse
     {
+        $this->ensureCurrent($registration);
+
         if (! $registration->isConfirmed()) {
             return back()->withErrors(['check_in' => $registration->user->name.' has not completed payment. Send them to the finance desk.']);
         }
@@ -217,11 +248,34 @@ class DeskController extends Controller
 
     public function badge(Registration $registration, DocumentService $documents): Response
     {
+        $this->ensureCurrent($registration);
         abort_unless($registration->isConfirmed(), 403, 'Badges are printed for confirmed registrations only.');
 
+        $pdf = $documents->badge($registration);
         $registration->update(['badge_printed_at' => $registration->badge_printed_at ?? now()]);
 
-        return $documents->badge($registration);
+        return $pdf;
+    }
+
+    /** Correct the name on the badge, for example a misspelling noticed at the desk. */
+    public function badgeName(Request $request, Registration $registration): RedirectResponse
+    {
+        $this->ensureCurrent($registration);
+
+        $data = $request->validate(['badge_name' => ['nullable', 'string', 'max:60']]);
+        $printed = (bool) $registration->badge_printed_at;
+
+        $registration->renameBadge($data['badge_name'] ?? null);
+
+        return back()->with('status', $printed && ! $registration->badge_printed_at
+            ? 'Badge name changed. Print the badge again.'
+            : 'Badge name saved.');
+    }
+
+    /** The desk works on this year's summit only. */
+    private function ensureCurrent(Registration $registration): void
+    {
+        abort_unless($registration->edition_id === $this->summit->edition()?->id, 404);
     }
 
     /** What the desk needs before doors open, computed from the data. */

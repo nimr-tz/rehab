@@ -52,7 +52,7 @@
         ['How do I pay the registration fee?', 'Pay by bank transfer or mobile money using the payment reference shown in your dashboard, then upload the receipt. A finance officer confirms the payment, after which your badge becomes available.'],
         ['I need a visa. Can I get an invitation letter?', 'Yes. Once you have registered, you can download an official invitation letter from your dashboard to support your visa application.'],
         ['How are the awards decided?', 'The scientific committee shortlists finalists from the accepted abstracts, and a panel of judges scores them during the summit. Judges never score their own work. Some honours are nominated by participants: sign in and choose "Awards" to nominate someone while nominations are open.'],
-        ['Will I receive a CPD certificate?', 'Attendance is recorded at each session you attend. Certificates are issued in the portal after the summit, based on that recorded attendance.'],
+        ['Will I receive CPD points and a certificate?', 'Your badge is scanned at each session you attend, and each session earns its CPD points, recorded in your portal account. After the summit you download a certificate of attendance from the portal.'],
     ];
 @endphp
 
@@ -168,7 +168,7 @@
             </div>
             <div class="rounded-[20px] bg-olive-50 p-7">
                 <p class="text-[2.75rem] font-extrabold tracking-tight text-olive-700">CPD</p>
-                <p class="mt-1.5 text-[17px] leading-snug text-ink-600">attendance recorded per session, with certificates after the summit</p>
+                <p class="mt-1.5 text-[17px] leading-snug text-ink-600">CPD points recorded per session, and a certificate of attendance after the summit</p>
             </div>
         </div>
     </section>
