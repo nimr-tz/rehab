@@ -171,6 +171,25 @@
                 <p class="mt-1.5 text-[17px] leading-snug text-ink-600">CPD points recorded per session, and a certificate of attendance after the summit</p>
             </div>
         </div>
+
+        {{-- Photos from the 2026 summit, until this year's are taken. --}}
+        <figure class="mt-16">
+            <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:grid-rows-2">
+                <img src="{{ asset('images/home/summit-plenary.webp') }}" width="1600" height="1067" loading="lazy" decoding="async"
+                     alt="A full hall listens to a speaker at the plenary, under the Rehabilitation Summit banner"
+                     class="col-span-2 aspect-[3/2] h-full w-full rounded-[20px] object-cover lg:row-span-2 lg:aspect-auto">
+                @foreach ([
+                    ['summit-first-aid', 'Young volunteers demonstrate first aid on a training manikin'],
+                    ['summit-panel', 'A panellist answers a question during a panel discussion'],
+                    ['summit-exhibition', 'An exhibitor presents assistive technology made with a 3D printer'],
+                    ['summit-question', 'A participant asks a question from the floor'],
+                ] as [$photo, $alt])
+                    <img src="{{ asset('images/home/'.$photo.'.webp') }}" width="900" height="600" loading="lazy" decoding="async" alt="{{ $alt }}"
+                         class="aspect-[3/2] h-full w-full rounded-[20px] object-cover">
+                @endforeach
+            </div>
+            <figcaption class="mt-4 text-sm text-ink-500">Rehabilitation Summit 2026 at the Mwalimu J.K. Nyerere International Convention Centre, Dar es Salaam.</figcaption>
+        </figure>
     </section>
 
     {{-- Key dates --}}
@@ -226,33 +245,38 @@
                 </ol>
                 <div class="mt-10 flex flex-wrap gap-3">
                     <a href="{{ route('register') }}" class="btn-pill bg-sun-400 text-ink-900 hover:bg-sun-300 focus-visible:ring-sun-300/50">Create your account →</a>
-                    {{-- Group registration arrives in Phase 2; the leader starts with their own account. --}}
-                    <a href="{{ route('register') }}" class="btn-pill border-[1.5px] border-white/50 text-white hover:bg-white/10 focus-visible:ring-white/30">Register a group</a>
+                    {{-- The leader signs in (or creates an account) first, then registers the group. --}}
+                    <a href="{{ route('groups.create') }}" class="btn-pill border-[1.5px] border-white/50 text-white hover:bg-white/10 focus-visible:ring-white/30">Register a group</a>
                 </div>
             </div>
 
-            <div class="self-start rounded-card bg-white p-8 text-ink-800 shadow-lift">
-                <div class="flex flex-wrap items-baseline justify-between gap-3">
-                    <h3 class="text-2xl font-bold text-brand-700">Registration fees</h3>
-                    @unless ($summit->feesConfirmed())
-                        <span class="text-[13px] font-bold text-ember-600">To be confirmed</span>
-                    @endunless
-                </div>
-                <div class="mt-5 divide-y divide-ink-100 border-t border-ink-100">
-                    @foreach ($summit->get('fees', []) as $fee)
-                        <div class="flex items-center justify-between gap-4 py-4">
-                            <span class="text-[17px] font-semibold">{{ $fee['label'] }}</span>
-                            <span class="text-[17px] font-semibold {{ filled($fee['amount']) ? 'text-ink-900' : 'text-ink-400' }}">
-                                {{ $fee['currency'] }} {{ filled($fee['amount']) ? number_format((float) $fee['amount']) : '—' }}
-                            </span>
-                        </div>
-                    @endforeach
-                </div>
-                <p class="mb-2.5 mt-6 text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Pay by</p>
-                <div class="flex flex-wrap gap-2">
-                    @foreach ($summit->get('payment_methods', []) as $method)
-                        <span class="whitespace-nowrap rounded-full bg-brand-50 px-3.5 py-2 text-sm font-semibold text-brand-700">{{ $method }}</span>
-                    @endforeach
+            <div class="space-y-6 self-start">
+                <img src="{{ asset('images/home/summit-registration.webp') }}" width="1200" height="800" loading="lazy" decoding="async"
+                     alt="The registration desks at the entrance of the summit"
+                     class="aspect-[16/9] w-full rounded-card object-cover shadow-lift">
+                <div class="rounded-card bg-white p-8 text-ink-800 shadow-lift">
+                    <div class="flex flex-wrap items-baseline justify-between gap-3">
+                        <h3 class="text-2xl font-bold text-brand-700">Registration fees</h3>
+                        @unless ($summit->feesConfirmed())
+                            <span class="text-[13px] font-bold text-ember-600">To be confirmed</span>
+                        @endunless
+                    </div>
+                    <div class="mt-5 divide-y divide-ink-100 border-t border-ink-100">
+                        @foreach ($summit->get('fees', []) as $fee)
+                            <div class="flex items-center justify-between gap-4 py-4">
+                                <span class="text-[17px] font-semibold">{{ $fee['label'] }}</span>
+                                <span class="text-[17px] font-semibold {{ filled($fee['amount']) ? 'text-ink-900' : 'text-ink-400' }}">
+                                    {{ $fee['currency'] }} {{ filled($fee['amount']) ? number_format((float) $fee['amount']) : '—' }}
+                                </span>
+                            </div>
+                        @endforeach
+                    </div>
+                    <p class="mb-2.5 mt-6 text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Pay by</p>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($summit->get('payment_methods', []) as $method)
+                            <span class="whitespace-nowrap rounded-full bg-brand-50 px-3.5 py-2 text-sm font-semibold text-brand-700">{{ $method }}</span>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </div>
@@ -345,20 +369,25 @@
                 </div>
                 <a href="{{ route('awards.index') }}" class="text-base font-bold text-brand-700 hover:text-brand-800">See the awards →</a>
             </div>
-            <ul class="mt-10 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-                @foreach ($awardCategories as $category)
-                    @php [$tint, $iconColour] = [['bg-ember-50', 'text-ember-600'], ['bg-sun-50', 'text-sun-700'], ['bg-olive-50', 'text-olive-700'], ['bg-coral-50', 'text-coral-700']][$loop->index % 4]; @endphp
-                    <li>
-                        <a href="{{ route('awards.index') }}#award-{{ $category->id }}" class="flex h-full gap-4 rounded-[20px] p-6 transition hover:shadow-soft {{ $tint }}">
-                            <x-icon name="trophy" class="h-7 w-7 shrink-0 {{ $iconColour }}" />
-                            <span>
-                                <span class="block text-lg font-bold leading-tight text-ink-900">{{ $category->name }}</span>
-                                <span class="mt-1 block text-sm text-ink-600">{{ $category->isAnnounced() ? 'Winners announced' : $category->eligibility() }}</span>
-                            </span>
-                        </a>
-                    </li>
-                @endforeach
-            </ul>
+            <div class="mt-10 grid gap-3.5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                <img src="{{ asset('images/home/summit-award.webp') }}" width="1000" height="667" loading="lazy" decoding="async"
+                     alt="An award winner receives a plaque on stage at the 2026 summit"
+                     class="aspect-[3/2] h-full w-full rounded-[20px] object-cover lg:aspect-auto">
+                <ul class="grid gap-3.5 sm:grid-cols-2">
+                    @foreach ($awardCategories as $category)
+                        @php [$tint, $iconColour] = [['bg-ember-50', 'text-ember-600'], ['bg-sun-50', 'text-sun-700'], ['bg-olive-50', 'text-olive-700'], ['bg-coral-50', 'text-coral-700']][$loop->index % 4]; @endphp
+                        <li>
+                            <a href="{{ route('awards.index') }}#award-{{ $category->id }}" class="flex h-full gap-4 rounded-[20px] p-6 transition hover:shadow-soft {{ $tint }}">
+                                <x-icon name="trophy" class="h-7 w-7 shrink-0 {{ $iconColour }}" />
+                                <span>
+                                    <span class="block text-lg font-bold leading-tight text-ink-900">{{ $category->name }}</span>
+                                    <span class="mt-1 block text-sm text-ink-600">{{ $category->isAnnounced() ? 'Winners announced' : $category->eligibility() }}</span>
+                                </span>
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
         </section>
     @endif
 
