@@ -10,7 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
 
-/** Badges, invitation letters and award certificates, generated on request. */
+/** Badges, invitation letters, and attendance and award certificates, generated on request. */
 class DocumentService
 {
     public function __construct(private Summit $summit) {}
@@ -43,6 +43,23 @@ class DocumentService
             'logo' => public_path('images/brand/logo-mark.png'),
         ])->setPaper('a4')
             ->download('invitation-letter-'.$registration->reference.'.pdf');
+    }
+
+    /** A4 landscape certificate of attendance, with a code anyone can check at /certificates. */
+    public function attendanceCertificate(Registration $registration): Response
+    {
+        $registration->loadMissing('user', 'edition');
+        $verifyUrl = route('certificates.verify', [$registration->certificateNumber(), $registration->certificateCode()]);
+
+        return Pdf::loadView('pdf.attendance-certificate', [
+            'registration' => $registration,
+            'days' => app(AttendanceService::class)->daysAttended($registration),
+            'summit' => $this->summit,
+            'logo' => public_path('images/brand/logo-mark.png'),
+            'qr' => Qr::dataUri($verifyUrl, 4),
+            'verifyUrl' => $verifyUrl,
+        ])->setPaper('a4', 'landscape')
+            ->download('certificate-of-attendance-'.$registration->certificateNumber().'.pdf');
     }
 
     /** A4 landscape certificate for an announced winner. */

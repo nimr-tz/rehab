@@ -7,6 +7,9 @@
             @if ($registration->isConfirmed())
                 <x-button variant="secondary" size="sm" :href="route('desk.badge', $registration)" icon="download">Badge</x-button>
             @endif
+            @if ($registration->hasAttendanceCertificate())
+                <x-button variant="secondary" size="sm" :href="route('admin.participants.certificate', $registration)" icon="download">Certificate</x-button>
+            @endif
         </x-page-header>
     </x-slot:header>
 

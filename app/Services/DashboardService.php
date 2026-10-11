@@ -30,14 +30,13 @@ class DashboardService
             ? $user->abstracts()->where('edition_id', $edition->id)->with('topic', 'reviews', 'sessions')->latest()->get()
             : collect();
         $confirmed = $registration?->isConfirmed() ?? false;
-        $summitOver = $edition?->end_date?->isPast() ?? false;
 
         $steps = [
             ['Account created', $user->created_at->format('j M'), true],
             ['Registered', $registration ? $registration->category->name : 'Choose a category', (bool) $registration],
             ['Payment verified', $confirmed ? ($registration->confirmed_at?->format('j M') ?? 'Confirmed') : (in_array($latest?->status, [PaymentStatus::Submitted, PaymentStatus::Pending], true) ? 'In progress' : 'Pay the fee'), $confirmed],
             ['Badge ready', $confirmed ? 'Print or show on phone' : 'After payment', $confirmed],
-            ['Certificate', 'After the Summit', $summitOver && $confirmed],
+            ['Certificate', $registration?->hasAttendanceCertificate() ? 'Ready to download' : 'After the Summit', (bool) $registration?->hasAttendanceCertificate()],
         ];
         $current = collect($steps)->search(fn ($s) => ! $s[2]);
         $current = $current === false ? count($steps) - 1 : $current;

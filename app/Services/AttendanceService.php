@@ -9,6 +9,7 @@ use App\Models\SessionAttendance;
 use App\Models\User;
 use App\Support\ScanResult;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -72,6 +73,30 @@ class AttendanceService
         }
 
         return new ScanResult(ScanResult::RECORDED, $registration->user->name.' recorded.', $registration, $attendance);
+    }
+
+    /**
+     * The summit days a participant attended, for the certificate of attendance:
+     * any day they were scanned at a session, and the day they checked in.
+     *
+     * @return Collection<int, Carbon>
+     */
+    public function daysAttended(Registration $registration): Collection
+    {
+        $days = $registration->attendances()->with('session')->get()
+            ->map(fn (SessionAttendance $a) => $a->session->starts_at->toDateString());
+
+        if ($registration->checked_in_at) {
+            $days->push($registration->checked_in_at->toDateString());
+        }
+
+        $edition = $registration->edition;
+
+        return $days->unique()->sort()->values()
+            ->map(fn (string $day) => Carbon::parse($day))
+            // Only days of the summit itself, should anyone have checked in the evening before.
+            ->filter(fn ($day) => ! $edition->start_date || ($day->gte($edition->start_date) && (! $edition->end_date || $day->lte($edition->end_date))))
+            ->values();
     }
 
     /**

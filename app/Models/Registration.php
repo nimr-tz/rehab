@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 class Registration extends Model
 {
@@ -136,6 +137,32 @@ class Registration extends Model
     public function isFullyWaived(): bool
     {
         return $this->isWaived() && $this->amountDue() <= 0;
+    }
+
+    /** Attended the summit: confirmed, and checked in at the desk or scanned at a session. */
+    public function attended(): bool
+    {
+        return $this->isConfirmed() && ($this->checked_in_at || $this->attendances()->exists());
+    }
+
+    /** The certificate of attendance can be downloaded once the summit is over. */
+    public function hasAttendanceCertificate(): bool
+    {
+        $end = $this->edition->end_date;
+
+        return $end && today()->gt($end) && $this->attended();
+    }
+
+    /** "AT27-000123" */
+    public function certificateNumber(): string
+    {
+        return 'AT'.$this->edition->shortYear().'-'.Str::padLeft((string) $this->id, 6, '0');
+    }
+
+    /** Printed on the certificate, so anyone can check it is genuine. */
+    public function certificateCode(): string
+    {
+        return substr(hash_hmac('sha256', 'attendance-certificate:'.$this->id, (string) config('app.key')), 0, 12);
     }
 
     public function displayName(): string

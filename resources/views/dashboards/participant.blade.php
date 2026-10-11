@@ -283,7 +283,11 @@
                         @endforeach
                     </ul>
                 @endif
-                <p class="mt-4 text-sm leading-relaxed text-ink-600">Have your badge scanned at each session: every session earns its own CPD points, recorded here. Your attendance certificate is in the portal after the Summit.</p>
+                @if ($registration?->hasAttendanceCertificate())
+                    <x-button class="mt-5" :href="route('registration.certificate')" icon="download">Certificate of attendance</x-button>
+                @else
+                    <p class="mt-4 text-sm leading-relaxed text-ink-600">Have your badge scanned at each session: every session earns its own CPD points, recorded here. Your attendance certificate is in the portal after the Summit.</p>
+                @endif
             </section>
         </div>
     @endif

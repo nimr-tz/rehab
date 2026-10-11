@@ -9,6 +9,7 @@ use App\Http\Controllers\AwardController;
 use App\Http\Controllers\Awards\CategoryController as AwardCategoryController;
 use App\Http\Controllers\Awards\EntryController as AwardEntryController;
 use App\Http\Controllers\Awards\JudgingController;
+use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeskController;
 use App\Http\Controllers\Finance\PaymentController as FinancePaymentController;
@@ -46,6 +47,7 @@ Route::get('/gallery/photos/{photo}/{size}', [GalleryController::class, 'photo']
 Route::post('/gallery/photos/{photo}/removal', [GalleryController::class, 'requestRemoval'])->middleware('throttle:5,1')->name('gallery.photos.removal');
 Route::get('/gallery/{album:slug}', [GalleryController::class, 'album'])->name('gallery.album');
 Route::get('/awards', [AwardController::class, 'index'])->name('awards.index');
+Route::get('/certificates/{number}/{code}', [CertificateController::class, 'verify'])->middleware('throttle:30,1')->name('certificates.verify');
 
 // Sign-in, registration, password reset and email verification routes come from Fortify.
 
@@ -83,6 +85,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/registration/badge', [RegistrationController::class, 'badge'])->name('registration.badge');
         Route::put('/registration/badge-name', [RegistrationController::class, 'badgeName'])->name('registration.badge-name');
         Route::get('/registration/invitation-letter', [RegistrationController::class, 'letter'])->name('registration.letter');
+        Route::get('/registration/certificate', [CertificateController::class, 'mine'])->name('registration.certificate');
         Route::post('/registration/payments', [PaymentController::class, 'store'])->name('registration.payments.store');
         Route::post('/registration/student-proof', [RegistrationController::class, 'studentProof'])->name('registration.student-proof');
         Route::put('/registration/category', [RegistrationController::class, 'changeCategory'])->name('registration.category');
@@ -227,6 +230,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/participants', [ParticipantController::class, 'index'])->name('participants.index');
         Route::get('/participants/{registration}', [ParticipantController::class, 'show'])->name('participants.show');
+        Route::get('/participants/{registration}/certificate', [CertificateController::class, 'participant'])->name('participants.certificate');
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::put('/users/{user}/roles', [UserController::class, 'roles'])->name('users.roles');
         Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
