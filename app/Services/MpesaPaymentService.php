@@ -33,6 +33,9 @@ class MpesaPaymentService
     // How long M-Pesa may take to know about a payment before "not found" means it never happened.
     private const NOT_FOUND_AFTER_MINUTES = 5;
 
+    // How long a payment stays pending before finance may settle it from the M-Pesa statement.
+    public const SETTLE_BY_HAND_AFTER_MINUTES = 10;
+
     public function __construct(private MpesaClient $mpesa) {}
 
     public static function availableFor(?Registration $registration): bool
@@ -151,6 +154,93 @@ class MpesaPaymentService
         }
 
         return $payment->fresh();
+    }
+
+    /** Whether finance may settle a pending payment by hand: M-Pesa has had its chance to answer. */
+    public static function canSettleByHand(Payment $payment): bool
+    {
+        return $payment->status === PaymentStatus::Pending
+            && $payment->gateway === 'mpesa'
+            && $payment->created_at->lte(now()->subMinutes(self::SETTLE_BY_HAND_AFTER_MINUTES));
+    }
+
+    /**
+     * Finance found the payment on the M-Pesa statement: it is verified with
+     * the statement's transaction ID, and the registration is confirmed.
+     */
+    public function markReceived(Payment $payment, User $officer, string $transactionId): void
+    {
+        $transactionId = strtoupper(trim($transactionId));
+
+        $confirmed = DB::transaction(function () use ($payment, $officer, $transactionId) {
+            $payment = Payment::lockForUpdate()->findOrFail($payment->id);
+            $this->assertSettleable($payment);
+
+            if (Payment::where('transaction_reference', $transactionId)->where('status', PaymentStatus::Verified)->exists()) {
+                throw new InvalidArgumentException('M-Pesa transaction '.$transactionId.' has already been counted for another payment.');
+            }
+
+            $payment->update([
+                'status' => PaymentStatus::Verified,
+                'transaction_reference' => $transactionId,
+                'gateway_message' => 'Found on the M-Pesa statement by finance.',
+                'reviewed_by' => $officer->id,
+                'reviewed_at' => now(),
+            ]);
+
+            $payment->registration->update([
+                'status' => RegistrationStatus::Confirmed,
+                'confirmed_at' => now(),
+            ]);
+
+            return $payment;
+        });
+
+        $confirmed->registration->user->notify(new RegistrationConfirmed($confirmed->registration->fresh()));
+    }
+
+    /** Finance found no such payment on the M-Pesa statement: it failed, and the participant can pay again. */
+    public function markNotReceived(Payment $payment, User $officer, string $reason): void
+    {
+        DB::transaction(function () use ($payment, $officer, $reason) {
+            $payment = Payment::lockForUpdate()->findOrFail($payment->id);
+            $this->assertSettleable($payment);
+
+            $payment->update([
+                'status' => PaymentStatus::Failed,
+                'gateway_message' => trim($reason),
+                'reviewed_by' => $officer->id,
+                'reviewed_at' => now(),
+            ]);
+        });
+    }
+
+    /** Ask M-Pesa again about every payment left pending, oldest first. Run in the background. */
+    public function reconcileStale(int $limit = 20): int
+    {
+        if (! config('mpesa.enabled') || blank(config('mpesa.api_key'))) {
+            return 0;
+        }
+
+        return Payment::where('status', PaymentStatus::Pending)
+            ->where('gateway', 'mpesa')
+            ->where('created_at', '<=', now()->subMinutes(2))
+            ->where(fn ($q) => $q->whereNull('gateway_checked_at')->orWhere('gateway_checked_at', '<=', now()->subMinutes(2)))
+            ->oldest('id')
+            ->limit($limit)
+            ->get()
+            ->each(fn (Payment $payment) => $this->reconcile($payment))
+            ->count();
+    }
+
+    private function assertSettleable(Payment $payment): void
+    {
+        if ($payment->status !== PaymentStatus::Pending || $payment->gateway !== 'mpesa') {
+            throw new InvalidArgumentException('This payment has already been settled.');
+        }
+        if (! self::canSettleByHand($payment)) {
+            throw new InvalidArgumentException('M-Pesa may still answer. Settle it by hand after '.self::SETTLE_BY_HAND_AFTER_MINUTES.' minutes.');
+        }
     }
 
     /**

@@ -412,4 +412,107 @@ class MpesaPaymentTest extends TestCase
 
         $this->assertSame(1, Payment::count());
     }
+
+    /** A payment M-Pesa never answers about: pending, so the participant is stuck until it is settled. */
+    private function stuckPayment(): Payment
+    {
+        $unclear = fn () => Http::response(['output_ResponseCode' => 'INS-999', 'output_ResponseDesc' => 'Unknown'], 500);
+        $this->fakeMpesa(
+            c2b: [Http::response(['output_ResponseCode' => 'INS-9'], 408)],
+            query: [$unclear(), $unclear(), $unclear(), $unclear()],
+        );
+        $this->payWithMpesa($this->registered());
+
+        return Payment::sole();
+    }
+
+    public function test_finance_can_record_a_stuck_payment_found_on_the_statement(): void
+    {
+        $payment = $this->stuckPayment();
+
+        // Too early: M-Pesa may still answer.
+        $this->actingAs($this->finance)->get(route('finance.payments.show', $payment))->assertSee('Ask M-Pesa again')->assertDontSee('It is on the statement');
+        $this->actingAs($this->finance)->post(route('finance.payments.mpesa.received', $payment), ['mpesa_transaction' => 'QX7TD52KHB'])->assertSessionHasErrors('mpesa_transaction');
+        $this->assertSame(PaymentStatus::Pending, $payment->fresh()->status);
+
+        // Asking again still gets no answer.
+        $this->actingAs($this->finance)->post(route('finance.payments.mpesa.check', $payment))->assertSessionHas('status');
+        $this->assertSame(PaymentStatus::Pending, $payment->fresh()->status);
+
+        $this->travel(11)->minutes();
+        $this->actingAs($this->finance)->get(route('finance.payments.show', $payment))->assertSee('It is on the statement');
+        $this->actingAs($this->finance)->post(route('finance.payments.mpesa.received', $payment), ['mpesa_transaction' => 'qx7td52khb'])->assertSessionHasNoErrors();
+
+        $payment->refresh();
+        $this->assertSame(PaymentStatus::Verified, $payment->status);
+        $this->assertSame('QX7TD52KHB', $payment->transaction_reference);
+        $this->assertSame($this->finance->id, $payment->reviewed_by);
+        $this->assertSame(RegistrationStatus::Confirmed, $payment->registration->status);
+        Notification::assertSentTo($payment->registration->user, RegistrationConfirmed::class);
+
+        // Settled once only.
+        $this->actingAs($this->finance)->post(route('finance.payments.mpesa.not-received', $payment), ['mpesa_reason' => 'Changed my mind'])->assertSessionHasErrors('mpesa_reason');
+        $this->assertSame(PaymentStatus::Verified, $payment->fresh()->status);
+    }
+
+    public function test_finance_can_release_a_stuck_payment_that_never_arrived(): void
+    {
+        $payment = $this->stuckPayment();
+        $this->assertFalse($payment->registration->canSubmitPayment());
+
+        $this->travel(11)->minutes();
+        $this->actingAs($this->finance)->post(route('finance.payments.mpesa.not-received', $payment), ['mpesa_reason' => 'Not on the statement for 12 March.'])->assertSessionHasNoErrors();
+
+        $payment->refresh();
+        $this->assertSame(PaymentStatus::Failed, $payment->status);
+        $this->assertSame('Not on the statement for 12 March.', $payment->gateway_message);
+        $this->assertSame(RegistrationStatus::PendingPayment, $payment->registration->status);
+        $this->assertTrue($payment->registration->canSubmitPayment());
+        Notification::assertNotSentTo($payment->registration->user, RegistrationConfirmed::class);
+    }
+
+    public function test_a_statement_transaction_counts_only_once(): void
+    {
+        $unclear = fn () => Http::response(['output_ResponseCode' => 'INS-999'], 500);
+        $this->fakeMpesa(c2b: [$this->c2bSuccess(), Http::response(['output_ResponseCode' => 'INS-9'], 408)], query: [$unclear(), $unclear()]);
+        $this->payWithMpesa($this->registered());
+        $paid = Payment::sole();
+
+        $this->payWithMpesa($this->registered());
+        $stuck = Payment::where('status', PaymentStatus::Pending)->sole();
+
+        $this->travel(11)->minutes();
+        $this->actingAs($this->finance)->post(route('finance.payments.mpesa.received', $stuck), ['mpesa_transaction' => $paid->transaction_reference])
+            ->assertSessionHasErrors('mpesa_transaction');
+
+        $this->assertSame(PaymentStatus::Pending, $stuck->fresh()->status);
+    }
+
+    public function test_only_finance_settles_payments(): void
+    {
+        $payment = $this->stuckPayment();
+        $this->travel(11)->minutes();
+
+        $this->actingAs($payment->registration->user)->post(route('finance.payments.mpesa.received', $payment), ['mpesa_transaction' => 'QX7TD52KHB'])->assertForbidden();
+
+        $this->assertSame(PaymentStatus::Pending, $payment->fresh()->status);
+    }
+
+    public function test_pending_payments_are_settled_in_the_background(): void
+    {
+        $this->fakeMpesa(
+            c2b: [Http::response(['output_ResponseCode' => 'INS-9'], 408)],
+            query: [Http::response(['output_ResponseCode' => 'INS-0', 'output_ResponseTransactionStatus' => 'Completed', 'output_OriginalTransactionID' => 'BG12345678'])],
+        );
+        $registration = $this->registered();
+        $this->payWithMpesa($registration);
+
+        // Nobody is watching the page.
+        $this->assertSame(0, app(MpesaPaymentService::class)->reconcileStale());
+        $this->travel(3)->minutes();
+        $this->assertSame(1, app(MpesaPaymentService::class)->reconcileStale());
+
+        $this->assertSame(PaymentStatus::Verified, Payment::sole()->status);
+        $this->assertSame(RegistrationStatus::Confirmed, $registration->fresh()->status);
+    }
 }

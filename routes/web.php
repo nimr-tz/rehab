@@ -142,6 +142,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/payments/{payment}/proof', [FinancePaymentController::class, 'proof'])->name('payments.proof');
         Route::post('/payments/{payment}/verify', [FinancePaymentController::class, 'verify'])->name('payments.verify');
         Route::post('/payments/{payment}/reject', [FinancePaymentController::class, 'reject'])->name('payments.reject');
+        Route::post('/payments/{payment}/mpesa/check', [FinancePaymentController::class, 'mpesaCheck'])->middleware('throttle:20,1')->name('payments.mpesa.check');
+        Route::post('/payments/{payment}/mpesa/received', [FinancePaymentController::class, 'mpesaReceived'])->name('payments.mpesa.received');
+        Route::post('/payments/{payment}/mpesa/not-received', [FinancePaymentController::class, 'mpesaNotReceived'])->name('payments.mpesa.not-received');
 
         // Fee waivers, in whole or in part
         Route::get('/waivers', [WaiverController::class, 'index'])->name('waivers.index');

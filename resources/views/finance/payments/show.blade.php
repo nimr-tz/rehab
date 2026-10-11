@@ -71,6 +71,42 @@
                         </div>
                     </form>
                 </x-card>
+            @elseif ($payment->status === PaymentStatus::Pending && $payment->gateway === 'mpesa')
+                <x-card title="Waiting for M-Pesa">
+                    <p class="text-sm text-ink-700">
+                        The request went to {{ $payment->payer_phone }} on {{ $payment->created_at->format('j M Y, H:i') }}.
+                        @if ($payment->gateway_checked_at) Last asked M-Pesa at {{ $payment->gateway_checked_at->format('H:i') }}@if ($payment->gateway_code) ({{ $payment->gateway_code }})@endif. @endif
+                        Until it is settled, the participant cannot pay another way.
+                    </p>
+                    <form method="POST" action="{{ route('finance.payments.mpesa.check', $payment) }}" class="mt-4">
+                        @csrf
+                        <x-button variant="secondary" class="w-full" icon="phone">Ask M-Pesa again</x-button>
+                    </form>
+
+                    @if (\App\Services\MpesaPaymentService::canSettleByHand($payment))
+                        <div class="mt-5 space-y-5 border-t border-ink-100 pt-5" x-data="{ open: '{{ $errors->has('mpesa_reason') ? 'no' : ($errors->has('mpesa_transaction') ? 'yes' : '') }}' }">
+                            <p class="text-sm text-ink-600">If M-Pesa does not answer, check the M-Pesa statement for {{ $payment->formattedAmount() }} from {{ $payment->payer_phone }}.</p>
+                            <form method="POST" action="{{ route('finance.payments.mpesa.received', $payment) }}" class="space-y-3">
+                                @csrf
+                                <button type="button" x-show="open !== 'yes'" @click="open = 'yes'" class="w-full text-sm font-semibold text-emerald-700 hover:underline">It is on the statement…</button>
+                                <div x-show="open === 'yes'" x-cloak class="space-y-3">
+                                    <x-form.input name="mpesa_transaction" label="M-Pesa transaction ID" placeholder="QX7TD52KHB" />
+                                    <x-button variant="success" class="w-full" icon="check">Record as paid</x-button>
+                                </div>
+                            </form>
+                            <form method="POST" action="{{ route('finance.payments.mpesa.not-received', $payment) }}" class="space-y-3">
+                                @csrf
+                                <button type="button" x-show="open !== 'no'" @click="open = 'no'" class="w-full text-sm font-semibold text-red-700 hover:underline">It is not on the statement…</button>
+                                <div x-show="open === 'no'" x-cloak class="space-y-3">
+                                    <x-form.textarea name="mpesa_reason" label="Note for the record" rows="2" placeholder="e.g. Not on the M-Pesa statement for 12–13 March." />
+                                    <x-button variant="danger" class="w-full" icon="x-circle">Mark as not received</x-button>
+                                </div>
+                            </form>
+                        </div>
+                    @else
+                        <p class="mt-4 text-xs text-ink-500">If M-Pesa has still not answered {{ \App\Services\MpesaPaymentService::SETTLE_BY_HAND_AFTER_MINUTES }} minutes after the request, you can settle it here from the M-Pesa statement.</p>
+                    @endif
+                </x-card>
             @else
                 <x-card title="Decision">
                     @if ($payment->gateway)

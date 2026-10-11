@@ -6,12 +6,14 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Services\MpesaPaymentService;
 use App\Services\RegistrationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PaymentController extends Controller
@@ -105,6 +107,50 @@ class PaymentController extends Controller
         $service->reject($payment, $request->user(), $data['rejection_reason']);
 
         return $this->next($payment, 'Payment rejected. The participant has been asked to resubmit.');
+    }
+
+    /** Ask M-Pesa again about a payment still pending. */
+    public function mpesaCheck(Payment $payment, MpesaPaymentService $mpesa): RedirectResponse
+    {
+        abort_unless($payment->gateway === 'mpesa', 404);
+
+        $payment = $mpesa->reconcile($payment);
+
+        return back()->with('status', match ($payment->status) {
+            PaymentStatus::Verified => 'M-Pesa confirmed the payment. '.$payment->registration->user->name.' is now confirmed.',
+            PaymentStatus::Failed => 'M-Pesa has no record of this payment. The participant can pay again.',
+            default => 'M-Pesa has not answered yet. Try again later, or settle it from the M-Pesa statement.',
+        });
+    }
+
+    /** Finance found the payment on the M-Pesa statement. */
+    public function mpesaReceived(Request $request, Payment $payment, MpesaPaymentService $mpesa): RedirectResponse
+    {
+        $data = $request->validate([
+            'mpesa_transaction' => ['required', 'string', 'regex:/^[A-Za-z0-9]{6,20}$/'],
+        ], ['mpesa_transaction.regex' => 'Enter the transaction ID exactly as it appears on the statement, for example QX7TD52KHB.']);
+
+        try {
+            $mpesa->markReceived($payment, $request->user(), $data['mpesa_transaction']);
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['mpesa_transaction' => $e->getMessage()]);
+        }
+
+        return back()->with('status', 'Payment recorded. '.$payment->registration->user->name.' is now confirmed.');
+    }
+
+    /** Finance found no such payment on the M-Pesa statement. */
+    public function mpesaNotReceived(Request $request, Payment $payment, MpesaPaymentService $mpesa): RedirectResponse
+    {
+        $data = $request->validate(['mpesa_reason' => ['required', 'string', 'min:5', 'max:255']]);
+
+        try {
+            $mpesa->markNotReceived($payment, $request->user(), $data['mpesa_reason']);
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['mpesa_reason' => $e->getMessage()]);
+        }
+
+        return back()->with('status', 'Marked as not received. The participant can pay again.');
     }
 
     /** After a decision, go straight to the next payment waiting, if any. */
