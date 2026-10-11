@@ -78,6 +78,7 @@ class Navigation
             Role::Admin => [
                 $item('Executive summary', 'admin.overview', 'admin.overview'),
                 $item('Participants', 'admin.participants.index', 'admin.participants.*'),
+                $item('Announcements', 'admin.announcements.index', 'admin.announcements.*'),
                 $item('Users & roles', 'admin.users.index', 'admin.users.*'),
                 $item('Photo removal requests', 'media.removal-requests.index', 'media.removal-requests.*', ['count' => PhotoRemovalRequest::pending()->count()]),
                 $item('Summit settings', 'admin.settings.edit', 'admin.settings.*'),

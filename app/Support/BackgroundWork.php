@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Services\AnnouncementService;
 use App\Services\MpesaPaymentService;
 use App\Services\ReminderService;
 use Illuminate\Support\Facades\Cache;
@@ -56,6 +57,7 @@ class BackgroundWork
     {
         return [
             'mpesa' => fn () => app(MpesaPaymentService::class)->reconcileStale(),
+            'announcements' => fn () => app(AnnouncementService::class)->sendBatch(),
             'reminders' => fn () => app(ReminderService::class)->sendDue(),
         ];
     }

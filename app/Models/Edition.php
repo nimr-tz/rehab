@@ -59,6 +59,11 @@ class Edition extends Model
         return $this->hasMany(Album::class);
     }
 
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(Announcement::class);
+    }
+
     public function awardCategories(): HasMany
     {
         return $this->hasMany(AwardCategory::class)->ordered();

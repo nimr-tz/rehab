@@ -176,7 +176,7 @@ class BackgroundWorkTest extends TestCase
         $this->assertSame([], app(BackgroundWork::class)->run());
 
         $this->travel(61)->minutes();
-        $this->assertSame(['mpesa' => 0, 'reminders' => 0], app(BackgroundWork::class)->run());
+        $this->assertSame(['mpesa' => 0, 'announcements' => 0, 'reminders' => 0], app(BackgroundWork::class)->run());
     }
 
     public function test_the_work_runs_after_a_page_is_sent(): void

@@ -6,8 +6,8 @@
 |--------------------------------------------------------------------------
 |
 | Production has no cron and no queue worker, so work that is due (reminders,
-| and settling M-Pesa payments nobody is watching) runs after a web page has
-| been sent, at most once every `every_seconds`.
+| announcement emails, and settling M-Pesa payments nobody is watching) runs
+| after a web page has been sent, at most once every `every_seconds`.
 |
 | `php artisan portal:background` runs the same work, for a cron job.
 |
@@ -22,6 +22,7 @@ return [
     // Minutes between runs of each task.
     'tasks' => [
         'mpesa' => 5,
+        'announcements' => 1,
         'reminders' => 60,
     ],
 

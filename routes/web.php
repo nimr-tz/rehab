@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AbstractController;
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\OverviewController;
 use App\Http\Controllers\Admin\ParticipantController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -242,6 +243,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/participants/{registration}/certificate', [CertificateController::class, 'participant'])->name('participants.certificate');
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::put('/users/{user}/roles', [UserController::class, 'roles'])->name('users.roles');
+        Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+        Route::get('/announcements/new', [AnnouncementController::class, 'create'])->name('announcements.create');
+        Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+        Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show'])->name('announcements.show');
+        Route::get('/announcements/{announcement}/edit', [AnnouncementController::class, 'edit'])->name('announcements.edit');
+        Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
+        Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+        Route::post('/announcements/{announcement}/test', [AnnouncementController::class, 'test'])->middleware('throttle:10,1')->name('announcements.test');
+        Route::post('/announcements/{announcement}/send', [AnnouncementController::class, 'send'])->name('announcements.send');
+        Route::post('/announcements/{announcement}/retry', [AnnouncementController::class, 'retry'])->name('announcements.retry');
         Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
         Route::post('/settings/next', [SettingsController::class, 'startNext'])->name('settings.next');
