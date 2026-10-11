@@ -1,7 +1,9 @@
 <x-layouts.portal title="Abstracts">
     <x-slot:header>
         <x-page-header eyebrow="Scientific committee" title="Abstracts"
-            description="Assign reviewers, follow the reviews and record decisions. Reviewers never see the authors." />
+            description="Assign reviewers, follow the reviews and record decisions. Reviewers never see the authors.">
+            <x-button variant="secondary" size="sm" :href="route('scientific.abstracts.export')" icon="download">Export CSV</x-button>
+        </x-page-header>
     </x-slot:header>
 
     {{-- Status tabs --}}

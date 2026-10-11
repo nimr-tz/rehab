@@ -2,6 +2,8 @@
     <x-slot:header>
         <x-page-header eyebrow="Scientific committee" title="Programme & CPD"
             description="The sessions of the summit and the CPD points each one earns. Attendance is scanned at each session by the staff app.">
+            <x-button variant="secondary" :href="route('scientific.programme.cpd-export')" icon="download">CPD points</x-button>
+            <x-button variant="secondary" :href="route('scientific.programme.attendance-export')" icon="download">Attendance</x-button>
             <x-button variant="secondary" :href="route('programme')" icon="eye">Public programme</x-button>
             <x-button :href="route('scientific.programme.create')" icon="plus">Add a session</x-button>
         </x-page-header>

@@ -6,13 +6,17 @@ use App\Enums\AbstractStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AbstractSubmission;
 use App\Models\ProgrammeSession;
+use App\Models\Registration;
+use App\Models\SessionAttendance;
 use App\Services\ProgrammeService;
+use App\Support\Csv;
 use App\Support\Summit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /** The committee edits the programme: sessions, halls, times and the CPD points each session earns. */
 class ProgrammeController extends Controller
@@ -30,6 +34,43 @@ class ProgrammeController extends Controller
             'unpointed' => $sessions->filter(fn (ProgrammeSession $s) => $s->isScannable() && $s->cpd_points === null)->count(),
             'unscheduled' => $edition ? $this->unscheduled($edition->id)->count() : 0,
         ]);
+    }
+
+    /** Every scan: who attended which session, when, and what it earned. */
+    public function attendanceExport(): StreamedResponse
+    {
+        $attendances = SessionAttendance::query()
+            ->whereHas('session', fn ($q) => $q->where('edition_id', $this->summit->edition()?->id))
+            ->with('session', 'registration.user', 'scanner')
+            ->get()
+            ->sortBy(fn (SessionAttendance $a) => [$a->session->starts_at->timestamp, $a->scanned_at->timestamp]);
+
+        return Csv::download('attendance-'.now()->format('Y-m-d').'.csv',
+            ['Session', 'Day', 'Starts', 'Hall', 'Badge number', 'Name', 'Email', 'Profession', 'Institution', 'Scanned at', 'Scanned by', 'CPD points'],
+            $attendances->map(fn (SessionAttendance $a) => [
+                $a->session->title, $a->session->starts_at->toDateString(), $a->session->starts_at->format('H:i'), $a->session->hall,
+                $a->registration->reference, $a->registration->user->name, $a->registration->user->email,
+                $a->registration->user->profession, $a->registration->user->institution,
+                $a->scanned_at->toDateTimeString(), $a->scanner?->name, $a->session->points(),
+            ]));
+    }
+
+    /** One row per participant who attended: their sessions and CPD points, for professional boards. */
+    public function cpdExport(): StreamedResponse
+    {
+        $registrations = Registration::where('edition_id', $this->summit->edition()?->id)
+            ->whereHas('attendances')
+            ->with('user', 'attendances.session')
+            ->orderBy('reference')
+            ->get();
+
+        return Csv::download('cpd-points-'.now()->format('Y-m-d').'.csv',
+            ['Badge number', 'Title', 'Name', 'Email', 'Profession', 'Institution', 'Country', 'Sessions attended', 'CPD points'],
+            $registrations->map(fn (Registration $r) => [
+                $r->reference, $r->user->title, $r->user->first_name.' '.$r->user->last_name, $r->user->email,
+                $r->user->profession, $r->user->institution, $r->user->countryName(),
+                $r->attendances->count(), round($r->attendances->sum(fn (SessionAttendance $a) => $a->session->points()), 2),
+            ]));
     }
 
     public function create(): View

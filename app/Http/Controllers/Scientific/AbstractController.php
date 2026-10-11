@@ -8,12 +8,14 @@ use App\Models\AbstractSubmission;
 use App\Models\ReviewAssignment;
 use App\Models\User;
 use App\Services\AbstractService;
+use App\Support\Csv;
 use App\Support\Summit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AbstractController extends Controller
 {
@@ -49,6 +51,27 @@ class AbstractController extends Controller
             'statuses' => array_filter(AbstractStatus::cases(), fn ($s) => $s !== AbstractStatus::Draft),
             'filters' => compact('status', 'topic', 'search'),
         ]);
+    }
+
+    /** Every submitted abstract of the summit, with authors, scores and decisions. */
+    public function export(Summit $summit): StreamedResponse
+    {
+        $abstracts = AbstractSubmission::where('edition_id', $summit->edition()?->id)
+            ->where('status', '!=', AbstractStatus::Draft)
+            ->with('topic', 'submitter', 'authors', 'reviews', 'sessions', 'edition')
+            ->orderBy('submitted_at')
+            ->get();
+
+        return Csv::download('abstracts-'.now()->format('Y-m-d').'.csv',
+            ['ID', 'Code', 'Title', 'Topic', 'Status', 'Accepted as', 'Submitted by', 'Email', 'Authors', 'Presenter', 'Keywords', 'Words', 'Average score', 'Reviews in', 'Submitted', 'Decided', 'Session'],
+            $abstracts->map(fn (AbstractSubmission $a) => [
+                $a->blindId(), $a->code, $a->title, $a->topic->name, $a->status->label(), $a->decision_type?->label(),
+                $a->submitter->name, $a->submitter->email,
+                $a->authors->map(fn ($author) => $author->name.' ('.$author->affiliation.')')->implode('; '),
+                $a->presenter()?->name, $a->keywords, $a->wordCount(), $a->averageScore(),
+                $a->reviews->filter->isComplete()->count(),
+                $a->submitted_at?->toDateTimeString(), $a->decided_at?->toDateTimeString(), $a->sessions->first()?->title,
+            ]));
     }
 
     public function show(AbstractSubmission $abstract, AbstractService $service): View

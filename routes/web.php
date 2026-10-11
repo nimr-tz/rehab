@@ -115,6 +115,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Scientific committee
     Route::middleware('role:scientific_admin|admin')->prefix('scientific')->name('scientific.')->group(function () {
         Route::get('/abstracts', [ScientificAbstractController::class, 'index'])->name('abstracts.index');
+        Route::get('/abstracts/export', [ScientificAbstractController::class, 'export'])->name('abstracts.export');
         Route::get('/abstracts/{abstract}', [ScientificAbstractController::class, 'show'])->name('abstracts.show');
         Route::post('/abstracts/{abstract}/reviewers', [ScientificAbstractController::class, 'assign'])->name('abstracts.assign');
         Route::delete('/abstracts/{abstract}/reviewers/{assignment}', [ScientificAbstractController::class, 'unassign'])->name('abstracts.unassign');
@@ -130,6 +131,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/session-roles/{application}/decline', [ScientificSessionRoleController::class, 'decline'])->name('session-roles.decline');
         Route::post('/session-roles/{application}/release', [ScientificSessionRoleController::class, 'release'])->name('session-roles.release');
         Route::get('/programme', [ScientificProgrammeController::class, 'index'])->name('programme.index');
+        Route::get('/programme/attendance.csv', [ScientificProgrammeController::class, 'attendanceExport'])->name('programme.attendance-export');
+        Route::get('/programme/cpd.csv', [ScientificProgrammeController::class, 'cpdExport'])->name('programme.cpd-export');
         Route::get('/programme/new', [ScientificProgrammeController::class, 'create'])->name('programme.create');
         Route::post('/programme', [ScientificProgrammeController::class, 'store'])->name('programme.store');
         Route::get('/programme/{session}', [ScientificProgrammeController::class, 'edit'])->name('programme.edit');
@@ -234,6 +237,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Administration
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/participants', [ParticipantController::class, 'index'])->name('participants.index');
+        Route::get('/participants/export', [ParticipantController::class, 'export'])->name('participants.export');
         Route::get('/participants/{registration}', [ParticipantController::class, 'show'])->name('participants.show');
         Route::get('/participants/{registration}/certificate', [CertificateController::class, 'participant'])->name('participants.certificate');
         Route::get('/users', [UserController::class, 'index'])->name('users.index');

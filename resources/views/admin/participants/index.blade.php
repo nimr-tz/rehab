@@ -1,6 +1,9 @@
 <x-layouts.portal title="Participants">
     <x-slot:header>
-        <x-page-header eyebrow="Administration" title="Participants" :description="$registrations->total().' registrations for the '.$summit->title()" />
+        <x-page-header eyebrow="Administration" title="Participants" :description="$registrations->total().' registrations for the '.$summit->title()">
+            <x-button variant="secondary" size="sm" :href="route('admin.participants.export', array_filter(['status' => $filters['status'], 'category' => $filters['category'], 'q' => $filters['search'], 'needs' => 1]))" icon="download">Dietary & access needs</x-button>
+            <x-button variant="secondary" size="sm" :href="route('admin.participants.export', array_filter(['status' => $filters['status'], 'category' => $filters['category'], 'q' => $filters['search']]))" icon="download">Export CSV</x-button>
+        </x-page-header>
     </x-slot:header>
 
     <x-card :padding="false">
