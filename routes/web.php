@@ -29,6 +29,7 @@ use App\Http\Controllers\ProgrammeController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Scientific\AbstractController as ScientificAbstractController;
+use App\Http\Controllers\Scientific\PresenterController;
 use App\Http\Controllers\Scientific\ProgrammeController as ScientificProgrammeController;
 use App\Http\Controllers\Scientific\ReviewerController;
 use App\Http\Controllers\Scientific\SessionRoleController as ScientificSessionRoleController;
@@ -120,6 +121,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/abstracts/{abstract}/decision', [ScientificAbstractController::class, 'decide'])->name('abstracts.decide');
         Route::put('/abstracts/{abstract}/revision-due', [ScientificAbstractController::class, 'extendRevision'])->name('abstracts.revision-due');
         Route::get('/reviewers', ReviewerController::class)->name('reviewers');
+        Route::get('/presenters', [PresenterController::class, 'index'])->name('presenters.index');
+        Route::get('/presenters/export', [PresenterController::class, 'export'])->name('presenters.export');
+        Route::post('/presenters/remind', [PresenterController::class, 'remindAll'])->middleware('throttle:3,1')->name('presenters.remind-all');
+        Route::post('/presenters/{abstract}/remind', [PresenterController::class, 'remind'])->name('presenters.remind');
         Route::get('/session-roles', [ScientificSessionRoleController::class, 'index'])->name('session-roles.index');
         Route::post('/session-roles/{application}/accept', [ScientificSessionRoleController::class, 'accept'])->name('session-roles.accept');
         Route::post('/session-roles/{application}/decline', [ScientificSessionRoleController::class, 'decline'])->name('session-roles.decline');

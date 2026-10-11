@@ -32,7 +32,18 @@ class ReminderService
             return 0;
         }
 
-        return $this->reviews($edition) + $this->revisions($edition) + $this->payments($edition);
+        return $this->reviews($edition) + $this->revisions($edition) + $this->payments($edition) + $this->presenters($edition);
+    }
+
+    /** Presenters of accepted abstracts still not confirmed two weeks after acceptance. */
+    private function presenters(Edition $edition): int
+    {
+        $presenters = app(PresenterService::class);
+
+        return $presenters->rows($edition)
+            ->filter(fn (array $row) => $row['state'] !== PresenterService::CONFIRMED
+                && $row['abstract']->decided_at?->lte(now()->subDays(config('background.presenter_after_days'))))
+            ->sum(fn (array $row) => $this->once('presenter_registration', $row['abstract'], fn () => $presenters->remind($row)));
     }
 
     private function reviews(Edition $edition): int

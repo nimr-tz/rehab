@@ -31,6 +31,9 @@ return [
     // Days after registering without paying before a reminder goes out.
     'unpaid_after_days' => 7,
 
+    // Days after acceptance before a presenter who has not registered and paid is reminded.
+    'presenter_after_days' => 14,
+
     // Days before the summit that anyone still unpaid is reminded.
     'unpaid_before_summit_days' => 14,
 

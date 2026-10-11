@@ -49,6 +49,7 @@ class Navigation
                     'count' => AbstractSubmission::awaitingDecision()->count(),
                 ]),
                 $item('Reviewers', 'scientific.reviewers', 'scientific.reviewers'),
+                $item('Presenters', 'scientific.presenters.index', 'scientific.presenters.*'),
                 $item('Programme & CPD', 'scientific.programme.index', 'scientific.programme.*'),
                 $item('Chairs & rapporteurs', 'scientific.session-roles.index', 'scientific.session-roles.*', [
                     'count' => SessionRoleApplication::where('edition_id', Edition::current()?->id)->where('status', ApplicationStatus::Pending)->count(),
