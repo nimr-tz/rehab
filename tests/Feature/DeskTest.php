@@ -76,6 +76,7 @@ class DeskTest extends TestCase
     public function test_a_walk_in_is_registered_paid_by_m_pesa_and_gets_a_badge(): void
     {
         $this->fakeMpesa();
+        $this->actingAs($this->desk)->get(route('desk.register'))->assertOk()->assertSee('Professional (Tanzania)')->assertSee('TZS 250,000');
 
         $response = $this->walkIn();
 

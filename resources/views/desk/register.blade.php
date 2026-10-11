@@ -31,7 +31,7 @@
                                 <input type="radio" name="category" value="{{ $category->id }}" @checked((int) old('category', $categories->first()?->id) === $category->id) @change="student = @js((bool) $category->is_student)" class="h-4 w-4 accent-brand-700">
                                 <span class="font-semibold text-ink-900">{{ $category->name }}</span>
                             </span>
-                            <span class="font-bold text-ink-900">{{ $category->formattedAmount() }}</span>
+                            <span class="font-bold text-ink-900">{{ $category->formattedFee() }}</span>
                         </label>
                     @endforeach
                 </div>
