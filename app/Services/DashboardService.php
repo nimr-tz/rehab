@@ -6,6 +6,7 @@ use App\Enums\AbstractStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
+use App\Enums\StudentProofStatus;
 use App\Models\AbstractSubmission;
 use App\Models\AwardEntry;
 use App\Models\Edition;
@@ -44,6 +45,8 @@ class DashboardService
         [$headline, $detail] = match (true) {
             ! $registration => ['Register for the '.$edition?->name.' '.$edition?->year, 'Choose your category and pay by bank transfer or mobile money. Your badge unlocks as soon as payment is verified.'],
             $registration->status === RegistrationStatus::PaymentSubmitted => ['Your payment is being verified', 'Submitted by '.$latest->channel().' on '.$latest->created_at->format('j F').'. Finance usually confirms within 2 working days, then your badge unlocks.'],
+            $registration->student_status === StudentProofStatus::Pending => ['We are checking your student proof', 'Finance checks proofs of enrolment, usually within 2 working days. You can pay the student rate of '.$registration->formattedDue().' once it is approved.'],
+            $registration->student_status === StudentProofStatus::Rejected => ['Your student proof was not accepted', $registration->student_rejection_reason.' Upload another document, or change your category.'],
             $registration->status === RegistrationStatus::PendingPayment && $latest?->status === PaymentStatus::Pending => ['Waiting for M-Pesa', 'We sent a payment request to '.$latest->payer_phone.'. Once you enter your PIN, your place is confirmed.'],
             $registration->status === RegistrationStatus::PendingPayment && $latest?->status === PaymentStatus::Rejected => ['Please resubmit your payment', 'We could not verify your last payment: '.$latest->rejection_reason],
             $registration->status === RegistrationStatus::PendingPayment => ['Pay your registration fee', $registration->formattedDue().' with reference '.$registration->reference.'. Pay by bank transfer or mobile money, then upload the proof.'],

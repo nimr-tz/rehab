@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AbstractStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
+use App\Enums\StudentProofStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,6 +25,8 @@ class Registration extends Model
             'confirmed_at' => 'datetime',
             'badge_printed_at' => 'datetime',
             'checked_in_at' => 'datetime',
+            'student_status' => StudentProofStatus::class,
+            'student_reviewed_at' => 'datetime',
         ];
     }
 
@@ -62,11 +65,34 @@ class Registration extends Model
         return $this->status === RegistrationStatus::Confirmed;
     }
 
-    /** A new payment can be submitted unless one is pending or the fee is settled. */
+    /** A new payment can be submitted unless one is pending, the fee is settled, or a student proof is still to be approved. */
     public function canSubmitPayment(): bool
     {
         return $this->status === RegistrationStatus::PendingPayment
+            && ! $this->awaitsStudentApproval()
             && ! $this->payments()->whereIn('status', [PaymentStatus::Submitted, PaymentStatus::Pending])->exists();
+    }
+
+    /** A student rate whose proof of enrolment has not been approved: nothing can be paid yet. */
+    public function awaitsStudentApproval(): bool
+    {
+        return in_array($this->student_status, [StudentProofStatus::Pending, StudentProofStatus::Rejected], true);
+    }
+
+    /**
+     * The category can change while nothing has been paid or sent for
+     * verification, and no waiver applies.
+     */
+    public function canChangeCategory(): bool
+    {
+        return $this->status === RegistrationStatus::PendingPayment
+            && ! $this->isWaived()
+            && ! $this->payments()->whereIn('status', [PaymentStatus::Submitted, PaymentStatus::Pending, PaymentStatus::Verified])->exists();
+    }
+
+    public function studentReviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'student_reviewed_by');
     }
 
     /** An M-Pesa payment still waiting for the participant's PIN or M-Pesa's answer. */

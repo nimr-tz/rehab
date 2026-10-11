@@ -58,6 +58,19 @@
                         They submitted a payment by {{ $registration->latestPayment?->channel() }}, which finance has not verified yet. Ask finance to verify it, then print the badge.
                     </x-empty>
                 </x-card>
+            @elseif ($registration->awaitsStudentApproval())
+                <x-card>
+                    <x-empty icon="user" title="Student rate: proof not approved yet">
+                        {{ $registration->student_status === \App\Enums\StudentProofStatus::Rejected ? 'Finance did not accept their proof: '.$registration->student_rejection_reason : 'Finance has not checked their proof of enrolment yet.' }}
+                        If they show you a valid student ID now, approve the student rate here, then take the payment.
+                        <x-slot:action>
+                            <form method="POST" action="{{ route('desk.student-id', $registration) }}">
+                                @csrf
+                                <x-button icon="check">I have seen a valid student ID</x-button>
+                            </form>
+                        </x-slot:action>
+                    </x-empty>
+                </x-card>
             @elseif ($mpesa || $pending)
                 <x-card title="Take payment: {{ $registration->formattedDue() }}" description="An M-Pesa request goes to their phone. They enter their PIN and the registration is confirmed at once.">
                     @if ($pending)

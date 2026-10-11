@@ -44,6 +44,7 @@ class MpesaPaymentService
             && filled(config('mpesa.api_key'))
             && $registration?->currency === config('mpesa.currency')
             && $registration->status === RegistrationStatus::PendingPayment
+            && ! $registration->awaitsStudentApproval()
             && $registration->amountDue() > 0
             && self::offeredTo($registration);
     }

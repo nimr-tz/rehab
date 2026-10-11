@@ -132,12 +132,18 @@ class DeskController extends Controller
             'category' => ['required', Rule::exists('registration_categories', 'id')->where('edition_id', $edition->id)->whereNotNull('amount')],
             'dietary_needs' => ['nullable', 'string', 'max:255'],
             'accessibility_needs' => ['nullable', 'string', 'max:255'],
+            'student_id_seen' => ['boolean'],
         ], [
             'phone.regex' => 'Enter a phone number with digits only, for example +255 712 345 678.',
         ]);
 
+        $category = $edition->categories->firstWhere('id', (int) $data['category']);
+        if ($category->is_student && empty($data['student_id_seen'])) {
+            return back()->withInput()->withErrors(['student_id_seen' => 'The student rate needs a valid student ID. Check it, or choose another category.']);
+        }
+
         try {
-            $registration = $service->registerAtDesk($data, $edition, $edition->categories->firstWhere('id', (int) $data['category']));
+            $registration = $service->registerAtDesk($data, $edition, $category, $category->is_student ? $request->user() : null);
         } catch (InvalidArgumentException $e) {
             return back()->withInput()->withErrors(['email' => $e->getMessage()]);
         }
@@ -255,6 +261,20 @@ class DeskController extends Controller
         $registration->update(['badge_printed_at' => $registration->badge_printed_at ?? now()]);
 
         return $pdf;
+    }
+
+    /** The desk has seen a valid student ID: the student rate applies, without waiting for finance. */
+    public function studentSeen(Request $request, Registration $registration, RegistrationService $service): RedirectResponse
+    {
+        $this->ensureCurrent($registration);
+
+        try {
+            $service->reviewStudentProof($registration, $request->user(), true);
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['check_in' => $e->getMessage()]);
+        }
+
+        return back()->with('status', 'Student rate approved. Take the payment.');
     }
 
     /** Correct the name on the badge, for example a misspelling noticed at the desk. */

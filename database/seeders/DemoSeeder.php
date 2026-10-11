@@ -9,6 +9,7 @@ use App\Enums\PresentationType;
 use App\Enums\Recommendation;
 use App\Enums\RegistrationStatus;
 use App\Enums\Role;
+use App\Enums\StudentProofStatus;
 use App\Enums\WaiverReason;
 use App\Models\AbstractSubmission;
 use App\Models\Edition;
@@ -355,6 +356,11 @@ class DemoSeeder extends Seeder
             ])->save();
             $registration->payments()->delete();
 
+            if ($category->is_student) {
+                // Students who have paid had their proof approved; some still unpaid are waiting, or were turned down.
+                $this->studentProof($registration, $status === 'pending' ? ['pending', 'pending', 'rejected', 'approved'][mt_rand(0, 3)] : 'approved', $finance, $registeredAt);
+            }
+
             if ($status === 'pending') {
                 continue;
             }
@@ -380,6 +386,25 @@ class DemoSeeder extends Seeder
                 ? ['status' => RegistrationStatus::Confirmed, 'confirmed_at' => $payment->reviewed_at]
                 : ['status' => RegistrationStatus::PaymentSubmitted]);
         }
+    }
+
+    /** A sample student ID, at the given stage of finance's check. */
+    private function studentProof(Registration $registration, string $stage, User $finance, CarbonImmutable $registeredAt): void
+    {
+        $path = 'student-proofs/demo-'.$registration->reference.'.pdf';
+        Storage::disk(config('payments.proof_disk'))->put($path, Pdf::loadView('pdf.sample-student-id', [
+            'user' => $registration->user,
+            'number' => strtoupper(Str::random(3)).'/'.mt_rand(2023, 2025).'/'.mt_rand(1000, 9999),
+            'validUntil' => $stage === 'rejected' ? '30/06/2025' : '30/06/2028',
+        ])->setPaper('a6', 'landscape')->output());
+
+        $registration->update([
+            'student_status' => StudentProofStatus::from($stage),
+            'student_proof_path' => $path,
+            'student_reviewed_by' => $stage === 'pending' ? null : $finance->id,
+            'student_reviewed_at' => $stage === 'pending' ? null : $this->past($registeredAt->addHours(mt_rand(4, 40)), $registeredAt),
+            'student_rejection_reason' => $stage === 'rejected' ? 'This student ID expired in June 2025. Please upload a current ID or a letter from your institution.' : null,
+        ]);
     }
 
     private function payment(Registration $registration, CarbonImmutable $paidOn, PaymentStatus $status, User $finance, ?string $reason = null): Payment

@@ -6,6 +6,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
 use App\Enums\Role;
+use App\Enums\StudentProofStatus;
 use App\Enums\WaiverReason;
 use App\Models\Edition;
 use App\Models\FeeWaiver;
@@ -18,6 +19,7 @@ use App\Notifications\PaymentReceived;
 use App\Notifications\PaymentRejected;
 use App\Notifications\RegisteredAtDesk;
 use App\Notifications\RegistrationConfirmed;
+use App\Notifications\StudentProofReviewed;
 use App\Notifications\WaiverWithdrawn;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -33,15 +35,21 @@ use Spatie\Permission\Models\Role as RoleModel;
 class RegistrationService
 {
     /**
+     * A student rate needs proof of enrolment: an uploaded document that finance
+     * approves, or a student ID the desk has seen ($studentSeenBy).
+     *
      * @param  array{badge_name?: ?string, needs_invitation_letter?: bool, passport_number?: ?string, dietary_needs?: ?string, accessibility_needs?: ?string}  $details
      */
-    public function register(User $user, Edition $edition, RegistrationCategory $category, array $details = []): Registration
+    public function register(User $user, Edition $edition, RegistrationCategory $category, array $details = [], ?UploadedFile $studentProof = null, ?User $studentSeenBy = null): Registration
     {
         if ($category->edition_id !== $edition->id || ! $category->hasFee()) {
             throw new InvalidArgumentException('This category is not available.');
         }
+        if ($category->is_student && ! $studentProof && ! $studentSeenBy) {
+            throw new InvalidArgumentException('The student rate needs proof of enrolment.');
+        }
 
-        return DB::transaction(function () use ($user, $edition, $category, $details) {
+        return DB::transaction(function () use ($user, $edition, $category, $details, $studentProof, $studentSeenBy) {
             $registration = Registration::create([
                 'edition_id' => $edition->id,
                 'user_id' => $user->id,
@@ -56,7 +64,7 @@ class RegistrationService
                 'dietary_needs' => $details['dietary_needs'] ?? null,
                 'accessibility_needs' => $details['accessibility_needs'] ?? null,
                 'qr_token' => Str::random(32),
-            ]);
+            ] + ($category->is_student ? $this->studentProof($studentProof, $studentSeenBy) : []));
 
             // RH27-000123: derived from the id so it is unique and never reused.
             $registration->update([
@@ -72,13 +80,15 @@ class RegistrationService
      * unknown email (and emailed a link to set its password); a known email gets
      * its existing account. Either way the registration awaits payment.
      *
+     * A student rate at the desk needs the officer to have seen a valid student ID.
+     *
      * @param  array{title?: ?string, first_name: string, last_name: string, email: string, phone: string, country: string, institution: string, profession: string, dietary_needs?: ?string, accessibility_needs?: ?string}  $data
      */
-    public function registerAtDesk(array $data, Edition $edition, RegistrationCategory $category): Registration
+    public function registerAtDesk(array $data, Edition $edition, RegistrationCategory $category, ?User $studentSeenBy = null): Registration
     {
         $email = Str::lower(trim($data['email']));
 
-        [$registration, $created] = DB::transaction(function () use ($data, $email, $edition, $category) {
+        [$registration, $created] = DB::transaction(function () use ($data, $email, $edition, $category, $studentSeenBy) {
             $user = User::where('email', $email)->lockForUpdate()->first();
             $created = ! $user;
 
@@ -99,7 +109,7 @@ class RegistrationService
             $user->update(['institution' => trim($data['institution']), 'profession' => trim($data['profession'])]);
             $user->assignRole(RoleModel::findOrCreate(Role::Participant->value, 'web'));
 
-            return [$this->register($user, $edition, $category, $data), $created];
+            return [$this->register($user, $edition, $category, $data, studentSeenBy: $studentSeenBy), $created];
         });
 
         if ($created) {
@@ -271,6 +281,86 @@ class RegistrationService
 
         $waiver->refresh()->load('registration.user');
         $waiver->registration->user->notify(new WaiverWithdrawn($waiver));
+    }
+
+    /** Finance (or the desk, seeing the student ID) approves or rejects a student's proof of enrolment. */
+    public function reviewStudentProof(Registration $registration, User $officer, bool $approve, ?string $reason = null): void
+    {
+        $registration = DB::transaction(function () use ($registration, $officer, $approve, $reason) {
+            $registration = Registration::lockForUpdate()->findOrFail($registration->id);
+
+            if ($registration->student_status !== StudentProofStatus::Pending && ! ($approve && $registration->student_status === StudentProofStatus::Rejected)) {
+                throw new InvalidArgumentException('This student proof has already been reviewed.');
+            }
+            if (! $approve && blank($reason)) {
+                throw new InvalidArgumentException('Give the reason, for the participant.');
+            }
+
+            $registration->update([
+                'student_status' => $approve ? StudentProofStatus::Approved : StudentProofStatus::Rejected,
+                'student_reviewed_by' => $officer->id,
+                'student_reviewed_at' => now(),
+                'student_rejection_reason' => $approve ? null : trim($reason),
+            ]);
+
+            return $registration;
+        });
+
+        $registration->user->notify(new StudentProofReviewed($registration));
+    }
+
+    /** After a rejection, the student uploads another proof of enrolment. */
+    public function resubmitStudentProof(Registration $registration, UploadedFile $proof): void
+    {
+        DB::transaction(function () use ($registration, $proof) {
+            $registration = Registration::lockForUpdate()->findOrFail($registration->id);
+
+            if ($registration->student_status !== StudentProofStatus::Rejected) {
+                throw new InvalidArgumentException('Your student proof is not waiting for a new document.');
+            }
+
+            $registration->update($this->studentProof($proof, null) + ['student_rejection_reason' => null]);
+        });
+    }
+
+    /**
+     * Move to another category, for example from a student rate whose proof was
+     * not accepted. The fee becomes the new category's. A student category needs
+     * a proof again unless one was already approved.
+     */
+    public function changeCategory(Registration $registration, RegistrationCategory $category, ?UploadedFile $studentProof = null): void
+    {
+        DB::transaction(function () use ($registration, $category, $studentProof) {
+            $registration = Registration::lockForUpdate()->findOrFail($registration->id);
+
+            if ($category->edition_id !== $registration->edition_id || ! $category->hasFee()) {
+                throw new InvalidArgumentException('This category is not available.');
+            }
+            if (! $registration->canChangeCategory()) {
+                throw new InvalidArgumentException('The category cannot change once a payment has been made or a waiver granted.');
+            }
+
+            $student = match (true) {
+                ! $category->is_student => ['student_status' => null, 'student_rejection_reason' => null],
+                $registration->student_status === StudentProofStatus::Approved => [],
+                (bool) $studentProof => $this->studentProof($studentProof, null),
+                default => throw new InvalidArgumentException('The student rate needs proof of enrolment.'),
+            };
+
+            $registration->update([
+                'registration_category_id' => $category->id,
+                'currency' => $category->currency,
+                'amount' => $category->amount,
+            ] + $student);
+        });
+    }
+
+    /** @return array<string, mixed> */
+    private function studentProof(?UploadedFile $proof, ?User $seenBy): array
+    {
+        return $seenBy
+            ? ['student_status' => StudentProofStatus::Approved, 'student_reviewed_by' => $seenBy->id, 'student_reviewed_at' => now()]
+            : ['student_status' => StudentProofStatus::Pending, 'student_proof_path' => $proof->store('student-proofs', config('payments.proof_disk')), 'student_reviewed_by' => null, 'student_reviewed_at' => null];
     }
 
     private function assertPending(Payment $payment): void

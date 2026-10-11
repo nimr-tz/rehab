@@ -12,6 +12,8 @@ use App\Models\User;
 use App\Support\Summit;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /** After payment the badge is the participant's summit ID, on screen and in the PDF. */
@@ -27,6 +29,7 @@ class BadgeTest extends TestCase
 
         $this->withoutVite();
         $this->seed(RoleSeeder::class);
+        Storage::fake('local');
 
         $this->edition = Edition::create([
             'year' => 2027, 'name' => 'Rehabilitation Summit', 'short_name' => 'Rehab Summit', 'ordinal' => '5th',
@@ -45,6 +48,7 @@ class BadgeTest extends TestCase
         $this->actingAs($user)->post(route('registration.store'), [
             'category' => $this->edition->categories->firstWhere('name', $category)->id,
             'institution' => 'Muhimbili National Hospital', 'profession' => 'Physiotherapist', 'confirm' => '1',
+            'student_proof' => UploadedFile::fake()->create('student-id.pdf', 50, 'application/pdf'),
         ])->assertRedirect();
 
         $registration = $user->registrationFor($this->edition);
@@ -115,7 +119,7 @@ class BadgeTest extends TestCase
 
         // Empty: back to the account name.
         $this->actingAs($registration->user)->put(route('registration.badge-name'), ['badge_name' => ''])->assertRedirect();
-        $this->assertSame('Neema Mushi', $registration->fresh()->displayName());
+        $this->assertSame($registration->user->name, $registration->fresh()->displayName());
     }
 
     public function test_a_collected_badge_stays_marked_as_printed(): void

@@ -12,6 +12,7 @@ use App\Http\Controllers\Awards\JudgingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeskController;
 use App\Http\Controllers\Finance\PaymentController as FinancePaymentController;
+use App\Http\Controllers\Finance\StudentProofController;
 use App\Http\Controllers\Finance\WaiverController;
 use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\Media\AlbumController as MediaAlbumController;
@@ -70,6 +71,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/registration/badge-name', [RegistrationController::class, 'badgeName'])->name('registration.badge-name');
         Route::get('/registration/invitation-letter', [RegistrationController::class, 'letter'])->name('registration.letter');
         Route::post('/registration/payments', [PaymentController::class, 'store'])->name('registration.payments.store');
+        Route::post('/registration/student-proof', [RegistrationController::class, 'studentProof'])->name('registration.student-proof');
+        Route::put('/registration/category', [RegistrationController::class, 'changeCategory'])->name('registration.category');
         Route::post('/registration/mpesa', [MpesaPaymentController::class, 'store'])->middleware('throttle:6,1')->name('registration.mpesa.store');
         Route::get('/registration/mpesa/status', [MpesaPaymentController::class, 'status'])->middleware('throttle:60,1')->name('registration.mpesa.status');
         Route::post('/registration/mpesa/check', [MpesaPaymentController::class, 'check'])->middleware('throttle:20,1')->name('registration.mpesa.check');
@@ -147,6 +150,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/payments/{payment}/mpesa/received', [FinancePaymentController::class, 'mpesaReceived'])->name('payments.mpesa.received');
         Route::post('/payments/{payment}/mpesa/not-received', [FinancePaymentController::class, 'mpesaNotReceived'])->name('payments.mpesa.not-received');
 
+        // Proofs of enrolment for student rates
+        Route::get('/students', [StudentProofController::class, 'index'])->name('students.index');
+        Route::get('/students/{registration}', [StudentProofController::class, 'show'])->name('students.show');
+        Route::get('/students/{registration}/proof', [StudentProofController::class, 'proof'])->name('students.proof');
+        Route::post('/students/{registration}/approve', [StudentProofController::class, 'approve'])->name('students.approve');
+        Route::post('/students/{registration}/reject', [StudentProofController::class, 'reject'])->name('students.reject');
+
         // Fee waivers, in whole or in part
         Route::get('/waivers', [WaiverController::class, 'index'])->name('waivers.index');
         Route::get('/waivers/export', [WaiverController::class, 'export'])->name('waivers.export');
@@ -167,6 +177,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/{registration}/mpesa', [DeskController::class, 'mpesa'])->middleware('throttle:20,1')->name('mpesa');
         Route::get('/{registration}/mpesa/status', [DeskController::class, 'mpesaStatus'])->middleware('throttle:120,1')->name('mpesa.status');
         Route::post('/{registration}/check-in', [DeskController::class, 'checkIn'])->name('check-in');
+        Route::post('/{registration}/student-id', [DeskController::class, 'studentSeen'])->name('student-id');
         Route::get('/{registration}/badge', [DeskController::class, 'badge'])->name('badge');
         Route::put('/{registration}/badge-name', [DeskController::class, 'badgeName'])->name('badge-name');
     });

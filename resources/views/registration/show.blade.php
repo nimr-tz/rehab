@@ -24,25 +24,29 @@
                 </x-empty>
             </x-card>
         @else
-            <form method="POST" action="{{ route('registration.store') }}" x-data="{ letter: {{ old('needs_invitation_letter') ? 'true' : 'false' }} }" class="space-y-6">
+            <form method="POST" action="{{ route('registration.store') }}" enctype="multipart/form-data"
+                  x-data="{ letter: {{ old('needs_invitation_letter') ? 'true' : 'false' }}, student: @js((bool) $categories->firstWhere('id', (int) old('category'))?->is_student) }" class="space-y-6">
                 @csrf
 
-                <x-card title="1. Choose your category" description="Student rates need proof of enrolment at the registration desk.">
+                <x-card title="1. Choose your category" description="Student rates need proof of enrolment, which finance checks before you pay.">
                     <div class="grid gap-3 sm:grid-cols-2">
                         @foreach ($categories as $category)
                             <label class="relative flex cursor-pointer items-start gap-3 rounded-2xl border border-ink-200 p-4 transition hover:border-brand-300 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50 has-[:checked]:ring-2 has-[:checked]:ring-brand-500/20">
-                                <input type="radio" name="category" value="{{ $category->id }}" @checked(old('category') == $category->id) required class="mt-1 h-4 w-4 accent-brand-700">
+                                <input type="radio" name="category" value="{{ $category->id }}" @checked(old('category') == $category->id) @change="student = @js((bool) $category->is_student)" required class="mt-1 h-4 w-4 accent-brand-700">
                                 <span class="flex-1">
                                     <span class="block font-semibold text-ink-900">{{ $category->name }}</span>
                                     <span class="mt-1 block text-xl font-bold tracking-tight text-brand-700">{{ $category->formattedFee() }}</span>
                                     @if ($category->is_student)
-                                        <span class="mt-1 block text-xs text-ink-500">Bring your student ID</span>
+                                        <span class="mt-1 block text-xs text-ink-500">Needs proof of enrolment</span>
                                     @endif
                                 </span>
                             </label>
                         @endforeach
                     </div>
                     @error('category') <p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p> @enderror
+                    <div x-show="student" x-cloak class="mt-5 max-w-lg">
+                        @include('registration._student-proof-input')
+                    </div>
                 </x-card>
 
                 <x-card title="2. Your details" description="These appear on your badge and certificate.">
@@ -118,6 +122,15 @@
                     @endif
                 </dl>
 
+                @if ($registration->canChangeCategory() && ! $registration->awaitsStudentApproval() && $categories->count() > 1)
+                    <div class="mt-5 border-t border-ink-100 pt-4" x-data="{ open: {{ $errors->has('category') ? 'true' : 'false' }} }">
+                        <button type="button" x-show="! open" @click="open = true" class="text-sm font-semibold text-brand-700 hover:underline">Change categoryâ€¦</button>
+                        <div x-show="open" x-cloak>
+                            @include('registration._category', ['current' => $registration->category])
+                        </div>
+                    </div>
+                @endif
+
                 @if ($registration->isConfirmed())
                     <div class="mt-6 space-y-2 border-t border-ink-100 pt-5">
                         <x-button :href="route('registration.badge')" icon="download" class="w-full">Download badge</x-button>
@@ -128,7 +141,9 @@
                 @endif
             </x-card>
 
-            @if ($registration->canSubmitPayment())
+            @if ($registration->awaitsStudentApproval())
+                @include('registration._student')
+            @elseif ($registration->canSubmitPayment())
                 @include('registration._payment')
             @elseif ($pendingMpesa)
                 <x-card>

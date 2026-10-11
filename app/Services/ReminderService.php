@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\AbstractStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
+use App\Enums\StudentProofStatus;
 use App\Models\AbstractSubmission;
 use App\Models\Edition;
 use App\Models\Registration;
@@ -74,6 +75,8 @@ class ReminderService
             ->where('edition_id', $edition->id)
             ->where('status', RegistrationStatus::PendingPayment)
             ->whereDoesntHave('payments', fn ($q) => $q->whereIn('status', [PaymentStatus::Submitted, PaymentStatus::Pending]))
+            // A student whose proof is not yet approved cannot pay, so is not chased.
+            ->where(fn ($q) => $q->whereNull('student_status')->orWhere('student_status', StudentProofStatus::Approved))
             ->with('user');
 
         $sent = $unpaid()

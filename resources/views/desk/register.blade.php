@@ -23,12 +23,12 @@
         </x-card>
 
         <div class="space-y-6">
-            <x-card title="Category">
+            <x-card title="Category" x-data="{ student: @js($categories->firstWhere('id', (int) old('category', $categories->first()?->id))?->is_student ?? false) }">
                 <div class="space-y-2">
                     @foreach ($categories as $category)
                         <label class="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-ink-200 p-4 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50">
                             <span class="flex items-center gap-3">
-                                <input type="radio" name="category" value="{{ $category->id }}" @checked((int) old('category', $categories->first()?->id) === $category->id) class="h-4 w-4 accent-brand-700">
+                                <input type="radio" name="category" value="{{ $category->id }}" @checked((int) old('category', $categories->first()?->id) === $category->id) @change="student = @js((bool) $category->is_student)" class="h-4 w-4 accent-brand-700">
                                 <span class="font-semibold text-ink-900">{{ $category->name }}</span>
                             </span>
                             <span class="font-bold text-ink-900">{{ $category->formattedAmount() }}</span>
@@ -36,6 +36,10 @@
                     @endforeach
                 </div>
                 @error('category') <p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p> @enderror
+                <div x-show="student" x-cloak class="mt-4 rounded-2xl bg-sun-50 p-4">
+                    <x-form.checkbox name="student_id_seen" label="I have seen a valid student ID" hint="The student rate needs proof of enrolment." />
+                    @error('student_id_seen') <p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p> @enderror
+                </div>
             </x-card>
 
             <x-card title="Needs (optional)">

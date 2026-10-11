@@ -5,11 +5,13 @@ namespace App\Support;
 use App\Enums\AbstractStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\Role;
+use App\Enums\StudentProofStatus;
 use App\Models\AbstractSubmission;
 use App\Models\AwardEntry;
 use App\Models\Edition;
 use App\Models\Payment;
 use App\Models\PhotoRemovalRequest;
+use App\Models\Registration;
 use App\Models\ReviewAssignment;
 use App\Models\User;
 
@@ -53,6 +55,7 @@ class Navigation
             ],
             Role::FinanceOfficer => [
                 $item('Verification queue', 'finance.payments.index', 'finance.payments.*', ['count' => Payment::where('status', PaymentStatus::Submitted)->count()]),
+                $item('Student proofs', 'finance.students.index', 'finance.students.*', ['count' => Registration::where('edition_id', Edition::current()?->id)->where('student_status', StudentProofStatus::Pending)->count()]),
                 $item('Fee waivers', 'finance.waivers.index', 'finance.waivers.*'),
             ],
             Role::RegistrationOfficer => [
