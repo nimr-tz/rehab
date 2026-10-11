@@ -64,6 +64,11 @@ class Registration extends Model implements Payable
         return $this->hasMany(SessionAttendance::class);
     }
 
+    public function feedback(): HasOne
+    {
+        return $this->hasOne(FeedbackResponse::class);
+    }
+
     public function latestPayment(): HasOne
     {
         return $this->hasOne(Payment::class)->latestOfMany();

@@ -28,6 +28,9 @@
                 @if ($registration->hasAttendanceCertificate())
                     <x-button :href="route('registration.certificate')" icon="download">Certificate of attendance</x-button>
                 @endif
+                @if (app(\App\Services\FeedbackService::class)->canRespond($registration))
+                    <x-button variant="secondary" :href="route('feedback.create')" icon="clipboard">Give your feedback</x-button>
+                @endif
                 <x-button :variant="$registration->hasAttendanceCertificate() ? 'secondary' : 'primary'" :href="route('registration.badge')" icon="download">Download badge (PDF)</x-button>
                 @if ($registration->needs_invitation_letter)
                     <x-button variant="secondary" :href="route('registration.letter')" icon="download">Invitation letter</x-button>

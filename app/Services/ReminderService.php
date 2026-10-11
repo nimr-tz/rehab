@@ -11,6 +11,7 @@ use App\Models\Edition;
 use App\Models\GroupRegistration;
 use App\Models\Registration;
 use App\Models\ReviewAssignment;
+use App\Notifications\FeedbackInvitation;
 use App\Notifications\GroupPaymentReminder;
 use App\Notifications\PaymentReminder;
 use App\Notifications\ReviewReminder;
@@ -34,7 +35,26 @@ class ReminderService
             return 0;
         }
 
-        return $this->reviews($edition) + $this->revisions($edition) + $this->payments($edition) + $this->groups($edition) + $this->presenters($edition);
+        return $this->reviews($edition) + $this->revisions($edition) + $this->payments($edition) + $this->groups($edition) + $this->presenters($edition) + $this->feedback($edition);
+    }
+
+    /** The day after the summit, everyone who attended is invited to the feedback survey. */
+    private function feedback(Edition $edition): int
+    {
+        $survey = app(FeedbackService::class);
+
+        if (! $survey->isOpen($edition) || ! today()->gt($edition->end_date)) {
+            return 0;
+        }
+
+        return Registration::where('edition_id', $edition->id)
+            ->where('status', RegistrationStatus::Confirmed)
+            ->whereDoesntHave('feedback')
+            ->with('user', 'edition')
+            ->get()
+            ->filter->attended()
+            ->sum(fn (Registration $registration) => $this->once('feedback_invite', $registration,
+                fn () => $registration->user->notify(new FeedbackInvitation($registration))));
     }
 
     /** Group leaders who have not paid for their group a week after registering it. */

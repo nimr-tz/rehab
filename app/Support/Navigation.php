@@ -16,6 +16,7 @@ use App\Models\Registration;
 use App\Models\ReviewAssignment;
 use App\Models\SessionRoleApplication;
 use App\Models\User;
+use App\Services\FeedbackService;
 
 /**
  * The portal sidebar for the workspace the person is in (see Workspace): one
@@ -79,6 +80,7 @@ class Navigation
                 $item('Executive summary', 'admin.overview', 'admin.overview'),
                 $item('Participants', 'admin.participants.index', 'admin.participants.*'),
                 $item('Announcements', 'admin.announcements.index', 'admin.announcements.*'),
+                $item('Feedback', 'admin.feedback.index', 'admin.feedback.*'),
                 $item('Users & roles', 'admin.users.index', 'admin.users.*'),
                 $item('Photo removal requests', 'media.removal-requests.index', 'media.removal-requests.*', ['count' => PhotoRemovalRequest::pending()->count()]),
                 $item('Summit settings', 'admin.settings.edit', 'admin.settings.*'),
@@ -91,6 +93,7 @@ class Navigation
                 $item('Programme', 'programme', 'programme'),
                 $item('Chair or rapporteur', 'session-roles.index', 'session-roles.*'),
                 $item('Awards', 'awards.mine', 'awards.mine'),
+                ...(self::feedbackOpen() ? [$item('Feedback', 'feedback.create', 'feedback.*')] : []),
             ] : [
                 $item('Programme', 'programme', 'programme'),
                 $item('Chair or rapporteur', 'session-roles.index', 'session-roles.*'),
@@ -116,6 +119,14 @@ class Navigation
             ->get()
             ->reject(fn (AwardEntry $entry) => $entry->conflictsWith($judge))
             ->count();
+    }
+
+    /** The feedback survey is open for this summit (after its last day). */
+    private static function feedbackOpen(): bool
+    {
+        $edition = app(Summit::class)->edition();
+
+        return $edition && app(FeedbackService::class)->isOpen($edition);
     }
 
     /** Placeholder for the search box in the top bar. */

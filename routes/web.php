@@ -13,6 +13,7 @@ use App\Http\Controllers\Awards\JudgingController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeskController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\Finance\PaymentController as FinancePaymentController;
 use App\Http\Controllers\Finance\StudentProofController;
 use App\Http\Controllers\Finance\WaiverController;
@@ -89,6 +90,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/registration/badge-name', [RegistrationController::class, 'badgeName'])->name('registration.badge-name');
         Route::get('/registration/invitation-letter', [RegistrationController::class, 'letter'])->name('registration.letter');
         Route::get('/registration/certificate', [CertificateController::class, 'mine'])->name('registration.certificate');
+        Route::get('/feedback', [FeedbackController::class, 'create'])->name('feedback.create');
+        Route::post('/feedback', [FeedbackController::class, 'store'])->middleware('throttle:10,1')->name('feedback.store');
         Route::post('/registration/payments', [PaymentController::class, 'store'])->name('registration.payments.store');
         Route::post('/registration/student-proof', [RegistrationController::class, 'studentProof'])->name('registration.student-proof');
         Route::put('/registration/category', [RegistrationController::class, 'changeCategory'])->name('registration.category');
@@ -255,6 +258,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/participants/{registration}/certificate', [CertificateController::class, 'participant'])->name('participants.certificate');
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::put('/users/{user}/roles', [UserController::class, 'roles'])->name('users.roles');
+        Route::get('/feedback', [FeedbackController::class, 'results'])->name('feedback.index');
+        Route::get('/feedback/export', [FeedbackController::class, 'export'])->name('feedback.export');
         Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
         Route::get('/announcements/new', [AnnouncementController::class, 'create'])->name('announcements.create');
         Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
