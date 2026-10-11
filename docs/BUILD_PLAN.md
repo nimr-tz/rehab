@@ -73,7 +73,17 @@ Awards: the scientific committee sets up each summit's awards (a suggested set c
 
 Deployment: pushing to `main` deploys through John Mduda's GitOps pipeline (see CLAUDE.md).
 
-Still to build for the live 2027 summit: group registration, sponsors, session chair and rapporteur applications, presentation uploads, scheduling abstracts into sessions in the portal (the demo schedule is seeded), certificates, the abstract book, the staff scanning app itself (its API is in `docs/STAFF_APP_API.md`), and email campaigns.
+Added in October 2026, after an audit:
+
+- Group registration: a leader registers several people and pays one invoice (the sum of their fees, one currency, any channel including M-Pesa); verifying it confirms everyone. Student rates stay individual.
+- Student rates need a proof of enrolment that finance approves before the fee can be paid (or the desk sees the student ID).
+- Scheduling accepted abstracts into sessions, presentation slides uploaded by presenters before the deadline, and a Presenters list showing who has registered and paid.
+- Session chair and rapporteur applications, decided by the committee; rapporteurs publish a report of their session.
+- Certificates of attendance (not CPD certificates: we only record CPD points), with a public verification page.
+- Email announcements to groups of people, a feedback survey after the summit, and CSV exports of participants, needs, abstracts, attendance and CPD points.
+- Starting the next year's summit from the settings, and background work (reminders, M-Pesa follow-ups, announcement batches) that runs after web requests, since production has no cron or queue worker.
+
+Still to build for the live 2027 summit: sponsors, the abstract book, and the staff scanning app itself (its API is in `docs/STAFF_APP_API.md`).
 
 ### Phase 0: Foundation and design system
 
