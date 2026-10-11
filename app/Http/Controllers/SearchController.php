@@ -46,12 +46,13 @@ class SearchController extends Controller
             }
 
             if (Workspace::is($user, Role::Admin, Role::FinanceOfficer)) {
-                $results['Payments'] = Payment::with('registration.user')
+                $results['Payments'] = Payment::with('registration.user', 'group.leader')
                     ->where(fn ($w) => $w->where('transaction_reference', 'like', $like)->orWhere('payer_name', 'like', $like)
-                        ->orWhereHas('registration', fn ($r) => $r->where('reference', 'like', $like)))
+                        ->orWhereHas('registration', fn ($r) => $r->where('reference', 'like', $like))
+                        ->orWhereHas('group', fn ($g) => $g->where('reference', 'like', $like)->orWhere('name', 'like', $like)))
                     ->limit(8)->get()
                     ->map(fn ($p) => [
-                        'title' => $p->registration->user->name.' · '.$p->formattedAmount(),
+                        'title' => $p->payable()->payer()->name.' · '.$p->formattedAmount(),
                         'meta' => $p->channel().' · '.$p->transaction_reference.' · '.$p->status->label(),
                         'url' => route('finance.payments.show', $p),
                     ]);

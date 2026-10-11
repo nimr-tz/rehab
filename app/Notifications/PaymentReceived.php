@@ -17,15 +17,15 @@ class PaymentReceived extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $registration = $this->payment->registration;
+        $payable = $this->payment->payable();
 
         return (new MailMessage)
-            ->subject('We received your payment details · '.$registration->reference)
+            ->subject('We received your payment details · '.$payable->reference)
             ->greeting('Hello '.$notifiable->first_name.',')
-            ->line('Thank you. We received your payment details for registration '.$registration->reference.'.')
+            ->line('Thank you. We received your payment details for registration '.$payable->reference.'.')
             ->line('Amount: '.$this->payment->formattedAmount().' via '.$this->payment->channel().', reference '.$this->payment->transaction_reference.'.')
             ->line('A finance officer will confirm it, usually within one working day. We will email you as soon as it is verified.')
-            ->action('View your registration', route('registration.show'));
+            ->action('View your registration', $payable->paymentUrl());
     }
 
     /** Shown under the bell in the portal. */
@@ -34,7 +34,7 @@ class PaymentReceived extends Notification
         return [
             'title' => 'Payment details received',
             'body' => $this->payment->formattedAmount().' via '.$this->payment->channel().'. Finance will verify it shortly.',
-            'url' => route('registration.show'),
+            'url' => $this->payment->payable()->paymentUrl(),
             'icon' => 'banknotes',
             'tone' => 'info',
         ];

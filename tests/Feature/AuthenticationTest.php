@@ -9,6 +9,7 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
@@ -189,5 +190,18 @@ class AuthenticationTest extends TestCase
         $known->assertSessionHas('status', PasswordResetLinkResponse::MESSAGE)->assertSessionHasNoErrors();
         $unknown->assertSessionHas('status', PasswordResetLinkResponse::MESSAGE)->assertSessionHasNoErrors();
         Notification::assertCount(1);
+    }
+
+    public function test_setting_a_password_from_an_emailed_link_verifies_the_email(): void
+    {
+        // An account the desk or a group leader created on someone's behalf.
+        $user = User::factory()->unverified()->create(['email' => 'juma@example.org']);
+        $token = Password::broker()->createToken($user);
+
+        $this->post(route('password.update'), [
+            'token' => $token, 'email' => 'juma@example.org', 'password' => 'rehab2027', 'password_confirmation' => 'rehab2027',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
     }
 }

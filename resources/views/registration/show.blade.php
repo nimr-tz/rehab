@@ -141,7 +141,9 @@
                 @endif
             </x-card>
 
-            @if ($registration->awaitsStudentApproval())
+            @if ($registration->group_registration_id)
+                @include('registration._group')
+            @elseif ($registration->awaitsStudentApproval())
                 @include('registration._student')
             @elseif ($registration->canSubmitPayment())
                 @include('registration._payment')

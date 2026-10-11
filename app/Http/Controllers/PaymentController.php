@@ -16,7 +16,23 @@ class PaymentController extends Controller
         $registration = $request->user()->registrationFor($summit->edition());
         abort_unless($registration?->canSubmitPayment(), 403, 'A payment cannot be submitted right now.');
 
-        $data = $request->validate([
+        $data = self::validatePayment($request);
+
+        // Mobile money is TZS only.
+        if ($data['method'] === PaymentMethod::MobileMoney->value && $registration->currency !== config('payments.mobile_money.currency')) {
+            return back()->withInput()->withErrors(['method' => 'Mobile money is available for TZS fees only. Please pay by bank transfer.']);
+        }
+
+        $service->submitPayment($registration, $data, $request->file('proof'));
+
+        return redirect()->route('registration.show')
+            ->with('status', 'Thank you. Your payment details were sent to our finance team for verification.');
+    }
+
+    /** The details and proof of a payment made outside the portal, for one person or a group. */
+    public static function validatePayment(Request $request): array
+    {
+        return $request->validate([
             'method' => ['required', Rule::enum(PaymentMethod::class)],
             'provider' => ['nullable', 'required_if:method,mobile_money', Rule::in(array_keys(config('payments.mobile_money.providers')))],
             'transaction_reference' => ['required', 'string', 'min:6', 'max:60'],
@@ -28,15 +44,5 @@ class PaymentController extends Controller
             'provider.required_if' => 'Choose the mobile money operator you paid with.',
             'proof.required' => 'Upload the bank slip or a screenshot of the mobile money confirmation.',
         ]);
-
-        // Mobile money is TZS only.
-        if ($data['method'] === PaymentMethod::MobileMoney->value && $registration->currency !== config('payments.mobile_money.currency')) {
-            return back()->withInput()->withErrors(['method' => 'Mobile money is available for TZS fees only. Please pay by bank transfer.']);
-        }
-
-        $service->submitPayment($registration, $data, $request->file('proof'));
-
-        return redirect()->route('registration.show')
-            ->with('status', 'Thank you. Your payment details were sent to our finance team for verification.');
     }
 }

@@ -25,13 +25,14 @@ class PaymentController extends Controller
         $method = PaymentMethod::tryFrom((string) $request->query('method'));
 
         $payments = Payment::query()
-            ->with('registration.user', 'registration.category')
+            ->with('registration.user', 'registration.category', 'group.leader')
             ->when($status !== 'all', fn ($q) => $q->where('status', $status))
             ->when($method, fn ($q) => $q->where('method', $method))
             ->when($search !== '', fn ($q) => $q->where(fn ($q) => $q
                 ->where('transaction_reference', 'like', "%{$search}%")
                 ->orWhere('payer_name', 'like', "%{$search}%")
-                ->orWhereHas('registration', fn ($q) => $q->where('reference', 'like', "%{$search}%"))))
+                ->orWhereHas('registration', fn ($q) => $q->where('reference', 'like', "%{$search}%"))
+                ->orWhereHas('group', fn ($q) => $q->where('reference', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%"))))
             ->orderByRaw("case when status = 'submitted' then 0 else 1 end")
             ->latest('created_at')
             ->paginate(15)
@@ -55,7 +56,7 @@ class PaymentController extends Controller
     {
         $status = $request->validate(['status' => ['nullable', Rule::in(['all', 'submitted', 'verified', 'rejected'])]])['status'] ?? 'all';
 
-        $payments = Payment::with('registration.user', 'registration.category', 'reviewer')
+        $payments = Payment::with('registration.user', 'registration.category', 'group.leader', 'reviewer')
             ->when($status !== 'all', fn ($q) => $q->where('status', $status))
             ->oldest()
             ->get();
@@ -64,8 +65,9 @@ class PaymentController extends Controller
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Registration', 'Participant', 'Email', 'Category', 'Channel', 'Transaction reference', 'Paid on', 'Currency', 'Amount', 'Status', 'Reviewed by', 'Reviewed at', 'Rejection reason', 'Submitted at']);
             foreach ($payments as $p) {
+                $payable = $p->payable();
                 fputcsv($out, [
-                    $p->registration->reference, $p->registration->user->name, $p->registration->user->email, $p->registration->category->name,
+                    $payable->reference, $payable->payer()->name, $payable->payer()->email, $payable->payableLabel(),
                     $p->channel(), $p->transaction_reference, $p->paid_on->toDateString(), $p->currency, $p->amount, $p->status->label(),
                     $p->reviewer?->name, $p->reviewed_at?->toDateTimeString(), $p->rejection_reason, $p->created_at->toDateTimeString(),
                 ]);
@@ -76,7 +78,7 @@ class PaymentController extends Controller
 
     public function show(Payment $payment): View
     {
-        $payment->load('registration.user', 'registration.category', 'registration.payments', 'reviewer');
+        $payment->load('registration.user', 'registration.category', 'registration.payments', 'group.leader', 'group.members.user', 'group.members.category', 'group.payments', 'reviewer');
 
         return view('finance.payments.show', [
             'payment' => $payment,
@@ -90,14 +92,14 @@ class PaymentController extends Controller
         $disk = Storage::disk(config('payments.proof_disk'));
         abort_unless($payment->proof_path && $disk->exists($payment->proof_path), 404);
 
-        return $disk->response($payment->proof_path, 'proof-'.$payment->registration->reference.'.'.pathinfo($payment->proof_path, PATHINFO_EXTENSION));
+        return $disk->response($payment->proof_path, 'proof-'.$payment->payable()->reference.'.'.pathinfo($payment->proof_path, PATHINFO_EXTENSION));
     }
 
     public function verify(Request $request, Payment $payment, RegistrationService $service): RedirectResponse
     {
         $service->verify($payment, $request->user());
 
-        return $this->next($payment, 'Payment verified. '.$payment->registration->user->name.' is now confirmed.');
+        return $this->next($payment, 'Payment verified. '.$this->confirmedName($payment).' now confirmed.');
     }
 
     public function reject(Request $request, Payment $payment, RegistrationService $service): RedirectResponse
@@ -117,7 +119,7 @@ class PaymentController extends Controller
         $payment = $mpesa->reconcile($payment);
 
         return back()->with('status', match ($payment->status) {
-            PaymentStatus::Verified => 'M-Pesa confirmed the payment. '.$payment->registration->user->name.' is now confirmed.',
+            PaymentStatus::Verified => 'M-Pesa confirmed the payment. '.$this->confirmedName($payment).' now confirmed.',
             PaymentStatus::Failed => 'M-Pesa has no record of this payment. The participant can pay again.',
             default => 'M-Pesa has not answered yet. Try again later, or settle it from the M-Pesa statement.',
         });
@@ -136,7 +138,7 @@ class PaymentController extends Controller
             return back()->withErrors(['mpesa_transaction' => $e->getMessage()]);
         }
 
-        return back()->with('status', 'Payment recorded. '.$payment->registration->user->name.' is now confirmed.');
+        return back()->with('status', 'Payment recorded. '.$this->confirmedName($payment).' now confirmed.');
     }
 
     /** Finance found no such payment on the M-Pesa statement. */
@@ -151,6 +153,12 @@ class PaymentController extends Controller
         }
 
         return back()->with('status', 'Marked as not received. The participant can pay again.');
+    }
+
+    /** "Neema Mushi is", or "Everyone in KCMC Physiotherapy is". */
+    private function confirmedName(Payment $payment): string
+    {
+        return $payment->registration ? $payment->registration->user->name.' is' : 'Everyone in '.$payment->group->name.' is';
     }
 
     /** After a decision, go straight to the next payment waiting, if any. */

@@ -5,8 +5,10 @@ namespace App\Providers;
 use App\Models\AbstractSubmission;
 use App\Models\ReviewAssignment;
 use App\Support\Summit;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -36,6 +38,14 @@ class AppServiceProvider extends ServiceProvider
         Route::model('assignment', ReviewAssignment::class);
 
         Paginator::defaultView('pagination.portal');
+
+        // Setting a password from an emailed link proves the address, for
+        // accounts the desk or a group leader created on someone's behalf.
+        Event::listen(PasswordReset::class, function (PasswordReset $event) {
+            if (! $event->user->hasVerifiedEmail()) {
+                $event->user->markEmailAsVerified();
+            }
+        });
 
         $this->registerDevCommands();
     }

@@ -25,7 +25,7 @@
             <tr><td>Date</td><td>{{ $payment->paid_on->format('d/m/Y') }} 10:24</td></tr>
             <tr><td>Paid by</td><td>{{ $payment->payer_name }}</td></tr>
             <tr><td>Beneficiary</td><td>Rehab Health</td></tr>
-            <tr><td>Narration</td><td>{{ $payment->registration->reference }} summit registration</td></tr>
+            <tr><td>Narration</td><td>{{ $payment->payable()->reference }} summit registration</td></tr>
             <tr><td>Amount</td><td class="amount">{{ $payment->formattedAmount() }}</td></tr>
         </table>
     </div>

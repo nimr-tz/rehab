@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\Payable;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
@@ -18,7 +19,6 @@ use App\Notifications\FeeWaived;
 use App\Notifications\PaymentReceived;
 use App\Notifications\PaymentRejected;
 use App\Notifications\RegisteredAtDesk;
-use App\Notifications\RegistrationConfirmed;
 use App\Notifications\StudentProofReviewed;
 use App\Notifications\WaiverWithdrawn;
 use Illuminate\Http\UploadedFile;
@@ -86,28 +86,8 @@ class RegistrationService
      */
     public function registerAtDesk(array $data, Edition $edition, RegistrationCategory $category, ?User $studentSeenBy = null): Registration
     {
-        $email = Str::lower(trim($data['email']));
-
-        [$registration, $created] = DB::transaction(function () use ($data, $email, $edition, $category, $studentSeenBy) {
-            $user = User::where('email', $email)->lockForUpdate()->first();
-            $created = ! $user;
-
-            if ($user && ($existing = $user->registrationFor($edition))) {
-                throw new InvalidArgumentException($user->name.' is already registered, as '.$existing->reference.'.');
-            }
-
-            $user ??= User::create([
-                'title' => $data['title'] ?? null,
-                'first_name' => trim($data['first_name']),
-                'last_name' => trim($data['last_name']),
-                'email' => $email,
-                'phone' => trim($data['phone']),
-                'country' => $data['country'],
-                // Replaced when they set their own from the welcome email.
-                'password' => Str::random(40),
-            ]);
-            $user->update(['institution' => trim($data['institution']), 'profession' => trim($data['profession'])]);
-            $user->assignRole(RoleModel::findOrCreate(Role::Participant->value, 'web'));
+        [$registration, $created] = DB::transaction(function () use ($data, $edition, $category, $studentSeenBy) {
+            [$user, $created] = $this->participantFor($data, $edition);
 
             return [$this->register($user, $edition, $category, $data, studentSeenBy: $studentSeenBy), $created];
         });
@@ -120,23 +100,60 @@ class RegistrationService
     }
 
     /**
+     * The account for someone registered by someone else (the desk, a group
+     * leader): their existing account, or a new one with a random password
+     * they replace from the welcome email. Refused if already registered.
+     * Call inside a transaction.
+     *
+     * @param  array{title?: ?string, first_name: string, last_name: string, email: string, phone: string, country: string, institution: string, profession: string}  $data
+     * @return array{0: User, 1: bool} the account, and whether it is new
+     */
+    public function participantFor(array $data, Edition $edition): array
+    {
+        $email = Str::lower(trim($data['email']));
+        $user = User::where('email', $email)->lockForUpdate()->first();
+        $created = ! $user;
+
+        if ($user && ($existing = $user->registrationFor($edition))) {
+            throw new InvalidArgumentException($user->name.' is already registered, as '.$existing->reference.'.');
+        }
+
+        $user ??= User::create([
+            'title' => $data['title'] ?? null,
+            'first_name' => trim($data['first_name']),
+            'last_name' => trim($data['last_name']),
+            'email' => $email,
+            'phone' => trim($data['phone']),
+            'country' => $data['country'],
+            // Replaced when they set their own from the welcome email.
+            'password' => Str::random(40),
+        ]);
+        $user->update(['institution' => trim($data['institution']), 'profession' => trim($data['profession'])]);
+        $user->assignRole(RoleModel::findOrCreate(Role::Participant->value, 'web'));
+
+        return [$user, $created];
+    }
+
+    /**
+     * Payment details for a registration or a group, with the proof, for finance to verify.
+     *
      * @param  array{method: string, provider?: ?string, transaction_reference: string, payer_name: string, payer_phone?: ?string, paid_on: string}  $data
      */
-    public function submitPayment(Registration $registration, array $data, ?UploadedFile $proof): Payment
+    public function submitPayment(Payable $payable, array $data, ?UploadedFile $proof): Payment
     {
-        $payment = DB::transaction(function () use ($registration, $data, $proof) {
-            $registration = Registration::lockForUpdate()->findOrFail($registration->id);
+        $payment = DB::transaction(function () use ($payable, $data, $proof) {
+            $payable = $payable::lockForUpdate()->findOrFail($payable->id);
 
-            if (! $registration->canSubmitPayment()) {
+            if (! $payable->canSubmitPayment()) {
                 throw new InvalidArgumentException('A payment cannot be submitted for this registration right now.');
             }
 
-            $payment = $registration->payments()->create([
+            $payment = $payable->payments()->create([
                 'method' => PaymentMethod::from($data['method']),
                 'provider' => $data['method'] === PaymentMethod::MobileMoney->value ? $data['provider'] : null,
-                'currency' => $registration->currency,
-                // What is due: the fee, less any waiver.
-                'amount' => $registration->amountDue(),
+                'currency' => $payable->currency,
+                // What is due: the fee (or the group's fees), less any waiver.
+                'amount' => $payable->amountDue(),
                 'transaction_reference' => trim($data['transaction_reference']),
                 'payer_name' => trim($data['payer_name']),
                 'payer_phone' => $data['payer_phone'] ?? null,
@@ -145,12 +162,12 @@ class RegistrationService
                 'status' => PaymentStatus::Submitted,
             ]);
 
-            $registration->update(['status' => RegistrationStatus::PaymentSubmitted]);
+            $payable->markPaymentSubmitted();
 
             return $payment;
         });
 
-        $registration->user->notify(new PaymentReceived($payment));
+        $payment->payable()->payer()->notify(new PaymentReceived($payment));
 
         return $payment;
     }
@@ -167,13 +184,10 @@ class RegistrationService
                 'reviewed_at' => now(),
             ]);
 
-            $payment->registration->update([
-                'status' => RegistrationStatus::Confirmed,
-                'confirmed_at' => now(),
-            ]);
+            $payment->payable()->markPaid();
         });
 
-        $payment->registration->user->notify(new RegistrationConfirmed($payment->registration->fresh()));
+        $payment->refresh()->payable()->notifyPaid();
     }
 
     public function reject(Payment $payment, User $officer, string $reason): void
@@ -189,11 +203,11 @@ class RegistrationService
                 'rejection_reason' => $reason,
             ]);
 
-            // The participant can submit a corrected payment.
-            $payment->registration->update(['status' => RegistrationStatus::PendingPayment]);
+            // The participant (or group leader) can submit a corrected payment.
+            $payment->payable()->markUnpaid();
         });
 
-        $payment->registration->user->notify(new PaymentRejected($payment->fresh()));
+        $payment->refresh()->payable()->payer()->notify(new PaymentRejected($payment));
     }
 
     /**
@@ -207,6 +221,9 @@ class RegistrationService
             $registration = Registration::lockForUpdate()->findOrFail($registration->id);
             $amount = round($amount, 2);
 
+            if ($registration->group_registration_id) {
+                throw new InvalidArgumentException('This person is registered and paid for by a group. Remove them from the group first.');
+            }
             if ($registration->status !== RegistrationStatus::PendingPayment) {
                 throw new InvalidArgumentException($registration->status === RegistrationStatus::PaymentSubmitted
                     ? 'A payment is waiting for verification. Verify or reject it first.'

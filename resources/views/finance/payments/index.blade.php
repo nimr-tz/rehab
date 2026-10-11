@@ -47,8 +47,9 @@
                     <tbody class="divide-y divide-ink-100">
                         @foreach ($payments as $payment)
                             <tr class="hover:bg-ink-50/60">
-                                <td class="px-5 py-3.5"><p class="font-medium text-ink-900">{{ $payment->registration->user->name }}</p><p class="text-xs text-ink-500">{{ $payment->registration->category->name }}</p></td>
-                                <td class="px-5 py-3.5 font-mono text-ink-700">{{ $payment->registration->reference }}</td>
+                                @php $payable = $payment->payable(); @endphp
+                                <td class="px-5 py-3.5"><p class="font-medium text-ink-900">{{ $payable->payer()->name }}</p><p class="text-xs text-ink-500">{{ $payable->payableLabel() }}</p></td>
+                                <td class="px-5 py-3.5 font-mono text-ink-700">{{ $payable->reference }}</td>
                                 <td class="px-5 py-3.5 text-ink-700">{{ $payment->channel() }}<p class="text-xs text-ink-500">{{ $payment->paid_on->format('j M Y') }}</p></td>
                                 <td class="px-5 py-3.5 font-mono text-ink-700">{{ $payment->transaction_reference }}</td>
                                 <td class="px-5 py-3.5 font-semibold text-ink-900">{{ $payment->formattedAmount() }}</td>

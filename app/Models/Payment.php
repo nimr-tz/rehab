@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\Payable;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +27,17 @@ class Payment extends Model
     public function registration(): BelongsTo
     {
         return $this->belongsTo(Registration::class);
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(GroupRegistration::class, 'group_registration_id');
+    }
+
+    /** What this payment pays for: one registration, or a group's. */
+    public function payable(): Payable
+    {
+        return $this->registration ?? $this->group;
     }
 
     /** The desk officer who sent the M-Pesa request, if it was not the participant. */

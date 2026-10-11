@@ -8,8 +8,10 @@ use App\Enums\RegistrationStatus;
 use App\Enums\StudentProofStatus;
 use App\Models\AbstractSubmission;
 use App\Models\Edition;
+use App\Models\GroupRegistration;
 use App\Models\Registration;
 use App\Models\ReviewAssignment;
+use App\Notifications\GroupPaymentReminder;
 use App\Notifications\PaymentReminder;
 use App\Notifications\ReviewReminder;
 use App\Notifications\RevisionReminder;
@@ -32,7 +34,21 @@ class ReminderService
             return 0;
         }
 
-        return $this->reviews($edition) + $this->revisions($edition) + $this->payments($edition) + $this->presenters($edition);
+        return $this->reviews($edition) + $this->revisions($edition) + $this->payments($edition) + $this->groups($edition) + $this->presenters($edition);
+    }
+
+    /** Group leaders who have not paid for their group a week after registering it. */
+    private function groups(Edition $edition): int
+    {
+        return GroupRegistration::query()
+            ->where('edition_id', $edition->id)
+            ->where('status', RegistrationStatus::PendingPayment)
+            ->where('created_at', '<=', now()->subDays(config('background.unpaid_after_days')))
+            ->whereHas('members')
+            ->whereDoesntHave('payments', fn ($q) => $q->whereIn('status', [PaymentStatus::Submitted, PaymentStatus::Pending]))
+            ->with('leader')
+            ->get()
+            ->sum(fn (GroupRegistration $group) => $this->once('group_unpaid', $group, fn () => $group->leader->notify(new GroupPaymentReminder($group))));
     }
 
     /** Presenters of accepted abstracts still not confirmed two weeks after acceptance. */
@@ -82,8 +98,10 @@ class ReminderService
     /** Fees still unpaid a week after registering, and again two weeks before the summit. */
     private function payments(Edition $edition): int
     {
+        // Group members are not chased: their leader pays (see groups()).
         $unpaid = fn () => Registration::query()
             ->where('edition_id', $edition->id)
+            ->whereNull('group_registration_id')
             ->where('status', RegistrationStatus::PendingPayment)
             ->whereDoesntHave('payments', fn ($q) => $q->whereIn('status', [PaymentStatus::Submitted, PaymentStatus::Pending]))
             // A student whose proof is not yet approved cannot pay, so is not chased.

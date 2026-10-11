@@ -43,8 +43,8 @@
                                 @php $age = (int) $payment->created_at->diffInDays(now()); @endphp
                                 <tr>
                                     <td class="px-6 py-3.5">
-                                        <p class="font-semibold text-ink-900">{{ $payment->registration->user->name }}</p>
-                                        <p class="font-mono text-xs text-ink-500">{{ $payment->registration->reference }} · {{ $payment->transaction_reference }}</p>
+                                        <p class="font-semibold text-ink-900">{{ $payment->payable()->payer()->name }}</p>
+                                        <p class="font-mono text-xs text-ink-500">{{ $payment->payable()->reference }} · {{ $payment->transaction_reference }}</p>
                                     </td>
                                     <td class="px-3 py-3.5 font-extrabold text-ink-900">{{ $payment->formattedAmount() }}</td>
                                     <td class="px-3 py-3.5 text-ink-700">{{ $payment->channel() }}</td>

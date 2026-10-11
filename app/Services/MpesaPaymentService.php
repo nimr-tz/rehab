@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
+use App\Contracts\Payable;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\User;
-use App\Notifications\RegistrationConfirmed;
 use App\Services\Mpesa\MpesaClient;
 use App\Services\Mpesa\MpesaResult;
 use Illuminate\Http\Client\ConnectionException;
@@ -38,15 +38,16 @@ class MpesaPaymentService
 
     public function __construct(private MpesaClient $mpesa) {}
 
-    public static function availableFor(?Registration $registration): bool
+    /** For a registration, or a group's: TZS, unpaid, and (for one person) not paid by a group or waiting for a student proof. */
+    public static function availableFor(?Payable $payable): bool
     {
         return config('mpesa.enabled')
             && filled(config('mpesa.api_key'))
-            && $registration?->currency === config('mpesa.currency')
-            && $registration->status === RegistrationStatus::PendingPayment
-            && ! $registration->awaitsStudentApproval()
-            && $registration->amountDue() > 0
-            && self::offeredTo($registration);
+            && $payable?->currency === config('mpesa.currency')
+            && $payable->status === RegistrationStatus::PendingPayment
+            && ! ($payable instanceof Registration && ($payable->awaitsStudentApproval() || $payable->group_registration_id))
+            && $payable->amountDue() > 0
+            && self::offeredTo($payable);
     }
 
     /**
@@ -54,7 +55,7 @@ class MpesaPaymentService
      * to named accounts. The sandbox moves no real money, so in production it is
      * only ever offered to those named testers.
      */
-    private static function offeredTo(Registration $registration): bool
+    private static function offeredTo(Payable $payable): bool
     {
         $only = config('mpesa.only_for');
 
@@ -62,7 +63,7 @@ class MpesaPaymentService
             return false;
         }
 
-        return empty($only) || in_array(strtolower($registration->user->email), $only, true);
+        return empty($only) || in_array(strtolower($payable->payer()->email), $only, true);
     }
 
     /** Valid M-Pesa numbers: Tanzanian mobiles, plus the sandbox's test numbers. */
@@ -74,32 +75,32 @@ class MpesaPaymentService
             || (config('mpesa.environment') === 'sandbox' && preg_match('/^0{11}[1-9]$/', $msisdn));
     }
 
-    /** Send the prompt to the participant's phone and record the outcome. $by is the desk officer who sent it, if any. */
-    public function start(Registration $registration, string $msisdn, ?User $by = null): Payment
+    /** Send the prompt to the payer's phone and record the outcome. $by is the desk officer who sent it, if any. */
+    public function start(Payable $payable, string $msisdn, ?User $by = null): Payment
     {
-        if (! self::availableFor($registration)) {
+        if (! self::availableFor($payable)) {
             throw new InvalidArgumentException('M-Pesa payments are not available for this registration.');
         }
 
-        $payment = DB::transaction(function () use ($registration, $msisdn, $by) {
-            $registration = Registration::lockForUpdate()->findOrFail($registration->id);
+        $payment = DB::transaction(function () use ($payable, $msisdn, $by) {
+            $payable = $payable::lockForUpdate()->findOrFail($payable->id);
 
-            if (! $registration->canSubmitPayment()) {
+            if (! $payable->canSubmitPayment()) {
                 throw new InvalidArgumentException('A payment cannot be made for this registration right now.');
             }
 
             $reference = Str::uuid()->getHex()->toString();
 
-            return $registration->payments()->create([
+            return $payable->payments()->create([
                 'method' => PaymentMethod::MobileMoney,
                 'provider' => 'mpesa',
                 'gateway' => 'mpesa',
                 'gateway_reference' => $reference,
-                'currency' => $registration->currency,
-                'amount' => $registration->amountDue(),
+                'currency' => $payable->currency,
+                'amount' => $payable->amountDue(),
                 // Replaced by M-Pesa's transaction ID once it is paid.
                 'transaction_reference' => $reference,
-                'payer_name' => $registration->user->name,
+                'payer_name' => $payable->payer()->name,
                 'payer_phone' => MpesaClient::normalizeMsisdn($msisdn),
                 'paid_on' => today(),
                 'status' => PaymentStatus::Pending,
@@ -112,9 +113,9 @@ class MpesaPaymentService
                 $payment->payer_phone,
                 number_format((float) $payment->amount, 0, '', ''),
                 // M-Pesa allows letters and digits only: RH27-000123 becomes RH27000123.
-                preg_replace('/[^A-Za-z0-9]/', '', $registration->reference),
+                preg_replace('/[^A-Za-z0-9]/', '', $payable->reference),
                 $payment->gateway_reference,
-                'Summit registration '.preg_replace('/[^A-Za-z0-9]/', '', $registration->reference),
+                'Summit registration '.preg_replace('/[^A-Za-z0-9]/', '', $payable->reference),
             );
         } catch (ConnectionException) {
             // The prompt may or may not have gone out. Ask M-Pesa later.
@@ -189,15 +190,12 @@ class MpesaPaymentService
                 'reviewed_at' => now(),
             ]);
 
-            $payment->registration->update([
-                'status' => RegistrationStatus::Confirmed,
-                'confirmed_at' => now(),
-            ]);
+            $payment->payable()->markPaid();
 
             return $payment;
         });
 
-        $confirmed->registration->user->notify(new RegistrationConfirmed($confirmed->registration->fresh()));
+        $confirmed->payable()->notifyPaid();
     }
 
     /** Finance found no such payment on the M-Pesa statement: it failed, and the participant can pay again. */
@@ -323,16 +321,13 @@ class MpesaPaymentService
                 'reviewed_at' => now(),
             ]);
 
-            $payment->registration->update([
-                'status' => RegistrationStatus::Confirmed,
-                'confirmed_at' => now(),
-            ]);
+            $payment->payable()->markPaid();
 
             return true;
         });
 
         if ($confirmed) {
-            $payment->registration->user->notify(new RegistrationConfirmed($payment->registration->fresh()));
+            $payment->refresh()->payable()->notifyPaid();
         }
     }
 

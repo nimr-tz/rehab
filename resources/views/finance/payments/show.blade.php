@@ -1,13 +1,16 @@
 @php
     use App\Enums\PaymentStatus;
+    // One person's registration, or a group's.
+    $payable = $payment->payable();
     $registration = $payment->registration;
+    $group = $payment->group;
     $pending = $payment->status === PaymentStatus::Submitted;
-    $amountMatches = (float) $payment->amount === $registration->amountDue() && $payment->currency === $registration->currency;
+    $amountMatches = (float) $payment->amount === $payable->amountDue() && $payment->currency === $payable->currency;
 @endphp
 
-<x-layouts.portal :title="'Payment '.$registration->reference">
+<x-layouts.portal :title="'Payment '.$payable->reference">
     <x-slot:header>
-        <x-page-header eyebrow="Finance" :title="$registration->user->name.' · '.$payment->formattedAmount()" :back="route('finance.payments.index')">
+        <x-page-header eyebrow="Finance" :title="($group ? $group->name : $registration->user->name).' · '.$payment->formattedAmount()" :back="route('finance.payments.index')">
             <x-status :tone="$payment->status->tone()">{{ $payment->status->label() }}</x-status>
         </x-page-header>
     </x-slot:header>
@@ -40,21 +43,40 @@
                     <div class="flex justify-between gap-4"><dt class="text-ink-500">Paid on</dt><dd class="font-medium text-ink-900">{{ $payment->paid_on->format('j M Y') }}</dd></div>
                     <div class="flex justify-between gap-4"><dt class="text-ink-500">Paid by</dt><dd class="text-right font-medium text-ink-900">{{ $payment->payer_name }}@if ($payment->payer_phone)<br><span class="text-xs text-ink-500">{{ $payment->payer_phone }}</span>@endif</dd></div>
                     <div class="flex justify-between gap-4"><dt class="text-ink-500">Amount</dt><dd class="font-bold text-ink-900">{{ $payment->formattedAmount() }}</dd></div>
-                    <div class="flex justify-between gap-4"><dt class="text-ink-500">Fee due</dt><dd class="text-right font-medium text-ink-900">{{ $registration->formattedDue() }}@if ($registration->isWaived())<span class="block text-xs font-normal text-ink-500">{{ $registration->formattedAmount() }} less a waiver</span>@endif</dd></div>
+                    <div class="flex justify-between gap-4"><dt class="text-ink-500">Fee due</dt><dd class="text-right font-medium text-ink-900">{{ $payable->formattedDue() }}@if ($registration?->isWaived())<span class="block text-xs font-normal text-ink-500">{{ $registration->formattedAmount() }} less a waiver</span>@endif</dd></div>
                 </dl>
                 @unless ($amountMatches)
                     <x-alert tone="warning" class="mt-4">The amount differs from the fee due.</x-alert>
                 @endunless
             </x-card>
 
-            <x-card title="Participant">
-                <dl class="space-y-3 text-sm">
-                    <div class="flex justify-between gap-4"><dt class="text-ink-500">Registration</dt><dd class="font-mono font-semibold text-ink-900">{{ $registration->reference }}</dd></div>
-                    <div class="flex justify-between gap-4"><dt class="text-ink-500">Category</dt><dd class="text-right font-medium text-ink-900">{{ $registration->category->name }}</dd></div>
-                    <div class="flex justify-between gap-4"><dt class="text-ink-500">Email</dt><dd class="text-right text-ink-900">{{ $registration->user->email }}</dd></div>
-                    <div class="flex justify-between gap-4"><dt class="text-ink-500">Earlier attempts</dt><dd class="text-ink-900">{{ $registration->payments->count() - 1 }}</dd></div>
-                </dl>
-            </x-card>
+            @if ($group)
+                <x-card title="Group" :description="'Verifying this payment confirms all '.$group->members->count().' people.'" :padding="false">
+                    <dl class="space-y-3 px-6 pt-4 text-sm">
+                        <div class="flex justify-between gap-4"><dt class="text-ink-500">Group</dt><dd class="font-mono font-semibold text-ink-900">{{ $group->reference }}</dd></div>
+                        <div class="flex justify-between gap-4"><dt class="text-ink-500">Leader</dt><dd class="text-right text-ink-900">{{ $group->leader->name }}<span class="block text-xs text-ink-500">{{ $group->leader->email }}</span></dd></div>
+                        <div class="flex justify-between gap-4"><dt class="text-ink-500">Earlier attempts</dt><dd class="text-ink-900">{{ $group->payments->count() - 1 }}</dd></div>
+                    </dl>
+                    <ul class="mt-4 divide-y divide-ink-100 border-t border-ink-100 text-sm">
+                        @foreach ($group->members as $member)
+                            <li class="flex justify-between gap-3 px-6 py-2">
+                                <span class="min-w-0 truncate text-ink-900">{{ $member->user->name }} <span class="text-xs text-ink-500">· {{ $member->category->name }}</span></span>
+                                <span class="shrink-0 font-medium text-ink-900">{{ $member->formattedAmount() }}</span>
+                            </li>
+                        @endforeach
+                        <li class="flex justify-between gap-3 bg-ink-50 px-6 py-2 font-bold text-ink-900"><span>Total</span><span>{{ $group->formattedAmount() }}</span></li>
+                    </ul>
+                </x-card>
+            @else
+                <x-card title="Participant">
+                    <dl class="space-y-3 text-sm">
+                        <div class="flex justify-between gap-4"><dt class="text-ink-500">Registration</dt><dd class="font-mono font-semibold text-ink-900">{{ $registration->reference }}</dd></div>
+                        <div class="flex justify-between gap-4"><dt class="text-ink-500">Category</dt><dd class="text-right font-medium text-ink-900">{{ $registration->category->name }}</dd></div>
+                        <div class="flex justify-between gap-4"><dt class="text-ink-500">Email</dt><dd class="text-right text-ink-900">{{ $registration->user->email }}</dd></div>
+                        <div class="flex justify-between gap-4"><dt class="text-ink-500">Earlier attempts</dt><dd class="text-ink-900">{{ $registration->payments->count() - 1 }}</dd></div>
+                    </dl>
+                </x-card>
+            @endif
 
             @if ($pending)
                 <x-card title="Decision">

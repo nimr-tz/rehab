@@ -52,10 +52,17 @@
                         @endunless
                     </div>
                 </x-card>
-            @elseif ($registration->status === RegistrationStatus::PaymentSubmitted)
+            @elseif ($registration->status === RegistrationStatus::PaymentSubmitted && ! $registration->group_registration_id)
                 <x-card>
                     <x-empty icon="clock" title="Their payment is with finance">
                         They submitted a payment by {{ $registration->latestPayment?->channel() }}, which finance has not verified yet. Ask finance to verify it, then print the badge.
+                    </x-empty>
+                </x-card>
+            @elseif ($registration->group_registration_id)
+                <x-card>
+                    <x-empty icon="users" :title="'Paid for by a group: '.$registration->group->name">
+                        {{ $registration->group->leader->name }} ({{ $registration->group->leader->phone }}) pays for the group, reference {{ $registration->group->reference }}.
+                        {{ $registration->status === RegistrationStatus::PaymentSubmitted ? 'The group payment is with finance for verification.' : 'The group has not paid yet. Ask the group leader to pay, or contact finance.' }}
                     </x-empty>
                 </x-card>
             @elseif ($registration->awaitsStudentApproval())

@@ -92,7 +92,7 @@ class DeskController extends Controller
     {
         $this->ensureCurrent($registration);
 
-        $registration->load('user', 'category', 'payments.initiator', 'activeWaiver');
+        $registration->load('user', 'category', 'payments.initiator', 'activeWaiver', 'group.leader');
 
         return view('desk.show', [
             'registration' => $registration,

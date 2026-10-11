@@ -85,6 +85,7 @@ class Navigation
             ],
             default => $user->hasRole(Role::Participant->value) ? [
                 $item('Registration & payment', 'registration.show', 'registration.show'),
+                $item('Group registration', 'groups.index', 'groups.*'),
                 $item('Badge & check-in', 'registration.badge.show', 'registration.badge.show'),
                 $item('My abstracts', 'abstracts.index', 'abstracts.*', ['count' => $user->abstracts()->whereIn('status', [AbstractStatus::Draft, AbstractStatus::RevisionRequested])->count()]),
                 $item('Programme', 'programme', 'programme'),

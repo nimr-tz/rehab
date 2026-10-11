@@ -2,8 +2,8 @@
 
 namespace App\Support;
 
+use App\Contracts\Payable;
 use App\Enums\PaymentMethod;
-use App\Models\Registration;
 use App\Services\MpesaPaymentService;
 
 /**
@@ -19,14 +19,14 @@ class PaymentChannels
     /**
      * @return array<string, array{key: string, label: string, mode: string, method: string, provider: ?string, timing: string, details: array}>
      */
-    public static function for(Registration $registration): array
+    public static function for(Payable $payable): array
     {
         $channels = [];
-        $mobileMoney = $registration->currency === config('payments.mobile_money.currency');
+        $mobileMoney = $payable->currency === config('payments.mobile_money.currency');
 
         if ($mobileMoney) {
             foreach (config('payments.mobile_money.providers') as $key => $provider) {
-                $instant = $key === 'mpesa' && MpesaPaymentService::availableFor($registration);
+                $instant = $key === 'mpesa' && MpesaPaymentService::availableFor($payable);
 
                 $channels[$key] = [
                     'key' => $key,
@@ -40,7 +40,7 @@ class PaymentChannels
             }
 
             // M-Pesa is offered instantly even before a pay number is published.
-            if (! isset($channels['mpesa']) && MpesaPaymentService::availableFor($registration)) {
+            if (! isset($channels['mpesa']) && MpesaPaymentService::availableFor($payable)) {
                 $channels = ['mpesa' => [
                     'key' => 'mpesa', 'label' => 'M-Pesa', 'mode' => 'instant',
                     'method' => PaymentMethod::MobileMoney->value, 'provider' => 'mpesa',
@@ -49,7 +49,7 @@ class PaymentChannels
             }
         }
 
-        $account = config('payments.bank_accounts')[$registration->currency] ?? null;
+        $account = config('payments.bank_accounts')[$payable->currency] ?? null;
         if ($account) {
             $channels['bank'] = [
                 'key' => 'bank',

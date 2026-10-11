@@ -2,17 +2,19 @@
 
 namespace App\Models;
 
+use App\Contracts\Payable;
 use App\Enums\AbstractStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
 use App\Enums\StudentProofStatus;
+use App\Notifications\RegistrationConfirmed;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
-class Registration extends Model
+class Registration extends Model implements Payable
 {
     protected $guarded = ['id'];
 
@@ -46,6 +48,12 @@ class Registration extends Model
         return $this->belongsTo(RegistrationCategory::class, 'registration_category_id');
     }
 
+    /** The group that registered and pays for this person, if any. */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(GroupRegistration::class, 'group_registration_id');
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class)->latest('id');
@@ -66,10 +74,14 @@ class Registration extends Model
         return $this->status === RegistrationStatus::Confirmed;
     }
 
-    /** A new payment can be submitted unless one is pending, the fee is settled, or a student proof is still to be approved. */
+    /**
+     * A new payment can be submitted unless one is pending, the fee is settled,
+     * a student proof is still to be approved, or a group pays for this person.
+     */
     public function canSubmitPayment(): bool
     {
         return $this->status === RegistrationStatus::PendingPayment
+            && ! $this->group_registration_id
             && ! $this->awaitsStudentApproval()
             && ! $this->payments()->whereIn('status', [PaymentStatus::Submitted, PaymentStatus::Pending])->exists();
     }
@@ -87,6 +99,7 @@ class Registration extends Model
     public function canChangeCategory(): bool
     {
         return $this->status === RegistrationStatus::PendingPayment
+            && ! $this->group_registration_id
             && ! $this->isWaived()
             && ! $this->payments()->whereIn('status', [PaymentStatus::Submitted, PaymentStatus::Pending, PaymentStatus::Verified])->exists();
     }
@@ -137,6 +150,41 @@ class Registration extends Model
     public function isFullyWaived(): bool
     {
         return $this->isWaived() && $this->amountDue() <= 0;
+    }
+
+    public function payer(): User
+    {
+        return $this->user;
+    }
+
+    public function payableLabel(): string
+    {
+        return $this->category->name;
+    }
+
+    public function paymentUrl(): string
+    {
+        return route('registration.show');
+    }
+
+    public function markPaymentSubmitted(): void
+    {
+        $this->update(['status' => RegistrationStatus::PaymentSubmitted]);
+    }
+
+    public function markPaid(): void
+    {
+        $this->update(['status' => RegistrationStatus::Confirmed, 'confirmed_at' => now()]);
+    }
+
+    public function markUnpaid(): void
+    {
+        $this->update(['status' => RegistrationStatus::PendingPayment]);
+    }
+
+    public function notifyPaid(): void
+    {
+        $this->user->notify(new RegistrationConfirmed($this->fresh()));
     }
 
     /** Attended the summit: confirmed, and checked in at the desk or scanned at a session. */

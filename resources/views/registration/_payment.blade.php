@@ -1,15 +1,25 @@
-{{-- The participant chooses how to pay, then follows that channel: an instant M-Pesa prompt, or pay and upload the proof. --}}
+{{--
+    The participant chooses how to pay, then follows that channel: an instant M-Pesa prompt, or pay and upload the proof.
+    For one person's registration ($registration), or a group's ($payable with $payRoutes).
+--}}
 @php
     use App\Enums\PaymentStatus;
     use App\Services\MpesaPaymentService;
 
-    $channels = \App\Support\PaymentChannels::for($registration);
+    $payable ??= $registration;
+    $payRoutes ??= [
+        'manual' => route('registration.payments.store'),
+        'mpesa' => route('registration.mpesa.store'),
+        'mpesa_status' => route('registration.mpesa.status'),
+        'back' => route('registration.show'),
+    ];
+    $channels = \App\Support\PaymentChannels::for($payable);
     $selected = array_key_exists(old('channel'), $channels) ? old('channel') : array_key_first($channels);
-    $lastPayment = $registration->payments->first();
+    $lastPayment = $payable->payments->first();
     $routes = collect($channels)->map(fn ($c) => ['mode' => $c['mode'], 'method' => $c['method'], 'provider' => $c['provider']]);
 @endphp
 
-<x-card title="Pay {{ $registration->formattedDue() }}" description="Choose how you would like to pay. Your reference is {{ $registration->reference }}.">
+<x-card title="Pay {{ $payable->formattedDue() }}" description="Choose how you would like to pay. Your reference is {{ $payable->reference }}.">
     @if ($lastPayment?->status === PaymentStatus::Rejected)
         <x-alert tone="danger" class="mb-5">
             <span class="font-semibold">Your last payment could not be verified.</span>
@@ -47,8 +57,8 @@
             @foreach ($channels as $channel)
                 <div x-show="channel === @js($channel['key'])" @if ($channel['key'] !== $selected) x-cloak @endif class="border-t border-ink-100 pt-6">
                     @if ($channel['mode'] === 'instant')
-                        <form method="POST" action="{{ route('registration.mpesa.store') }}"
-                              x-data="mpesaPay({ storeUrl: @js(route('registration.mpesa.store')), statusUrl: @js(route('registration.mpesa.status')) })"
+                        <form method="POST" action="{{ $payRoutes['mpesa'] }}"
+                              x-data="mpesaPay({ storeUrl: @js($payRoutes['mpesa']), statusUrl: @js($payRoutes['mpesa_status']) })"
                               @submit.prevent="pay($el)" class="space-y-5">
                             @csrf
                             <ol class="grid gap-2 text-sm text-ink-600 sm:grid-cols-3">
@@ -68,7 +78,7 @@
                                 <span class="mt-0.5 h-6 w-6 shrink-0 animate-spin rounded-full border-[3px] border-sun-200 border-t-ember-600"></span>
                                 <div class="text-sm">
                                     <p class="font-semibold text-ink-900">Check your phone and enter your M-Pesa PIN</p>
-                                    <p class="mt-1 text-ink-600" x-show="state === 'sending'">The request for {{ $registration->formattedDue() }} is on its way. Keep this page open. <span class="tabular-nums" x-text="seconds + ' s'"></span></p>
+                                    <p class="mt-1 text-ink-600" x-show="state === 'sending'">The request for {{ $payable->formattedDue() }} is on its way. Keep this page open. <span class="tabular-nums" x-text="seconds + ' s'"></span></p>
                                     <p class="mt-1 text-ink-600" x-show="state === 'pending'" x-cloak>Waiting for M-Pesa to confirm. This page updates by itself. <span class="tabular-nums" x-text="seconds + ' s'"></span></p>
                                 </div>
                             </div>
@@ -82,23 +92,23 @@
 
                             <div x-show="state === 'unknown'" x-cloak class="rounded-2xl bg-sun-50 p-4 text-sm text-ink-800" role="status">
                                 <p x-text="message"></p>
-                                <a href="{{ route('registration.show') }}" class="mt-2 inline-block font-semibold text-brand-700 hover:underline">Check again</a>
+                                <a href="{{ $payRoutes['back'] }}" class="mt-2 inline-block font-semibold text-brand-700 hover:underline">Check again</a>
                             </div>
                         </form>
                     @else
                         <div class="rounded-2xl bg-canvas p-4 text-sm">
-                            <p class="font-semibold text-ink-900">Pay {{ $registration->formattedDue() }} by {{ $channel['label'] }}</p>
+                            <p class="font-semibold text-ink-900">Pay {{ $payable->formattedDue() }} by {{ $channel['label'] }}</p>
                             <dl class="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
                                 @if ($channel['method'] === 'bank_transfer')
                                     <div><dt class="text-ink-500">Bank</dt><dd class="font-semibold text-ink-900">{{ $channel['details']['bank_name'] }}</dd></div>
                                     <div><dt class="text-ink-500">Account name</dt><dd class="font-semibold text-ink-900">{{ $channel['details']['account_name'] }}</dd></div>
-                                    <div><dt class="text-ink-500">Account number ({{ $registration->currency }})</dt><dd class="font-mono font-semibold text-ink-900">{{ $channel['details']['account_number'] }}</dd></div>
+                                    <div><dt class="text-ink-500">Account number ({{ $payable->currency }})</dt><dd class="font-mono font-semibold text-ink-900">{{ $channel['details']['account_number'] }}</dd></div>
                                     <div><dt class="text-ink-500">Branch · SWIFT</dt><dd class="font-semibold text-ink-900">{{ $channel['details']['branch'] }} · {{ $channel['details']['swift_code'] }}</dd></div>
                                 @else
                                     <div><dt class="text-ink-500">Pay number</dt><dd class="font-mono font-semibold text-ink-900">{{ $channel['details']['pay_number'] }}</dd></div>
                                     <div><dt class="text-ink-500">Account name</dt><dd class="font-semibold text-ink-900">{{ $channel['details']['account_name'] }}</dd></div>
                                 @endif
-                                <div><dt class="text-ink-500">Reference</dt><dd class="font-mono font-semibold text-ink-900">{{ $registration->reference }}</dd></div>
+                                <div><dt class="text-ink-500">Reference</dt><dd class="font-mono font-semibold text-ink-900">{{ $payable->reference }}</dd></div>
                             </dl>
                         </div>
                     @endif
@@ -106,7 +116,7 @@
             @endforeach
 
             {{-- One form for every pay-and-upload channel; the chosen channel sets the method and operator. --}}
-            <form method="POST" action="{{ route('registration.payments.store') }}" enctype="multipart/form-data"
+            <form method="POST" action="{{ $payRoutes['manual'] }}" enctype="multipart/form-data"
                   x-show="routes[channel]?.mode === 'manual'" @if (($channels[$selected]['mode'] ?? null) !== 'manual') x-cloak @endif class="space-y-5">
                 @csrf
                 <input type="hidden" name="channel" :value="channel">

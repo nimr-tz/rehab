@@ -15,6 +15,7 @@ use App\Enums\StudentProofStatus;
 use App\Enums\WaiverReason;
 use App\Models\AbstractSubmission;
 use App\Models\Edition;
+use App\Models\GroupRegistration;
 use App\Models\Payment;
 use App\Models\ProgrammeSession;
 use App\Models\Registration;
@@ -70,6 +71,7 @@ class DemoSeeder extends Seeder
         $staff = $this->staff();
         $participants = $this->participants();
         $this->registrations($participants, $staff['finance']);
+        $this->groups($participants->firstWhere('email', 'groupleader@rehab.test'), $staff['finance']);
         $this->waivers($staff['finance']);
         $this->abstracts($participants, $staff['scientific']);
         $this->programme();
@@ -306,6 +308,8 @@ class DemoSeeder extends Seeder
         $people = collect([
             $make('participant@rehab.test', 'Dr', 'Amina', 'Mussa', 'Muhimbili National Hospital', 'TZ', 'Rehabilitation physician', '-4 months'),
             $make('newcomer@rehab.test', null, 'Joseph', 'Mrema', 'Dodoma Regional Referral Hospital', 'TZ', 'Physiotherapist', '-2 days'),
+            // Registers and pays for a group of colleagues (see groups()).
+            $make('groupleader@rehab.test', 'Mr', 'Baraka', 'Mollel', 'Kilimanjaro Christian Medical Centre', 'TZ', 'Head of Physiotherapy', '-6 weeks'),
         ]);
 
         // Names, institutions and phone numbers come from the person's own country,
@@ -386,7 +390,7 @@ class DemoSeeder extends Seeder
             && ($c->currency === 'TZS') === $local);
 
         foreach ($participants as $index => $user) {
-            if ($user->email === 'newcomer@rehab.test') {
+            if (in_array($user->email, ['newcomer@rehab.test', 'groupleader@rehab.test'], true)) {
                 continue; // registers live during the demo
             }
 
@@ -472,6 +476,81 @@ class DemoSeeder extends Seeder
             'student_reviewed_at' => $stage === 'pending' ? null : $this->past($registeredAt->addHours(mt_rand(4, 40)), $registeredAt),
             'student_rejection_reason' => $stage === 'rejected' ? 'This student ID expired in June 2025. Please upload a current ID or a letter from your institution.' : null,
         ]);
+    }
+
+    /**
+     * Two groups: the demo group leader's, paid by bank and waiting for finance,
+     * and another hospital's, already paid and confirmed.
+     */
+    private function groups(User $leader, User $finance): void
+    {
+        GroupRegistration::where('edition_id', $this->edition->id)->each(function (GroupRegistration $group) {
+            $group->members()->delete();
+            $group->delete();
+        });
+
+        $tzs = $this->edition->categories->first(fn (RegistrationCategory $c) => $c->currency === 'TZS' && ! $c->is_student);
+        $plan = [
+            [$leader, 'KCMC Physiotherapy Department', PaymentStatus::Submitted, [
+                ['Ms', 'Rehema', 'Lyimo'], ['Mr', 'Elia', 'Massawe'], ['Ms', 'Upendo', 'Kimaro'], ['Mr', 'Godlisten', 'Shayo'],
+            ]],
+            [null, 'Bugando Occupational Therapy Unit', PaymentStatus::Verified, [
+                ['Dr', 'Neema', 'Bundala'], ['Ms', 'Agnes', 'Magesa'], ['Mr', 'Paulo', 'Kisinza'],
+            ]],
+        ];
+
+        foreach ($plan as $g => [$groupLeader, $name, $paid, $people]) {
+            $groupLeader ??= User::updateOrCreate(['email' => 'ot.bugando@example.org'], [
+                'title' => 'Dr', 'first_name' => 'Joyce', 'last_name' => 'Masanja', 'phone' => '+255 28 250 0081',
+                'country' => 'TZ', 'institution' => 'Bugando Medical Centre', 'profession' => 'Occupational therapist', 'password' => self::PASSWORD,
+            ]);
+            $createdAt = CarbonImmutable::now()->subDays(12 - $g * 6)->setTime(10, 15);
+
+            $group = GroupRegistration::create([
+                'edition_id' => $this->edition->id, 'leader_id' => $groupLeader->id, 'name' => $name,
+                'reference' => 'pending-'.Str::random(12), 'currency' => 'TZS', 'status' => RegistrationStatus::PendingPayment,
+            ]);
+            $group->forceFill([
+                'created_at' => $createdAt,
+                'reference' => sprintf('%s%s-G%04d', config('payments.reference_prefix'), $this->edition->shortYear(), $group->id),
+            ])->save();
+
+            foreach ($people as [$title, $first, $last]) {
+                $user = User::updateOrCreate(['email' => Str::slug($first.' '.$last, '.').'@example.org'], [
+                    'title' => $title, 'first_name' => $first, 'last_name' => $last, 'phone' => '+255 7'.mt_rand(10000000, 99999999),
+                    'country' => 'TZ', 'institution' => $groupLeader->institution, 'profession' => $g === 0 ? 'Physiotherapist' : 'Occupational therapist',
+                    'password' => self::PASSWORD,
+                ]);
+                $user->forceFill(['email_verified_at' => $createdAt])->save();
+                $user->syncRoles([Role::Participant->value]);
+
+                $registration = Registration::updateOrCreate(['edition_id' => $this->edition->id, 'user_id' => $user->id], [
+                    'registration_category_id' => $tzs->id, 'group_registration_id' => $group->id,
+                    'reference' => 'pending-'.Str::random(12), 'currency' => 'TZS', 'amount' => $tzs->amount,
+                    'status' => RegistrationStatus::PendingPayment, 'qr_token' => Str::random(32),
+                ]);
+                $registration->forceFill([
+                    'created_at' => $createdAt,
+                    'reference' => sprintf('%s%s-%06d', config('payments.reference_prefix'), $this->edition->shortYear(), $registration->id),
+                ])->save();
+            }
+
+            $paidOn = $createdAt->addDays(2);
+            $payment = $group->payments()->create([
+                'method' => PaymentMethod::BankTransfer, 'currency' => 'TZS', 'amount' => $group->amount(),
+                'transaction_reference' => 'FT'.mt_rand(270000000, 279999999), 'payer_name' => $group->name,
+                'paid_on' => $paidOn->toDateString(), 'status' => $paid,
+                'reviewed_by' => $paid === PaymentStatus::Verified ? $finance->id : null,
+                'reviewed_at' => $paid === PaymentStatus::Verified ? $paidOn->addHours(5) : null,
+            ]);
+            $payment->forceFill(['created_at' => $paidOn->setTime(11, 30)])->save();
+
+            $path = 'payment-proofs/demo-'.$group->reference.'.pdf';
+            Storage::disk(config('payments.proof_disk'))->put($path, Pdf::loadView('pdf.sample-receipt', ['payment' => $payment, 'bank' => 'CRDB Bank PLC'])->setPaper('a5', 'landscape')->output());
+            $payment->update(['proof_path' => $path]);
+
+            $paid === PaymentStatus::Verified ? $group->markPaid() : $group->markPaymentSubmitted();
+        }
     }
 
     private function payment(Registration $registration, CarbonImmutable $paidOn, PaymentStatus $status, User $finance, ?string $reason = null): Payment

@@ -17,6 +17,7 @@ use App\Http\Controllers\Finance\PaymentController as FinancePaymentController;
 use App\Http\Controllers\Finance\StudentProofController;
 use App\Http\Controllers\Finance\WaiverController;
 use App\Http\Controllers\GalleryController;
+use App\Http\Controllers\GroupController;
 use App\Http\Controllers\Media\AlbumController as MediaAlbumController;
 use App\Http\Controllers\Media\PhotoController as MediaPhotoController;
 use App\Http\Controllers\Media\RemovalRequestController;
@@ -94,6 +95,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/registration/mpesa', [MpesaPaymentController::class, 'store'])->middleware('throttle:6,1')->name('registration.mpesa.store');
         Route::get('/registration/mpesa/status', [MpesaPaymentController::class, 'status'])->middleware('throttle:60,1')->name('registration.mpesa.status');
         Route::post('/registration/mpesa/check', [MpesaPaymentController::class, 'check'])->middleware('throttle:20,1')->name('registration.mpesa.check');
+
+        Route::get('/groups', [GroupController::class, 'index'])->name('groups.index');
+        Route::get('/groups/new', [GroupController::class, 'create'])->name('groups.create');
+        Route::post('/groups', [GroupController::class, 'store'])->middleware('throttle:10,1')->name('groups.store');
+        Route::get('/groups/{group}', [GroupController::class, 'show'])->name('groups.show');
+        Route::post('/groups/{group}/members', [GroupController::class, 'addMember'])->middleware('throttle:30,1')->name('groups.members.store');
+        Route::delete('/groups/{group}/members/{registration}', [GroupController::class, 'removeMember'])->name('groups.members.destroy');
+        Route::post('/groups/{group}/payments', [GroupController::class, 'pay'])->name('groups.payments.store');
+        Route::post('/groups/{group}/mpesa', [GroupController::class, 'mpesa'])->middleware('throttle:6,1')->name('groups.mpesa.store');
+        Route::get('/groups/{group}/mpesa/status', [GroupController::class, 'mpesaStatus'])->middleware('throttle:60,1')->name('groups.mpesa.status');
+        Route::post('/groups/{group}/mpesa/check', [GroupController::class, 'mpesaCheck'])->middleware('throttle:20,1')->name('groups.mpesa.check');
 
         Route::get('/abstracts', [AbstractController::class, 'index'])->name('abstracts.index');
         Route::get('/abstracts/new', [AbstractController::class, 'create'])->name('abstracts.create');

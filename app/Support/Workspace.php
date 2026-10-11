@@ -37,6 +37,7 @@ class Workspace
     private const ROUTES = [
         'registration.*' => Role::Participant,
         'abstracts.*' => Role::Participant,
+        'groups.*' => Role::Participant,
         'reviews.*' => Role::Reviewer,
         'scientific.*' => Role::ScientificAdmin,
         'committee.awards.*' => Role::ScientificAdmin,

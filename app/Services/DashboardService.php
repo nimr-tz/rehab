@@ -44,6 +44,7 @@ class DashboardService
         [$headline, $detail] = match (true) {
             ! $registration => ['Register for the '.$edition?->name.' '.$edition?->year, 'Choose your category and pay by bank transfer or mobile money. Your badge unlocks as soon as payment is verified.'],
             $registration->status === RegistrationStatus::PaymentSubmitted => ['Your payment is being verified', 'Submitted by '.$latest->channel().' on '.$latest->created_at->format('j F').'. Finance usually confirms within 2 working days, then your badge unlocks.'],
+            $registration->group_registration_id && ! $confirmed => ['Your group is paying for you', $registration->group->leader->name.' registered you with '.$registration->group->name.' and pays for the whole group. You will be emailed once the payment is verified.'],
             $registration->student_status === StudentProofStatus::Pending => ['We are checking your student proof', 'Finance checks proofs of enrolment, usually within 2 working days. You can pay the student rate of '.$registration->formattedDue().' once it is approved.'],
             $registration->student_status === StudentProofStatus::Rejected => ['Your student proof was not accepted', $registration->student_rejection_reason.' Upload another document, or change your category.'],
             $registration->status === RegistrationStatus::PendingPayment && $latest?->status === PaymentStatus::Pending => ['Waiting for M-Pesa', 'We sent a payment request to '.$latest->payer_phone.'. Once you enter your PIN, your place is confirmed.'],
@@ -281,7 +282,7 @@ class DashboardService
 
     public function finance(): array
     {
-        $payments = Payment::with('registration.user', 'registration.category')->get();
+        $payments = Payment::with('registration.user', 'registration.category', 'group.leader')->get();
         $verified = $payments->where('status', PaymentStatus::Verified);
         $submitted = $payments->where('status', PaymentStatus::Submitted)->sortBy('created_at')->values();
         $registrations = Registration::all();
