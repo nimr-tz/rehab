@@ -180,7 +180,7 @@
                 <p class="eyebrow">Key dates</p>
                 <h2 class="section-title">On the road to {{ $summit->get('year') }}</h2>
             </div>
-            <a href="{{ route('login') }}" class="text-base font-bold text-brand-700 hover:text-brand-800">Apply to chair or report a session →</a>
+            <a href="{{ route('session-roles.index') }}" class="text-base font-bold text-brand-700 hover:text-brand-800">Apply to chair or report a session →</a>
         </div>
         <ol class="mt-12 grid gap-y-8 sm:grid-cols-2 lg:grid-cols-5">
             <li class="border-t-[3px] border-brand-700 pr-5">

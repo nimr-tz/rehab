@@ -3,12 +3,14 @@
 namespace Database\Seeders;
 
 use App\Enums\AbstractStatus;
+use App\Enums\ApplicationStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PresentationType;
 use App\Enums\Recommendation;
 use App\Enums\RegistrationStatus;
 use App\Enums\Role;
+use App\Enums\SessionRole;
 use App\Enums\StudentProofStatus;
 use App\Enums\WaiverReason;
 use App\Models\AbstractSubmission;
@@ -18,6 +20,7 @@ use App\Models\ProgrammeSession;
 use App\Models\Registration;
 use App\Models\RegistrationCategory;
 use App\Models\ReviewAssignment;
+use App\Models\SessionRoleApplication;
 use App\Models\Topic;
 use App\Models\User;
 use App\Support\Rubric;
@@ -70,6 +73,7 @@ class DemoSeeder extends Seeder
         $this->waivers($staff['finance']);
         $this->abstracts($participants, $staff['scientific']);
         $this->programme();
+        $this->sessionRoles($participants, $staff['scientific']);
         $this->deskAndNotifications();
         $this->call(AwardsSeeder::class);
         $this->call(GallerySeeder::class);
@@ -85,6 +89,69 @@ class DemoSeeder extends Seeder
         $window = max(60, (int) $after->diffInSeconds(now()));
 
         return $after->addSeconds(mt_rand(30, $window - 30));
+    }
+
+    /**
+     * Offers to chair or report a session: some accepted with a session, some
+     * waiting for the committee, one declined. The demo participant reports one.
+     */
+    private function sessionRoles(Collection $participants, User $committee): void
+    {
+        SessionRoleApplication::where('edition_id', $this->edition->id)->delete();
+
+        $sessions = $this->edition->sessions()->where('kind', '!=', 'break')->orderBy('starts_at')->get();
+        $people = $participants->reject(fn (User $u) => in_array($u->email, ['participant@rehab.test', 'newcomer@rehab.test'], true))->shuffle()->take(9)->values();
+        $amina = $participants->firstWhere('email', 'participant@rehab.test');
+
+        $experience = [
+            SessionRole::Chair->value => [
+                'I have chaired the stroke rehabilitation track at our national physiotherapy conference for three years.',
+                'I lead our hospital\'s weekly clinical meeting and chaired two sessions at the 2025 summit.',
+                'Head of department; I have moderated panels on community-based rehabilitation in the region.',
+            ],
+            SessionRole::Rapporteur->value => [
+                'I write the summaries of our department\'s research seminars and edit the newsletter.',
+                'I was a rapporteur at the East African physiotherapy congress and enjoy synthesising discussions.',
+                'Postgraduate researcher; I take careful notes and have written conference reports for our association.',
+            ],
+        ];
+
+        // [person, role, status, session index]
+        $plan = [
+            [$amina, SessionRole::Rapporteur, ApplicationStatus::Accepted, 1],
+            [$people[0], SessionRole::Chair, ApplicationStatus::Accepted, 2],
+            [$people[1], SessionRole::Rapporteur, ApplicationStatus::Accepted, 2],
+            [$people[2], SessionRole::Rapporteur, ApplicationStatus::Accepted, 4],
+            [$people[3], SessionRole::Chair, ApplicationStatus::Pending, null],
+            [$people[4], SessionRole::Chair, ApplicationStatus::Pending, null],
+            [$people[5], SessionRole::Rapporteur, ApplicationStatus::Pending, null],
+            [$people[6], SessionRole::Rapporteur, ApplicationStatus::Pending, null],
+            [$people[7], SessionRole::Chair, ApplicationStatus::Declined, null],
+        ];
+
+        foreach ($plan as $i => [$user, $role, $status, $sessionIndex]) {
+            $session = $sessionIndex !== null ? $sessions->get($sessionIndex) : null;
+            $appliedAt = CarbonImmutable::now()->subDays(mt_rand(5, 40))->setTime(mt_rand(8, 20), mt_rand(0, 59));
+
+            $application = SessionRoleApplication::create([
+                'edition_id' => $this->edition->id,
+                'user_id' => $user->id,
+                'role' => $role,
+                'topic_ids' => $this->topics->values()->shuffle()->take(mt_rand(1, 2))->pluck('id')->all(),
+                'experience' => $experience[$role->value][$i % 3],
+                'status' => $status,
+                'programme_session_id' => $session?->id,
+                'decided_by' => $status === ApplicationStatus::Pending ? null : $committee->id,
+                'decided_at' => $status === ApplicationStatus::Pending ? null : $this->past($appliedAt->addDays(3), $appliedAt),
+            ]);
+            $application->forceFill(['created_at' => $appliedAt])->save();
+
+            if ($session) {
+                $session->update($role === SessionRole::Chair
+                    ? ['chair' => $user->name, 'chair_user_id' => $user->id]
+                    : ['rapporteur' => $user->name, 'rapporteur_user_id' => $user->id]);
+            }
+        }
     }
 
     /** Some badges already printed, and the bell filled for the demo accounts. */

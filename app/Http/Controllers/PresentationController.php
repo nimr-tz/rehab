@@ -74,9 +74,12 @@ class PresentationController extends Controller
             : $abstract->user_id === $user->id && $abstract->acceptsPresentationUpload();
     }
 
+    /** The presenter, the committee, and the chair of the session it is presented in. */
     private function canDownload(User $user, AbstractSubmission $abstract): bool
     {
-        return $abstract->user_id === $user->id || $this->isCommittee($user);
+        return $abstract->user_id === $user->id
+            || $this->isCommittee($user)
+            || $abstract->sessions()->where('chair_user_id', $user->id)->exists();
     }
 
     private function isCommittee(User $user): bool

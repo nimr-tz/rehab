@@ -18,6 +18,7 @@
                     <x-form.input name="ends_at" type="datetime-local" label="Ends" :value="$session->ends_at?->format('Y-m-d\TH:i')" required />
                     <x-form.input name="hall" label="Hall (optional)" :value="$session->hall" />
                     <x-form.input name="chair" label="Chair (optional)" :value="$session->chair" />
+                    <x-form.input name="rapporteur" label="Rapporteur (optional)" :value="$session->rapporteur" />
                 </div>
                 <x-form.input name="description" label="Short description (optional)" :value="$session->description" />
             </div>

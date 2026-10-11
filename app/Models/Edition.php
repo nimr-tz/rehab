@@ -71,6 +71,13 @@ class Edition extends Model
             && (! $this->abstract_deadline || today()->lte($this->abstract_deadline));
     }
 
+    /** Applications to chair or report a session: open until their deadline (that whole day), and never once the summit has begun. */
+    public function acceptsSessionRoleApplications(): bool
+    {
+        return (! $this->session_role_deadline || today()->lte($this->session_role_deadline))
+            && (! $this->start_date || today()->lt($this->start_date));
+    }
+
     public function shortYear(): string
     {
         return substr((string) $this->year, -2);

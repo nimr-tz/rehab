@@ -27,7 +27,24 @@ class ProgrammeSession extends Model
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'cpd_points' => 'decimal:2',
+            'rapporteur_report_at' => 'datetime',
         ];
+    }
+
+    public function chairUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'chair_user_id');
+    }
+
+    public function rapporteurUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rapporteur_user_id');
+    }
+
+    /** The rapporteur writes the report once the session has started. */
+    public function acceptsReport(): bool
+    {
+        return $this->isScannable() && now()->gte($this->starts_at);
     }
 
     public function attendances(): HasMany

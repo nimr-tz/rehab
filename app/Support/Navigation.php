@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\AbstractStatus;
+use App\Enums\ApplicationStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\Role;
 use App\Enums\StudentProofStatus;
@@ -13,6 +14,7 @@ use App\Models\Payment;
 use App\Models\PhotoRemovalRequest;
 use App\Models\Registration;
 use App\Models\ReviewAssignment;
+use App\Models\SessionRoleApplication;
 use App\Models\User;
 
 /**
@@ -48,6 +50,9 @@ class Navigation
                 ]),
                 $item('Reviewers', 'scientific.reviewers', 'scientific.reviewers'),
                 $item('Programme & CPD', 'scientific.programme.index', 'scientific.programme.*'),
+                $item('Chairs & rapporteurs', 'scientific.session-roles.index', 'scientific.session-roles.*', [
+                    'count' => SessionRoleApplication::where('edition_id', Edition::current()?->id)->where('status', ApplicationStatus::Pending)->count(),
+                ]),
                 $item('Awards', 'committee.awards.index', 'committee.awards.*'),
             ],
             Role::Judge => [
@@ -81,9 +86,11 @@ class Navigation
                 $item('Badge & check-in', 'registration.badge.show', 'registration.badge.show'),
                 $item('My abstracts', 'abstracts.index', 'abstracts.*', ['count' => $user->abstracts()->whereIn('status', [AbstractStatus::Draft, AbstractStatus::RevisionRequested])->count()]),
                 $item('Programme', 'programme', 'programme'),
+                $item('Chair or rapporteur', 'session-roles.index', 'session-roles.*'),
                 $item('Awards', 'awards.mine', 'awards.mine'),
             ] : [
                 $item('Programme', 'programme', 'programme'),
+                $item('Chair or rapporteur', 'session-roles.index', 'session-roles.*'),
                 $item('Awards', 'awards.mine', 'awards.mine'),
             ],
         };

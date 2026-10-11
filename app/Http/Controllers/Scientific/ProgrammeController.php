@@ -65,7 +65,16 @@ class ProgrammeController extends Controller
     public function update(Request $request, ProgrammeSession $session): RedirectResponse
     {
         $this->ensureCurrent($session);
-        $session->update($this->validated($request));
+        $data = $this->validated($request);
+
+        // A chair or rapporteur typed in by hand is no longer the person the committee accepted.
+        foreach (['chair' => 'chair_user_id', 'rapporteur' => 'rapporteur_user_id'] as $name => $user) {
+            if (($data[$name] ?? null) !== $session->{$name}) {
+                $data[$user] = null;
+            }
+        }
+
+        $session->update($data);
 
         return redirect()->route('scientific.programme.index')->with('status', $session->title.' was updated.');
     }
@@ -147,6 +156,7 @@ class ProgrammeController extends Controller
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
             'chair' => ['nullable', 'string', 'max:255'],
+            'rapporteur' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:255'],
             'cpd_points' => ['nullable', 'numeric', 'min:0', 'max:99'],
         ], [

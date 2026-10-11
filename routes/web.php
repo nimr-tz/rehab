@@ -30,7 +30,9 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Scientific\AbstractController as ScientificAbstractController;
 use App\Http\Controllers\Scientific\ProgrammeController as ScientificProgrammeController;
 use App\Http\Controllers\Scientific\ReviewerController;
+use App\Http\Controllers\Scientific\SessionRoleController as ScientificSessionRoleController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SessionRoleController;
 use App\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
@@ -61,6 +63,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Slides for accepted abstracts: the presenter and the committee.
     Route::post('/presentations/{abstract}/chunks', [PresentationController::class, 'upload'])->middleware('throttle:600,1')->name('presentations.upload');
     Route::get('/presentations/{abstract}', [PresentationController::class, 'download'])->name('presentations.download');
+
+    // Chairs and rapporteurs: anyone with an account can apply; rapporteurs report on their session.
+    Route::get('/session-roles', [SessionRoleController::class, 'index'])->name('session-roles.index');
+    Route::post('/session-roles', [SessionRoleController::class, 'store'])->middleware('throttle:10,1')->name('session-roles.store');
+    Route::delete('/session-roles/{application}', [SessionRoleController::class, 'destroy'])->name('session-roles.destroy');
+    Route::put('/session-roles/sessions/{session}/report', [SessionRoleController::class, 'report'])->name('session-roles.report');
 
     // Awards: anyone with an account can nominate, and winners download their certificates.
     Route::get('/my-awards', [AwardController::class, 'mine'])->name('awards.mine');
@@ -109,6 +117,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/abstracts/{abstract}/decision', [ScientificAbstractController::class, 'decide'])->name('abstracts.decide');
         Route::put('/abstracts/{abstract}/revision-due', [ScientificAbstractController::class, 'extendRevision'])->name('abstracts.revision-due');
         Route::get('/reviewers', ReviewerController::class)->name('reviewers');
+        Route::get('/session-roles', [ScientificSessionRoleController::class, 'index'])->name('session-roles.index');
+        Route::post('/session-roles/{application}/accept', [ScientificSessionRoleController::class, 'accept'])->name('session-roles.accept');
+        Route::post('/session-roles/{application}/decline', [ScientificSessionRoleController::class, 'decline'])->name('session-roles.decline');
+        Route::post('/session-roles/{application}/release', [ScientificSessionRoleController::class, 'release'])->name('session-roles.release');
         Route::get('/programme', [ScientificProgrammeController::class, 'index'])->name('programme.index');
         Route::get('/programme/new', [ScientificProgrammeController::class, 'create'])->name('programme.create');
         Route::post('/programme', [ScientificProgrammeController::class, 'store'])->name('programme.store');
