@@ -8,12 +8,14 @@ use App\Models\Photo;
 use App\Models\PhotoRemovalRequest;
 use App\Models\User;
 use App\Notifications\PhotoRemovalDecided;
+use App\Support\ChunkedUpload;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * Photo uploads and their files.
@@ -44,37 +46,22 @@ class GalleryService
      */
     public function receiveChunk(Album $album, User $user, array $upload, UploadedFile $chunk, bool $publish): array
     {
-        $temp = Storage::disk('local');
-        $dir = self::CHUNKS."/{$user->id}/{$upload['upload_id']}";
+        $chunks = new ChunkedUpload(self::CHUNKS);
 
-        if ($upload['index'] === 0) {
-            $this->clearAbandonedUploads($user);
+        try {
+            $joined = $chunks->receive($user, $upload, $chunk);
+        } catch (RuntimeException) {
+            throw new UnreadablePhoto('The upload was incomplete. Try this photo again.');
         }
 
-        $temp->putFileAs($dir, $chunk, sprintf('%05d.part', $upload['index']));
-
-        $parts = collect($temp->files($dir))->filter(fn ($file) => str_ends_with($file, '.part'))->sort()->values();
-        if ($parts->count() < $upload['total']) {
+        if (! $joined) {
             return ['done' => false];
         }
 
-        $joined = $temp->path("{$dir}/joined");
         try {
-            $out = fopen($joined, 'wb');
-            foreach ($parts as $part) {
-                $in = fopen($temp->path($part), 'rb');
-                stream_copy_to_stream($in, $out);
-                fclose($in);
-            }
-            fclose($out);
-
-            if (filesize($joined) !== $upload['size']) {
-                throw new UnreadablePhoto('The upload was incomplete. Try this photo again.');
-            }
-
             $photo = $this->add($album, $user, $joined, $upload['name'], $publish);
         } finally {
-            $temp->deleteDirectory($dir);
+            $chunks->done($user, $upload['upload_id']);
         }
 
         return $photo ? ['done' => true, 'photo' => $photo] : ['done' => true, 'duplicate' => true];
@@ -154,20 +141,5 @@ class GalleryService
 
         $requests->each(fn (PhotoRemovalRequest $request) => Notification::route('mail', $request->email)
             ->notify(new PhotoRemovalDecided($request->refresh())));
-    }
-
-    /** Chunks from uploads that were abandoned more than a day ago. */
-    private function clearAbandonedUploads(User $user): void
-    {
-        $temp = Storage::disk('local');
-
-        foreach ($temp->directories(self::CHUNKS."/{$user->id}") as $dir) {
-            $files = $temp->files($dir);
-            $latest = $files ? max(array_map(fn ($file) => $temp->lastModified($file), $files)) : 0;
-
-            if ($latest < now()->subDay()->getTimestamp()) {
-                $temp->deleteDirectory($dir);
-            }
-        }
     }
 }

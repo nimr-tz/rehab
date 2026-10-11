@@ -74,6 +74,10 @@
                 </dl>
             </x-card>
 
+            @if ($abstract->status === AbstractStatus::Accepted)
+                <x-presentation-slides :abstract="$abstract" :can-upload="$abstract->acceptsPresentationUpload()" />
+            @endif
+
             <x-card title="Authors">
                 <ol class="space-y-3 text-sm">
                     @foreach ($abstract->authors as $author)

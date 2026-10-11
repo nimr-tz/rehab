@@ -22,6 +22,7 @@ use App\Http\Controllers\Media\UploadController;
 use App\Http\Controllers\MpesaPaymentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PresentationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgrammeController;
 use App\Http\Controllers\RegistrationController;
@@ -56,6 +57,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
+
+    // Slides for accepted abstracts: the presenter and the committee.
+    Route::post('/presentations/{abstract}/chunks', [PresentationController::class, 'upload'])->middleware('throttle:600,1')->name('presentations.upload');
+    Route::get('/presentations/{abstract}', [PresentationController::class, 'download'])->name('presentations.download');
 
     // Awards: anyone with an account can nominate, and winners download their certificates.
     Route::get('/my-awards', [AwardController::class, 'mine'])->name('awards.mine');
@@ -110,6 +115,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/programme/{session}', [ScientificProgrammeController::class, 'edit'])->name('programme.edit');
         Route::put('/programme/{session}', [ScientificProgrammeController::class, 'update'])->name('programme.update');
         Route::delete('/programme/{session}', [ScientificProgrammeController::class, 'destroy'])->name('programme.destroy');
+        Route::post('/programme/{session}/abstracts', [ScientificProgrammeController::class, 'schedule'])->name('programme.abstracts.store');
+        Route::delete('/programme/{session}/abstracts/{abstract}', [ScientificProgrammeController::class, 'unschedule'])->name('programme.abstracts.destroy');
+        Route::put('/programme/{session}/abstracts/{abstract}/move', [ScientificProgrammeController::class, 'move'])->name('programme.abstracts.move');
     });
 
     // Awards judges score the finalists of the awards they are assigned to.

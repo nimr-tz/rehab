@@ -236,8 +236,22 @@
                         @if ($abstract->code)<div><dt class="text-ink-500">Conference code</dt><dd class="mt-1 font-mono font-semibold text-ink-900">{{ $abstract->code }}</dd></div>@endif
                         @if ($abstract->decided_at)<div><dt class="text-ink-500">Decided</dt><dd class="mt-1 text-ink-900">{{ $abstract->decided_at->format('j M Y') }}</dd></div>@endif
                         @if ($abstract->decision_note)<div><dt class="text-ink-500">Note</dt><dd class="mt-1 text-ink-900">{{ $abstract->decision_note }}</dd></div>@endif
+                        @if ($abstract->status === AbstractStatus::Accepted)
+                            <div><dt class="text-ink-500">Session</dt><dd class="mt-1 text-ink-900">
+                                @if ($session = $abstract->sessions->first())
+                                    <a href="{{ route('scientific.programme.edit', $session) }}" class="font-semibold text-brand-700 hover:underline">{{ $session->title }}</a>
+                                    <span class="block text-xs text-ink-500">{{ $session->starts_at->format('D j M, H:i') }}{{ $session->hall ? ' · '.$session->hall : '' }}</span>
+                                @else
+                                    Not scheduled yet. Add it to a session in <a href="{{ route('scientific.programme.index') }}" class="font-semibold text-brand-700 hover:underline">Programme & CPD</a>.
+                                @endif
+                            </dd></div>
+                        @endif
                     </dl>
                 </x-card>
+
+                @if ($abstract->status === AbstractStatus::Accepted)
+                    <x-presentation-slides :abstract="$abstract" :can-upload="true" />
+                @endif
             @endif
         </div>
     </div>

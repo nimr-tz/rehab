@@ -64,7 +64,7 @@ class AbstractController extends Controller
         $this->authorizeOwner($request, $abstract);
 
         return view('abstracts.show', [
-            'abstract' => $abstract->load('topic', 'authors', 'edition', 'reviews', 'sessions'),
+            'abstract' => $abstract->load('topic', 'authors', 'edition', 'reviews', 'sessions', 'presentationFile.uploader'),
         ]);
     }
 

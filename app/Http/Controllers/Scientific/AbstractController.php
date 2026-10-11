@@ -53,7 +53,7 @@ class AbstractController extends Controller
 
     public function show(AbstractSubmission $abstract, AbstractService $service): View
     {
-        $abstract->load('topic', 'authors', 'submitter', 'edition', 'reviews.reviewer');
+        $abstract->load('topic', 'authors', 'submitter', 'edition', 'reviews.reviewer', 'sessions', 'presentationFile.uploader');
         $seats = $service->openSeats($abstract);
 
         return view('scientific.abstracts.show', [

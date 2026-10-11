@@ -13,6 +13,10 @@
         <x-alert tone="warning">{{ $unpointed }} {{ \Illuminate\Support\Str::plural('session', $unpointed) }} {{ $unpointed === 1 ? 'has' : 'have' }} no CPD points yet, so attending {{ $unpointed === 1 ? 'it' : 'them' }} earns nothing.</x-alert>
     @endif
 
+    @if ($unscheduled > 0)
+        <x-alert tone="warning">{{ $unscheduled }} accepted {{ \Illuminate\Support\Str::plural('abstract', $unscheduled) }} {{ $unscheduled === 1 ? 'is' : 'are' }} not in a session yet. Open a session and add {{ $unscheduled === 1 ? 'it' : 'them' }} under Presentations.</x-alert>
+    @endif
+
     @if ($days->isEmpty())
         <x-card>
             <x-empty icon="calendar" title="No sessions yet">
@@ -40,7 +44,7 @@
                                     <td class="whitespace-nowrap px-6 py-3.5 font-mono text-xs text-ink-700">{{ $session->starts_at->format('H:i') }}–{{ $session->ends_at->format('H:i') }}</td>
                                     <td class="max-w-[22rem] px-3 py-3.5">
                                         <p class="truncate font-semibold text-ink-900">{{ $session->title }}</p>
-                                        <p class="truncate text-xs text-ink-500">{{ \App\Models\ProgrammeSession::KINDS[$session->kind] ?? $session->kind }}{{ $session->topic ? ' · '.$session->topic->name : '' }}{{ $session->chair ? ' · Chair: '.$session->chair : '' }}</p>
+                                        <p class="truncate text-xs text-ink-500">{{ \App\Models\ProgrammeSession::KINDS[$session->kind] ?? $session->kind }}{{ $session->topic ? ' · '.$session->topic->name : '' }}{{ $session->chair ? ' · Chair: '.$session->chair : '' }}{{ $session->abstracts_count ? ' · '.$session->abstracts_count.' '.\Illuminate\Support\Str::plural('presentation', $session->abstracts_count) : '' }}</p>
                                     </td>
                                     <td class="px-3 py-3.5 text-ink-700">{{ $session->hall ?? '—' }}</td>
                                     <td class="px-3 py-3.5">

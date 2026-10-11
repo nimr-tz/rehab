@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -173,6 +174,19 @@ class AbstractSubmission extends Model
     public function sessions(): BelongsToMany
     {
         return $this->belongsToMany(ProgrammeSession::class, 'programme_session_abstract', 'abstract_id');
+    }
+
+    public function presentationFile(): HasOne
+    {
+        return $this->hasOne(PresentationFile::class, 'abstract_id');
+    }
+
+    /** The presenter may upload slides once accepted, until the edition's presentation deadline (that whole day). */
+    public function acceptsPresentationUpload(): bool
+    {
+        $deadline = $this->edition->presentation_deadline;
+
+        return $this->status === AbstractStatus::Accepted && (! $deadline || today()->lte($deadline));
     }
 
     public function presenter(): ?AbstractAuthor

@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\Scientific;
 
+use App\Enums\AbstractStatus;
 use App\Http\Controllers\Controller;
+use App\Models\AbstractSubmission;
 use App\Models\ProgrammeSession;
+use App\Services\ProgrammeService;
 use App\Support\Summit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use InvalidArgumentException;
 
 /** The committee edits the programme: sessions, halls, times and the CPD points each session earns. */
 class ProgrammeController extends Controller
@@ -18,12 +22,13 @@ class ProgrammeController extends Controller
     public function index(): View
     {
         $edition = $this->summit->edition();
-        $sessions = $edition?->sessions()->with('topic')->withCount('attendances')->get() ?? collect();
+        $sessions = $edition?->sessions()->with('topic')->withCount('attendances', 'abstracts')->get() ?? collect();
 
         return view('scientific.programme.index', [
             'days' => $sessions->groupBy(fn (ProgrammeSession $s) => $s->starts_at->toDateString()),
             'totalPoints' => $sessions->sum(fn (ProgrammeSession $s) => $s->points()),
             'unpointed' => $sessions->filter(fn (ProgrammeSession $s) => $s->isScannable() && $s->cpd_points === null)->count(),
+            'unscheduled' => $edition ? $this->unscheduled($edition->id)->count() : 0,
         ]);
     }
 
@@ -79,13 +84,57 @@ class ProgrammeController extends Controller
         return redirect()->route('scientific.programme.index')->with('status', $session->title.' was removed from the programme.');
     }
 
+    /** Add an accepted abstract to the session. */
+    public function schedule(Request $request, ProgrammeSession $session, ProgrammeService $programme): RedirectResponse
+    {
+        $this->ensureCurrent($session);
+        $data = $request->validate(['abstract_id' => ['required', 'integer']]);
+
+        try {
+            $programme->schedule($session, AbstractSubmission::findOrFail($data['abstract_id']));
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['abstract_id' => $e->getMessage()]);
+        }
+
+        return back()->with('status', 'Presentation added to '.$session->title.'.');
+    }
+
+    public function unschedule(ProgrammeSession $session, AbstractSubmission $abstract, ProgrammeService $programme): RedirectResponse
+    {
+        $this->ensureCurrent($session);
+        $programme->unschedule($session, $abstract);
+
+        return back()->with('status', ($abstract->code ?: 'The abstract').' was taken out of '.$session->title.'.');
+    }
+
+    public function move(Request $request, ProgrammeSession $session, AbstractSubmission $abstract, ProgrammeService $programme): RedirectResponse
+    {
+        $this->ensureCurrent($session);
+        $programme->move($session, $abstract, $request->input('direction') === 'up' ? -1 : 1);
+
+        return back();
+    }
+
     private function form(ProgrammeSession $session): View
     {
         return view('scientific.programme.form', [
             'session' => $session,
             'kinds' => ProgrammeSession::KINDS,
             'topics' => $this->summit->edition()->topics()->orderBy('name')->pluck('name', 'id')->all(),
+            'presentations' => $session->exists ? $session->abstracts()->with('topic', 'authors', 'presentationFile')->get() : collect(),
+            // Accepted abstracts not yet in any session, those in this session's topic first.
+            'candidates' => $session->exists
+                ? $this->unscheduled($session->edition_id)->with('topic', 'authors')->get()
+                    ->sortBy(fn (AbstractSubmission $a) => [$a->topic_id === $session->topic_id ? 0 : 1, $a->code])->values()
+                : collect(),
         ]);
+    }
+
+    private function unscheduled(int $editionId)
+    {
+        return AbstractSubmission::where('edition_id', $editionId)
+            ->where('status', AbstractStatus::Accepted)
+            ->whereDoesntHave('sessions');
     }
 
     private function validated(Request $request): array

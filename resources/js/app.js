@@ -1,4 +1,5 @@
 import Alpine from 'alpinejs';
+import fileUploader from './file-uploader';
 import photoUploader from './photo-uploader';
 import scorecard from './scorecard';
 import mpesaPay from './mpesa-pay';
@@ -51,6 +52,7 @@ Alpine.data('brandLogo', (animatedSrc) => ({
 }));
 
 Alpine.data('photoUploader', photoUploader);
+Alpine.data('fileUploader', fileUploader);
 
 // The gallery lightbox loads only on pages with a photo grid.
 if (document.querySelector('[data-gallery]')) {

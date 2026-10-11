@@ -124,7 +124,7 @@
 
                 @if ($registration->canChangeCategory() && ! $registration->awaitsStudentApproval() && $categories->count() > 1)
                     <div class="mt-5 border-t border-ink-100 pt-4" x-data="{ open: {{ $errors->has('category') ? 'true' : 'false' }} }">
-                        <button type="button" x-show="! open" @click="open = true" class="text-sm font-semibold text-brand-700 hover:underline">Change categoryâ€¦</button>
+                        <button type="button" x-show="! open" @click="open = true" class="text-sm font-semibold text-brand-700 hover:underline">Change category…</button>
                         <div x-show="open" x-cloak>
                             @include('registration._category', ['current' => $registration->category])
                         </div>
