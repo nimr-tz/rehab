@@ -11,9 +11,7 @@ Alpine.data('mpesaPay', mpesaPay);
 // still image instead of layering over it. On small screens, with reduced motion,
 // or if it has not loaded within 1.2s, the still image stays.
 //
-// Browsers do not agree on the WebP loop count, so the page ends the animation
-// itself: after one run it swaps back to the still, which is the final frame.
-const LOGO_ANIMATION_MS = 2800;
+// The WebP loops forever, holding the finished logo for a moment between runs.
 
 Alpine.data('brandLogo', (animatedSrc) => ({
     animated: false,
@@ -39,12 +37,6 @@ Alpine.data('brandLogo', (animatedSrc) => ({
             clearTimeout(fallback);
             this.$refs.anim.src = img.src;
             this.animated = true;
-
-            setTimeout(() => {
-                this.stillHidden = false;
-                this.animated = false;
-                this.$refs.anim.removeAttribute('src');
-            }, LOGO_ANIMATION_MS);
         };
         img.onerror = showStill;
         img.src = animatedSrc;

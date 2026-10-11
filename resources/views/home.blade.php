@@ -76,73 +76,7 @@
     <x-public.nav />
 
     {{-- Hero --}}
-    <header class="bg-gradient-to-b from-white to-brand-50">
-        <div class="wrap grid items-center gap-12 pb-20 pt-14 lg:grid-cols-[1.15fr_1fr] lg:pt-16">
-            <div>
-                <p class="flex flex-wrap items-center gap-x-3.5 gap-y-2 text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
-                    People <span class="h-[7px] w-[7px] rounded-full bg-ember-500"></span>
-                    Care <span class="h-[7px] w-[7px] rounded-full bg-olive-700"></span>
-                    Together
-                </p>
-                <h1 class="mt-6 text-[clamp(3rem,6.4vw,5.6rem)] font-extrabold leading-[0.98] tracking-[-0.035em] text-brand-700">
-                    {{ $summit->get('name') }} <span class="text-ember-500">{{ $summit->get('year') }}</span>
-                </h1>
-                <p class="mt-6 max-w-xl text-[clamp(1.15rem,1.6vw,1.35rem)] leading-normal text-ink-600">
-                    <span class="font-bold text-ink-900">Theme:</span>
-                    @if ($theme)
-                        {{ $theme }}
-                    @else
-                        <span class="tba">to be announced with the call for abstracts</span>
-                    @endif
-                </p>
-
-                <div class="mt-9 flex flex-wrap gap-3">
-                    <a href="#register" class="btn-pill bg-brand-700 text-white shadow-[0_10px_24px_-10px_rgb(2_79_109/0.6)] hover:bg-brand-800 focus-visible:ring-brand-500/30">
-                        Register now <span class="text-sun-400">→</span>
-                    </a>
-                    @if ($summit->get('abstracts_open'))
-                        <a href="{{ route('login') }}" class="btn-pill border-[1.5px] border-brand-700 bg-white text-brand-700 hover:bg-brand-700 hover:text-white focus-visible:ring-brand-500/30">
-                            Submit an abstract
-                        </a>
-                    @endif
-                </div>
-
-                <dl class="mt-12 grid grid-cols-2 gap-5 border-t border-brand-100 pt-6 sm:grid-cols-3">
-                    <div>
-                        <dt class="text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Dates</dt>
-                        <dd class="mt-1.5 text-lg font-bold text-ink-900">
-                            @if ($dateRange)
-                                {{ $dateRange }}
-                            @else
-                                {{ $summit->get('year') }}<span class="block text-sm tba">Exact dates to be announced</span>
-                            @endif
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Venue</dt>
-                        <dd class="mt-1.5 text-lg {{ $venueLine ? 'font-bold text-ink-900' : 'tba' }}">{{ $venueLine ?? 'To be announced' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Edition</dt>
-                        <dd class="mt-1.5 text-lg font-bold text-ink-900">{{ $summit->get('edition') }}</dd>
-                    </div>
-                </dl>
-            </div>
-
-            <div class="relative mx-auto flex w-full max-w-[32rem] items-center justify-center">
-                <div class="absolute aspect-square w-[88%] rounded-full bg-[radial-gradient(circle,#fff_0%,#fff_55%,rgb(255_255_255/0)_72%)]"></div>
-                <span class="absolute right-[10%] top-[6%] h-[22px] w-[22px] rounded-full bg-sun-400"></span>
-                <span class="absolute bottom-[14%] left-[4%] h-4 w-4 rounded-full bg-coral-400"></span>
-                <span class="absolute left-[2%] top-[30%] h-2.5 w-2.5 rounded-full bg-brand-700"></span>
-                <div x-data="brandLogo('{{ asset('images/brand/logo-2027-animated.webp') }}')" class="relative aspect-square w-full">
-                    <img src="{{ asset('images/brand/logo-2027-still.webp') }}" alt="{{ $summit->get('organiser') }} {{ $summit->get('year') }} Events Portal"
-                         :class="{ 'opacity-0': stillHidden }" class="h-full w-full object-contain">
-                    <img x-ref="anim" alt="" aria-hidden="true" style="display: none" :style="{ display: animated ? 'block' : 'none' }"
-                         class="absolute inset-0 h-full w-full object-contain">
-                </div>
-            </div>
-        </div>
-    </header>
+    @include('home._hero-collage')
 
     {{-- About --}}
     <section id="about" class="wrap pt-28">
